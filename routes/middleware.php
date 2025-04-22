@@ -3,7 +3,7 @@ use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return [
     'api' => [
-        EnsureFrontendRequestsAreStateful::class, // ← add this line
+        EnsureFrontendRequestsAreStateful::class, // Ensure this is included
         \Illuminate\Routing\Middleware\SubstituteBindings::class,
     ],
 ];

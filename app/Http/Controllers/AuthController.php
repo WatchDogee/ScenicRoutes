@@ -1,6 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
@@ -21,8 +22,12 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        Auth::login($user);
-        return redirect('/map');
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 
     public function login(Request $request)
@@ -33,7 +38,7 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($data)) {
-            return response()->json(['error' => 'Invalid credentials'], 401);
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
         $user = Auth::user();
@@ -47,7 +52,9 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::logout();
-        return redirect('/login');
+        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }

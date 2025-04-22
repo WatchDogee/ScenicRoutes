@@ -1,7 +1,17 @@
+import React, { useEffect, useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
+import apiClient from '@/utils/apiClient';
 
 export default function Dashboard() {
+    const [savedRoads, setSavedRoads] = useState([]);
+
+    useEffect(() => {
+        apiClient.get('/saved-roads')
+            .then((response) => setSavedRoads(response.data))
+            .catch((error) => console.error('Failed to fetch saved roads:', error));
+    }, []);
+
     return (
         <AuthenticatedLayout
             header={
@@ -20,6 +30,15 @@ export default function Dashboard() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div>
+                <h2>Saved Roads</h2>
+                <ul>
+                    {savedRoads.map((road) => (
+                        <li key={road.id}>{road.name}</li>
+                    ))}
+                </ul>
             </div>
         </AuthenticatedLayout>
     );

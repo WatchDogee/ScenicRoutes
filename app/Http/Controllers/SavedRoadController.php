@@ -9,7 +9,7 @@ class SavedRoadController extends Controller
 {
     public function index()
     {
-        return auth()->user()->savedRoads()->get();
+        return response()->json(auth()->user()->savedRoads);
     }
 
     public function store(Request $request)
@@ -17,6 +17,9 @@ class SavedRoadController extends Controller
         $data = $request->validate([
             'road_name' => 'required|string|max:255',
             'coordinates' => 'required|array',
+            'twistiness' => 'nullable|numeric',
+            'corner_count' => 'nullable|integer',
+            'length' => 'nullable|numeric',
         ]);
 
         // Serialize coordinates to JSON

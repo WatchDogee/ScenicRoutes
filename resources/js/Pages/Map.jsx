@@ -21,10 +21,52 @@ export default function Map() {
     const [selectedRoad, setSelectedRoad] = useState(null); // Selected road for display/edit
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
 
+    // Initialize auth state from localStorage
     useEffect(() => {
-        // Trigger re-render when auth state changes
-        console.log("Auth state updated:", auth);
-    }, [auth]);
+        const token = localStorage.getItem('token');
+        if (token) {
+            // Set axios default authorization header
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            
+            // Fetch user data to verify token and restore session
+            axios.get('/api/user', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(response => {
+                setAuth({ user: response.data, token });
+            })
+            .catch(() => {
+                // If token is invalid, clear it
+                localStorage.removeItem('token');
+                delete axios.defaults.headers.common['Authorization'];
+                setAuth({ user: null, token: null });
+            });
+        }
+    }, []); // Run only once on component mount
+
+    // Effect for loading saved roads when auth state changes
+    useEffect(() => {
+        const loadSavedRoads = async () => {
+            if (auth.token) {
+                try {
+                    const response = await axios.get('/api/saved-roads', {
+                        headers: { Authorization: `Bearer ${auth.token}` }
+                    });
+                    setSavedRoads(response.data);
+                } catch (error) {
+                    console.error('Error loading saved roads:', error);
+                    if (error.response?.status === 401) {
+                        // If unauthorized, clear auth state
+                        localStorage.removeItem('token');
+                        delete axios.defaults.headers.common['Authorization'];
+                        setAuth({ user: null, token: null });
+                    }
+                }
+            }
+        };
+
+        loadSavedRoads();
+    }, [auth.token]); // Reload when auth token changes
 
     const handleRadiusChange = (e) => {
         setRadius(Number(e.target.value));
@@ -171,7 +213,13 @@ export default function Map() {
 
                 polyline.bindPopup(popupContent);
                 polyline.on("popupopen", () => {
-                    document.getElementById(`save-road-${way.id}`).addEventListener('click', () => saveRoad({ name, coordinates }));
+                    document.getElementById(`save-road-${way.id}`).addEventListener('click', () => saveRoad({ 
+                        name, 
+                        coordinates, 
+                        twistiness: twistinessData.twistiness, 
+                        corner_count: twistinessData.corner_count, 
+                        length: roadLength 
+                    }));
                 });
 
                 newRoads.push({ id: way.id, name, coordinates });
@@ -194,7 +242,10 @@ export default function Map() {
         try {
             const payload = {
                 road_name: road.name || "Unnamed Road",
-                coordinates: road.coordinates, // Ensure this is an array
+                coordinates: road.coordinates,
+                twistiness: road.twistiness,
+                corner_count: road.corner_count,
+                length: road.length,
             };
 
             const response = await axios.post('/api/saved-roads', payload, {
@@ -245,54 +296,79 @@ export default function Map() {
         try {
             const response = await axios.post('/api/login', loginForm, {
                 headers: {
-                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
+                withCredentials: true
             });
 
             if (response.data && response.data.user && response.data.token) {
-                setAuth({ user: response.data.user, token: response.data.token });
-                setLoginForm({ email: '', password: '' }); // Clear login form
+                const { user, token } = response.data;
+                localStorage.setItem('token', token);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                setAuth({ user, token });
+                setLoginForm({ email: '', password: '' });
+                
+                // Load saved roads immediately after login
+                const roadsResponse = await axios.get('/api/saved-roads', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setSavedRoads(roadsResponse.data);
+                
+                // Check if this is the first login
+                if (!localStorage.getItem('storage_notice_shown')) {
+                    alert("To stay logged in between sessions, please ensure your browser is set to accept cookies and local storage data for this site. You can check this in your browser's site settings.");
+                    localStorage.setItem('storage_notice_shown', 'true');
+                }
+                
                 alert("Login successful!");
-            } else {
-                console.error("Unexpected response format:", response.data);
-                alert("Failed to log in. Please try again.");
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
-            alert("Failed to log in.");
+            alert(error.response?.data?.message || "Failed to log in.");
         }
     };
 
-    const handleLogout = () => {
-        setAuth({ user: null, token: null });
-        alert("Logged out successfully!");
+    const handleLogout = async () => {
+        try {
+            await axios.post('/api/logout', {}, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            setAuth({ user: null, token: null });
+            setSavedRoads([]); // Clear saved roads on logout
+            alert("Logged out successfully!");
+        } catch (error) {
+            console.error("Logout error:", error);
+            // Still clear local state even if the server request fails
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            setAuth({ user: null, token: null });
+            setSavedRoads([]);
+        }
     };
 
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            // Ensure the data matches the server's validation rules
-            const payload = {
-                name: registerForm.name.trim(),
-                email: registerForm.email.trim().toLowerCase(),
-                password: registerForm.password,
-                password_confirmation: registerForm.password_confirmation,
-            };
+            const response = await axios.post('/api/register', registerForm, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                withCredentials: true
+            });
 
-            const response = await axios.post('/register', payload); // Adjusted endpoint
             alert("Registration successful! Please log in.");
             setAuthMode('login');
+            setRegisterForm({ name: '', email: '', password: '', password_confirmation: '' });
         } catch (error) {
             console.error("Registration error:", error.response?.data || error.message);
             if (error.response?.data?.errors) {
-                // Display validation errors if available
-                alert(
-                    Object.values(error.response.data.errors)
-                        .flat()
-                        .join('\n')
-                );
+                alert(Object.values(error.response.data.errors).flat().join('\n'));
             } else {
-                alert("Failed to register.");
+                alert(error.response?.data?.message || "Failed to register.");
             }
         }
     };

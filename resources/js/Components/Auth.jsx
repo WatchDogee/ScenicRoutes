@@ -1,9 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import apiClient, { setAuthToken } from '../utils/apiClient';
 
 export default function Auth({ onAuthSuccess }) {
-    const [formType, setFormType] = useState('login'); // Switch between login/signup
+    const [formType, setFormType] = useState('login');
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const initializeAuth = async () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    setAuthToken(token);
+                    const response = await apiClient.get('/user');
+                    onAuthSuccess(response.data);
+                } catch (error) {
+                    console.error('Error verifying token:', error);
+                    localStorage.removeItem('token');
+                    setAuthToken(null);
+                }
+            }
+            setIsLoading(false);
+        };
+
+        initializeAuth();
+    }, []);
 
     const handleInputChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,16 +41,24 @@ export default function Auth({ onAuthSuccess }) {
                 const { token, user } = response.data;
                 localStorage.setItem('token', token);
                 setAuthToken(token);
-                onAuthSuccess(user);
+                
+                // Fetch user data immediately after login
+                const userResponse = await apiClient.get('/user');
+                onAuthSuccess(userResponse.data);
             } else {
                 alert('Registration successful! You can now log in.');
                 setFormType('login');
             }
         } catch (error) {
             console.error('Error:', error.response?.data || error.message);
-            alert('An error occurred.');
+            const errorMessage = error.response?.data?.message || 'An error occurred.';
+            alert(errorMessage);
         }
     };
+
+    if (isLoading) {
+        return <div>Loading...</div>;
+    }
 
     return (
         <div>
