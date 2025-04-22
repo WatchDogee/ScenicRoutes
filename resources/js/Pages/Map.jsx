@@ -17,6 +17,14 @@ export default function Map() {
     const [loginForm, setLoginForm] = useState({ email: '', password: '' });
     const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
     const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
+    const [savedRoads, setSavedRoads] = useState([]); // List of saved roads
+    const [selectedRoad, setSelectedRoad] = useState(null); // Selected road for display/edit
+    const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
+
+    useEffect(() => {
+        // Trigger re-render when auth state changes
+        console.log("Auth state updated:", auth);
+    }, [auth]);
 
     const handleRadiusChange = (e) => {
         setRadius(Number(e.target.value));
@@ -108,7 +116,7 @@ export default function Map() {
             return;
         }
 
-        setLoading(true);
+        setLoading(true); // Show loading indicator
         const lat = markerRef.current.getLatLng().lat;
         const lon = markerRef.current.getLatLng().lng;
 
@@ -163,7 +171,7 @@ export default function Map() {
 
                 polyline.bindPopup(popupContent);
                 polyline.on("popupopen", () => {
-                    document.getElementById(`save-road-${way.id}`).addEventListener('click', () => saveRoad({ id: way.id, name, coordinates }));
+                    document.getElementById(`save-road-${way.id}`).addEventListener('click', () => saveRoad({ name, coordinates }));
                 });
 
                 newRoads.push({ id: way.id, name, coordinates });
@@ -173,7 +181,7 @@ export default function Map() {
         } catch (error) {
             console.error("Error fetching roads:", error);
         } finally {
-            setLoading(false);
+            setLoading(false); // Hide loading indicator
         }
     };
 
@@ -183,16 +191,28 @@ export default function Map() {
             return;
         }
 
-        const isPublic = confirm("Do you want to make this road public?");
-
         try {
-            await axios.post('/api/saved-roads', { ...road, is_public: isPublic }, {
+            const payload = {
+                road_name: road.name || "Unnamed Road",
+                coordinates: road.coordinates, // Ensure this is an array
+            };
+
+            const response = await axios.post('/api/saved-roads', payload, {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
+            setSavedRoads([...savedRoads, response.data]); // Add road to saved list
             alert("Road saved successfully!");
         } catch (error) {
-            console.error("Error saving road:", error);
-            alert("Failed to save road.");
+            console.error("Error saving road:", error.response?.data || error.message);
+            if (error.response?.data?.errors) {
+                alert(
+                    Object.values(error.response.data.errors)
+                        .flat()
+                        .join('\n')
+                );
+            } else {
+                alert("Failed to save road.");
+            }
         }
     };
 
@@ -223,25 +243,98 @@ export default function Map() {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/login', loginForm);
-            setAuth({ user: response.data.user, token: response.data.token });
-            alert("Login successful!");
+            const response = await axios.post('/api/login', loginForm, {
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+
+            if (response.data && response.data.user && response.data.token) {
+                setAuth({ user: response.data.user, token: response.data.token });
+                setLoginForm({ email: '', password: '' }); // Clear login form
+                alert("Login successful!");
+            } else {
+                console.error("Unexpected response format:", response.data);
+                alert("Failed to log in. Please try again.");
+            }
         } catch (error) {
-            console.error("Login error:", error);
+            console.error("Login error:", error.response?.data || error.message);
             alert("Failed to log in.");
         }
+    };
+
+    const handleLogout = () => {
+        setAuth({ user: null, token: null });
+        alert("Logged out successfully!");
     };
 
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            // Update the endpoint to match the correct API route
-            await axios.post('/register', registerForm); // Adjusted endpoint
+            // Ensure the data matches the server's validation rules
+            const payload = {
+                name: registerForm.name.trim(),
+                email: registerForm.email.trim().toLowerCase(),
+                password: registerForm.password,
+                password_confirmation: registerForm.password_confirmation,
+            };
+
+            const response = await axios.post('/register', payload); // Adjusted endpoint
             alert("Registration successful! Please log in.");
             setAuthMode('login');
         } catch (error) {
-            console.error("Registration error:", error);
-            alert("Failed to register.");
+            console.error("Registration error:", error.response?.data || error.message);
+            if (error.response?.data?.errors) {
+                // Display validation errors if available
+                alert(
+                    Object.values(error.response.data.errors)
+                        .flat()
+                        .join('\n')
+                );
+            } else {
+                alert("Failed to register.");
+            }
+        }
+    };
+
+    const displayRoadOnMap = (road) => {
+        if (!mapRef.current) return;
+
+        // Clear existing layers
+        roadsLayerRef.current.clearLayers();
+
+        // Add the road's polyline to the map
+        const coordinates = JSON.parse(road.road_coordinates);
+        const polyline = L.polyline(coordinates, { color: 'blue', weight: 8 }).addTo(roadsLayerRef.current);
+
+        // Zoom to the road
+        mapRef.current.fitBounds(polyline.getBounds());
+    };
+
+    const handleRoadClick = async (roadId) => {
+        try {
+            const response = await axios.get(`/api/saved-roads/${roadId}`, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            setSelectedRoad(response.data);
+            displayRoadOnMap(response.data);
+        } catch (error) {
+            console.error("Error fetching road details:", error);
+            alert("Failed to fetch road details.");
+        }
+    };
+
+    const handleEditRoad = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.put(`/api/saved-roads/${selectedRoad.id}`, editForm, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            alert("Road updated successfully!");
+            setSelectedRoad(response.data.road);
+        } catch (error) {
+            console.error("Error updating road:", error);
+            alert("Failed to update road.");
         }
     };
 
@@ -277,10 +370,37 @@ export default function Map() {
             <div className="w-80 p-4 bg-white shadow-md overflow-y-auto">
                 {auth.user ? (
                     <div>
-                        <h3>Welcome, {auth.user.name}</h3>
-                        <button onClick={() => setAuth({ user: null, token: null })} className="bg-red-500 text-white w-full p-1 mt-2">
+                        <div className="flex items-center mb-4">
+                            <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
+                            <div className="ml-3">
+                                <h3 className="font-semibold">{auth.user.name}</h3>
+                                <button
+                                    onClick={() => window.location.href = '/profile'}
+                                    className="text-sm text-blue-600"
+                                >
+                                    Settings
+                                </button>
+                            </div>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="bg-red-500 text-white px-4 py-1 mt-2 rounded"
+                        >
                             Log Out
                         </button>
+                        <h3 className="font-semibold mt-4">Saved Roads</h3>
+                        <ul className="mt-2">
+                            {savedRoads.map((road) => (
+                                <li key={road.id} className="mb-2">
+                                    <button
+                                        onClick={() => handleRoadClick(road.id)}
+                                        className="text-blue-600 underline"
+                                    >
+                                        {road.road_name || 'Unnamed Road'}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
                 ) : authMode === 'login' ? (
                     <form onSubmit={handleLogin}>
@@ -360,6 +480,39 @@ export default function Map() {
                     </form>
                 )}
 
+                {selectedRoad && (
+                    <div className="mt-4">
+                        <h3 className="font-semibold">Edit Road</h3>
+                        <form onSubmit={handleEditRoad}>
+                            <label className="block mt-2">Name</label>
+                            <input
+                                type="text"
+                                value={editForm.road_name}
+                                onChange={(e) => setEditForm({ ...editForm, road_name: e.target.value })}
+                                className="w-full p-1 border"
+                            />
+                            <label className="block mt-2">Description</label>
+                            <textarea
+                                value={editForm.description}
+                                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                className="w-full p-1 border"
+                            />
+                            <label className="block mt-2">Pictures</label>
+                            <input
+                                type="file"
+                                multiple
+                                onChange={(e) =>
+                                    setEditForm({ ...editForm, pictures: Array.from(e.target.files) })
+                                }
+                                className="w-full p-1 border"
+                            />
+                            <button type="submit" className="bg-green-500 text-white w-full p-1 mt-2">
+                                Save Changes
+                            </button>
+                        </form>
+                    </div>
+                )}
+
                 <h3 className="font-semibold mt-4 mb-2">Filters</h3>
                 <label>Search Radius: {radius} km</label>
                 <input
@@ -394,6 +547,7 @@ export default function Map() {
                 <button onClick={searchRoads} className="bg-green-500 text-white w-full p-1 mt-2">
                     Search Roads
                 </button>
+                {loading && <p className="text-center text-gray-500 mt-2">Loading roads...</p>}
             </div>
 
             {/* Map */}

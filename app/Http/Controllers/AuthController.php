@@ -33,10 +33,16 @@ class AuthController extends Controller
         ]);
 
         if (!Auth::attempt($data)) {
-            return back()->withErrors(['email' => 'Invalid credentials']);
+            return response()->json(['error' => 'Invalid credentials'], 401);
         }
 
-        return redirect('/map');
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
 
     public function logout(Request $request)

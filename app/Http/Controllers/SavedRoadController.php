@@ -19,6 +19,10 @@ class SavedRoadController extends Controller
             'coordinates' => 'required|array',
         ]);
 
+        // Serialize coordinates to JSON
+        $data['road_coordinates'] = json_encode($data['coordinates']);
+        unset($data['coordinates']); // Remove the original 'coordinates' key
+
         $road = auth()->user()->savedRoads()->create($data);
         return response()->json($road, 201);
     }
@@ -63,5 +67,28 @@ class SavedRoadController extends Controller
         ]);
 
         return response()->json(['message' => 'Comment added successfully.']);
+    }
+
+    public function show(SavedRoad $road)
+    {
+        return response()->json($road);
+    }
+
+    public function update(Request $request, SavedRoad $road)
+    {
+        $data = $request->validate([
+            'road_name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'road_coordinates' => 'nullable|array',
+            'pictures' => 'nullable|array',
+        ]);
+
+        if (isset($data['road_coordinates'])) {
+            $data['road_coordinates'] = json_encode($data['road_coordinates']);
+        }
+
+        $road->update($data);
+
+        return response()->json(['message' => 'Road updated successfully.', 'road' => $road]);
     }
 }
