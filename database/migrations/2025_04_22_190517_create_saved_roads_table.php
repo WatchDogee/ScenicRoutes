@@ -21,6 +21,8 @@ class CreateSavedRoadsTable extends Migration
             $table->decimal('twistiness', 8, 4)->nullable(); // Measure road twistiness
             $table->integer('corner_count')->nullable(); // Number of corners
             $table->decimal('length', 10, 2)->nullable(); // Road length (meters)
+            $table->boolean('is_public')->default(false); // Indicates if the road is public
+            $table->decimal('average_rating', 3, 2)->nullable(); // Average rating for the road
             $table->timestamps(); // Created/updated timestamps
         });
     }

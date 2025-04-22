@@ -15,6 +15,8 @@ export default function Map() {
     const [roads, setRoads] = useState([]);
     const [auth, setAuth] = useState({ user: null, token: null });
     const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+    const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
+    const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
 
     const handleRadiusChange = (e) => {
         setRadius(Number(e.target.value));
@@ -181,14 +183,40 @@ export default function Map() {
             return;
         }
 
+        const isPublic = confirm("Do you want to make this road public?");
+
         try {
-            await axios.post('/api/saved-roads', road, {
+            await axios.post('/api/saved-roads', { ...road, is_public: isPublic }, {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
             alert("Road saved successfully!");
         } catch (error) {
             console.error("Error saving road:", error);
             alert("Failed to save road.");
+        }
+    };
+
+    const addReview = async (roadId, rating) => {
+        try {
+            await axios.post(`/api/saved-roads/${roadId}/review`, { rating }, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            alert("Review added successfully!");
+        } catch (error) {
+            console.error("Error adding review:", error);
+            alert("Failed to add review.");
+        }
+    };
+
+    const addComment = async (roadId, comment) => {
+        try {
+            await axios.post(`/api/saved-roads/${roadId}/comment`, { comment }, {
+                headers: { Authorization: `Bearer ${auth.token}` },
+            });
+            alert("Comment added successfully!");
+        } catch (error) {
+            console.error("Error adding comment:", error);
+            alert("Failed to add comment.");
         }
     };
 
@@ -201,6 +229,19 @@ export default function Map() {
         } catch (error) {
             console.error("Login error:", error);
             alert("Failed to log in.");
+        }
+    };
+
+    const handleRegister = async (e) => {
+        e.preventDefault();
+        try {
+            // Update the endpoint to match the correct API route
+            await axios.post('/register', registerForm); // Adjusted endpoint
+            alert("Registration successful! Please log in.");
+            setAuthMode('login');
+        } catch (error) {
+            console.error("Registration error:", error);
+            alert("Failed to register.");
         }
     };
 
@@ -241,7 +282,7 @@ export default function Map() {
                             Log Out
                         </button>
                     </div>
-                ) : (
+                ) : authMode === 'login' ? (
                     <form onSubmit={handleLogin}>
                         <h3 className="font-semibold mb-2">Login</h3>
                         <input
@@ -262,6 +303,59 @@ export default function Map() {
                         />
                         <button type="submit" className="bg-blue-500 text-white w-full p-1">
                             Log In
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAuthMode('register')}
+                            className="text-sm text-blue-600 mt-2"
+                        >
+                            Don't have an account? Register
+                        </button>
+                    </form>
+                ) : (
+                    <form onSubmit={handleRegister}>
+                        <h3 className="font-semibold mb-2">Register</h3>
+                        <input
+                            type="text"
+                            placeholder="Name"
+                            value={registerForm.name}
+                            onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                            className="w-full mb-2 p-1 border"
+                            required
+                        />
+                        <input
+                            type="email"
+                            placeholder="Email"
+                            value={registerForm.email}
+                            onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                            className="w-full mb-2 p-1 border"
+                            required
+                        />
+                        <input
+                            type="password"
+                            placeholder="Password"
+                            value={registerForm.password}
+                            onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                            className="w-full mb-2 p-1 border"
+                            required
+                        />
+                        <input
+                            type="password"
+                            placeholder="Confirm Password"
+                            value={registerForm.password_confirmation}
+                            onChange={(e) => setRegisterForm({ ...registerForm, password_confirmation: e.target.value })}
+                            className="w-full mb-2 p-1 border"
+                            required
+                        />
+                        <button type="submit" className="bg-green-500 text-white w-full p-1">
+                            Register
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAuthMode('login')}
+                            className="text-sm text-blue-600 mt-2"
+                        >
+                            Already have an account? Log In
                         </button>
                     </form>
                 )}

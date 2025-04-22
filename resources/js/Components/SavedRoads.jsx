@@ -3,10 +3,12 @@ import apiClient from '../utils/apiClient';
 
 export default function SavedRoads() {
     const [roads, setRoads] = useState([]);
+    const [publicRoads, setPublicRoads] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchSavedRoads();
+        fetchPublicRoads();
     }, []);
 
     const fetchSavedRoads = async () => {
@@ -18,6 +20,15 @@ export default function SavedRoads() {
             console.error('Error fetching saved roads:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPublicRoads = async () => {
+        try {
+            const response = await apiClient.get('/public-roads');
+            setPublicRoads(response.data);
+        } catch (error) {
+            console.error('Error fetching public roads:', error);
         }
     };
 
@@ -55,6 +66,20 @@ export default function SavedRoads() {
                     ))}
                 </ul>
             )}
+            <h1>Public Roads</h1>
+            <ul>
+                {publicRoads.map(road => (
+                    <li key={road.id}>
+                        <h2>{road.road_name || 'Unnamed Road'}</h2>
+                        <p>Rating: {road.average_rating || 'No ratings yet'}</p>
+                        <ul>
+                            {road.comments.map(comment => (
+                                <li key={comment.id}>{comment.comment}</li>
+                            ))}
+                        </ul>
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }
