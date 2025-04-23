@@ -398,10 +398,39 @@ export default function Map() {
     const RoadItem = ({ road, isSelected, onSelect }) => {
         const [isEditing, setIsEditing] = useState(false);
         const [isExpanded, setIsExpanded] = useState(false);
+        const [isDeleting, setIsDeleting] = useState(false);
         const [editData, setEditData] = useState({
             road_name: road.road_name || '',
             description: road.description || ''
         });
+
+        // Update editData when road prop changes
+        useEffect(() => {
+            setEditData({
+                road_name: road.road_name || '',
+                description: road.description || ''
+            });
+        }, [road]);
+
+        const handleDelete = async () => {
+            try {
+                await axios.delete(`/api/saved-roads/${road.id}`, {
+                    headers: { Authorization: `Bearer ${auth.token}` }
+                });
+                
+                // Remove road from the list
+                setSavedRoads(savedRoads.filter(r => r.id !== road.id));
+                
+                // Clear the road from the map if it was selected
+                if (isSelected) {
+                    roadsLayerRef.current.clearLayers();
+                    onSelect(null);
+                }
+            } catch (error) {
+                console.error("Error deleting road:", error);
+                alert("Failed to delete road.");
+            }
+        };
 
         const handleEdit = async (e) => {
             e.preventDefault();
@@ -417,10 +446,12 @@ export default function Map() {
                     }
                 );
 
-                // Update the road in the saved roads list
-                setSavedRoads(savedRoads.map(r => 
-                    r.id === road.id ? response.data.road : r
-                ));
+                // Update the road in the saved roads list with all fields from response
+                const updatedRoad = response.data.road;
+                setSavedRoads(prevRoads => 
+                    prevRoads.map(r => r.id === road.id ? updatedRoad : r)
+                );
+
                 setIsEditing(false);
                 alert("Road updated successfully!");
             } catch (error) {
@@ -460,9 +491,12 @@ export default function Map() {
         };
 
         return (
-            <li className={`mb-4 p-4 border rounded-lg transition-colors duration-200 ${
-                isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
-            }`}>
+            <li 
+                className={`mb-4 p-4 border rounded-lg transition-colors duration-200 cursor-pointer ${
+                    isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
+                }`}
+                onClick={handleViewOnMap}
+            >
                 <div className="flex justify-between items-start">
                     <div className="flex-grow">
                         <h2 className="text-lg font-semibold">{road.road_name || 'Unnamed Road'}</h2>
@@ -470,17 +504,17 @@ export default function Map() {
                             <p>Length: {formatLength(road.length)}</p>
                             <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
                             <p>Corners: {road.corner_count}</p>
+                            {road.description && !isEditing && (
+                                <p className="mt-2 text-gray-700">{road.description}</p>
+                            )}
                         </div>
                     </div>
                     <div className="flex space-x-2">
                         <button
-                            onClick={handleViewOnMap}
-                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-                        >
-                            View on Map
-                        </button>
-                        <button
-                            onClick={() => setIsExpanded(!isExpanded)}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent list item click
+                                setIsExpanded(!isExpanded);
+                            }}
                             className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
                         >
                             {isExpanded ? 'Hide Details' : 'Show Details'}
@@ -488,8 +522,46 @@ export default function Map() {
                     </div>
                 </div>
 
+                {/* Delete Confirmation Dialog */}
+                {isDeleting && (
+                    <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9999 }}>
+                        <div className="fixed inset-0 bg-black bg-opacity-50"></div>
+                        <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+                            <h3 className="text-lg font-semibold mb-4">Delete Road</h3>
+                            <p className="text-gray-600 mb-6">
+                                Are you sure you want to delete "{road.road_name || 'Unnamed Road'}"? 
+                                This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsDeleting(false);
+                                    }}
+                                    className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete();
+                                        setIsDeleting(false);
+                                    }}
+                                    className="px-4 py-2 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {isExpanded && (
-                    <div className="mt-4 border-t pt-4">
+                    <div 
+                        className="mt-4 border-t pt-4"
+                        onClick={(e) => e.stopPropagation()} // Prevent list item click when interacting with form
+                    >
                         {!isEditing ? (
                             <div className="space-y-4">
                                 <div>
@@ -498,15 +570,32 @@ export default function Map() {
                                         {road.description || 'No description provided'}
                                     </p>
                                 </div>
-                                <button
-                                    onClick={() => setIsEditing(true)}
-                                    className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                                >
-                                    Edit Details
-                                </button>
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsEditing(true);
+                                        }}
+                                        className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                    >
+                                        Edit Details
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsDeleting(true);
+                                        }}
+                                        className="px-3 py-1 text-sm text-red-600 hover:text-red-700 transition-colors"
+                                    >
+                                        Delete Road
+                                    </button>
+                                </div>
                             </div>
                         ) : (
-                            <form onSubmit={handleEdit} className="space-y-4">
+                            <form onSubmit={(e) => {
+                                e.stopPropagation();
+                                handleEdit(e);
+                            }} className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700">Name</label>
                                     <input
@@ -514,6 +603,7 @@ export default function Map() {
                                         value={editData.road_name}
                                         onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                 </div>
                                 <div>
@@ -523,6 +613,7 @@ export default function Map() {
                                         onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                                         rows={3}
                                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                        onClick={(e) => e.stopPropagation()}
                                     />
                                 </div>
                                 <div className="flex space-x-2">
@@ -534,7 +625,10 @@ export default function Map() {
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setIsEditing(false)}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsEditing(false);
+                                        }}
                                         className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
                                     >
                                         Cancel
