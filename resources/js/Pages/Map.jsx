@@ -20,6 +20,7 @@ export default function Map() {
     const [savedRoads, setSavedRoads] = useState([]); // List of saved roads
     const [selectedRoad, setSelectedRoad] = useState(null); // Selected road for display/edit
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
+    const [selectedRoadId, setSelectedRoadId] = useState(null);
 
     // Initialize auth state from localStorage
     useEffect(() => {
@@ -314,13 +315,6 @@ export default function Map() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSavedRoads(roadsResponse.data);
-                
-                // Check if this is the first login
-                if (!localStorage.getItem('storage_notice_shown')) {
-                    alert("To stay logged in between sessions, please ensure your browser is set to accept cookies and local storage data for this site. You can check this in your browser's site settings.");
-                    localStorage.setItem('storage_notice_shown', 'true');
-                }
-                
                 alert("Login successful!");
             }
         } catch (error) {
@@ -400,18 +394,158 @@ export default function Map() {
         }
     };
 
-    const handleEditRoad = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.put(`/api/saved-roads/${selectedRoad.id}`, editForm, {
-                headers: { Authorization: `Bearer ${auth.token}` },
-            });
-            alert("Road updated successfully!");
-            setSelectedRoad(response.data.road);
-        } catch (error) {
-            console.error("Error updating road:", error);
-            alert("Failed to update road.");
-        }
+    // Move edit form to be part of each road item
+    const RoadItem = ({ road, isSelected, onSelect }) => {
+        const [isEditing, setIsEditing] = useState(false);
+        const [isExpanded, setIsExpanded] = useState(false);
+        const [editData, setEditData] = useState({
+            road_name: road.road_name || '',
+            description: road.description || ''
+        });
+
+        const handleEdit = async (e) => {
+            e.preventDefault();
+            try {
+                const response = await axios.put(
+                    `/api/saved-roads/${road.id}`,
+                    editData,
+                    {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${auth.token}`
+                        }
+                    }
+                );
+
+                // Update the road in the saved roads list
+                setSavedRoads(savedRoads.map(r => 
+                    r.id === road.id ? response.data.road : r
+                ));
+                setIsEditing(false);
+                alert("Road updated successfully!");
+            } catch (error) {
+                console.error("Error updating road:", error);
+                alert("Failed to update road.");
+            }
+        };
+
+        const formatLength = (meters) => {
+            return (meters / 1000).toFixed(2) + ' km';
+        };
+
+        const getTwistinessLabel = (twistiness) => {
+            if (twistiness > 0.007) return 'Very Curvy';
+            if (twistiness > 0.0035) return 'Moderately Curvy';
+            return 'Mellow';
+        };
+
+        const handleViewOnMap = () => {
+            onSelect(road.id);
+            if (mapRef.current && road.road_coordinates) {
+                const coordinates = JSON.parse(road.road_coordinates);
+                
+                // Clear existing layers and add the new road
+                roadsLayerRef.current.clearLayers();
+                const polyline = L.polyline(coordinates, { 
+                    color: isSelected ? '#2563eb' : '#4ade80', // Blue when selected, green otherwise
+                    weight: 6,
+                    opacity: 0.8
+                }).addTo(roadsLayerRef.current);
+
+                // Fit map to the road bounds
+                mapRef.current.fitBounds(polyline.getBounds(), {
+                    padding: [50, 50] // Add some padding around the bounds
+                });
+            }
+        };
+
+        return (
+            <li className={`mb-4 p-4 border rounded-lg transition-colors duration-200 ${
+                isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
+            }`}>
+                <div className="flex justify-between items-start">
+                    <div className="flex-grow">
+                        <h2 className="text-lg font-semibold">{road.road_name || 'Unnamed Road'}</h2>
+                        <div className="mt-1 text-sm text-gray-600 space-y-1">
+                            <p>Length: {formatLength(road.length)}</p>
+                            <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
+                            <p>Corners: {road.corner_count}</p>
+                        </div>
+                    </div>
+                    <div className="flex space-x-2">
+                        <button
+                            onClick={handleViewOnMap}
+                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                        >
+                            View on Map
+                        </button>
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                        >
+                            {isExpanded ? 'Hide Details' : 'Show Details'}
+                        </button>
+                    </div>
+                </div>
+
+                {isExpanded && (
+                    <div className="mt-4 border-t pt-4">
+                        {!isEditing ? (
+                            <div className="space-y-4">
+                                <div>
+                                    <h3 className="text-sm font-medium text-gray-700">Description</h3>
+                                    <p className="mt-1 text-gray-600">
+                                        {road.description || 'No description provided'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => setIsEditing(true)}
+                                    className="px-4 py-2 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                >
+                                    Edit Details
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleEdit} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                                    <input
+                                        type="text"
+                                        value={editData.road_name}
+                                        onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700">Description</label>
+                                    <textarea
+                                        value={editData.description}
+                                        onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                                        rows={3}
+                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    />
+                                </div>
+                                <div className="flex space-x-2">
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                    >
+                                        Save Changes
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(false)}
+                                        className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </div>
+                )}
+            </li>
+        );
     };
 
     useEffect(() => {
@@ -422,7 +556,16 @@ export default function Map() {
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19,
+            updateWhenIdle: false,
+            updateWhenZooming: false,
+            updateInterval: 250,
         }).addTo(leafletMap);
+
+        // Force a resize event after map initialization
+        setTimeout(() => {
+            leafletMap.invalidateSize();
+        }, 100);
 
         leafletMap.on('click', handleMapClick);
         mapRef.current = leafletMap;
@@ -460,21 +603,19 @@ export default function Map() {
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="bg-red-500 text-white px-4 py-1 mt-2 rounded"
+                            className="bg-red-500 text-white px-4 py-1 mt-2 rounded hover:bg-red-600 transition-colors"
                         >
                             Log Out
                         </button>
                         <h3 className="font-semibold mt-4">Saved Roads</h3>
-                        <ul className="mt-2">
+                        <ul className="mt-2 space-y-4">
                             {savedRoads.map((road) => (
-                                <li key={road.id} className="mb-2">
-                                    <button
-                                        onClick={() => handleRoadClick(road.id)}
-                                        className="text-blue-600 underline"
-                                    >
-                                        {road.road_name || 'Unnamed Road'}
-                                    </button>
-                                </li>
+                                <RoadItem 
+                                    key={road.id} 
+                                    road={road}
+                                    isSelected={road.id === selectedRoadId}
+                                    onSelect={setSelectedRoadId}
+                                />
                             ))}
                         </ul>
                     </div>
@@ -554,39 +695,6 @@ export default function Map() {
                             Already have an account? Log In
                         </button>
                     </form>
-                )}
-
-                {selectedRoad && (
-                    <div className="mt-4">
-                        <h3 className="font-semibold">Edit Road</h3>
-                        <form onSubmit={handleEditRoad}>
-                            <label className="block mt-2">Name</label>
-                            <input
-                                type="text"
-                                value={editForm.road_name}
-                                onChange={(e) => setEditForm({ ...editForm, road_name: e.target.value })}
-                                className="w-full p-1 border"
-                            />
-                            <label className="block mt-2">Description</label>
-                            <textarea
-                                value={editForm.description}
-                                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                                className="w-full p-1 border"
-                            />
-                            <label className="block mt-2">Pictures</label>
-                            <input
-                                type="file"
-                                multiple
-                                onChange={(e) =>
-                                    setEditForm({ ...editForm, pictures: Array.from(e.target.files) })
-                                }
-                                className="w-full p-1 border"
-                            />
-                            <button type="submit" className="bg-green-500 text-white w-full p-1 mt-2">
-                                Save Changes
-                            </button>
-                        </form>
-                    </div>
                 )}
 
                 <h3 className="font-semibold mt-4 mb-2">Filters</h3>
