@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
+import RatingModal from '../Components/RatingModal';
 
 export default function Map() {
     const mapRef = useRef(null);
@@ -27,8 +28,8 @@ export default function Map() {
     const [searchResults, setSearchResults] = useState([]);
     const [selectedRoadForReview, setSelectedRoadForReview] = useState(null);
     const [ratingModalOpen, setRatingModalOpen] = useState(false);
-    const [newRating, setNewRating] = useState(0);
-    const [newComment, setNewComment] = useState('');
+    const [localRating, setLocalRating] = useState(0);
+    const [localComment, setLocalComment] = useState('');
     const searchTimeoutRef = useRef(null);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState(null);
@@ -458,11 +459,7 @@ export default function Map() {
                     `/api/saved-roads/${road.id}`,
                     {
                         road_name: editData.road_name,
-                        description: editData.description,
-                        road_coordinates: road.road_coordinates,
-                        twistiness: road.twistiness,
-                        corner_count: road.corner_count,
-                        length: road.length
+                        description: editData.description
                     },
                     {
                         headers: {
@@ -490,7 +487,8 @@ export default function Map() {
                 }
             } catch (error) {
                 console.error("Error updating road:", error);
-                alert("Failed to update road.");
+                const errorMessage = error.response?.data?.error || "Failed to update road.";
+                alert(errorMessage);
             }
         };
 
@@ -716,16 +714,20 @@ export default function Map() {
                 }
             });
             
-            // Ensure average_rating is properly formatted
+            // Ensure average_rating is properly formatted and user data is present
             const formattedRoads = response.data.map(road => ({
                 ...road,
-                average_rating: road.reviews_avg_rating ? parseFloat(road.reviews_avg_rating) : null
+                average_rating: road.reviews_avg_rating ? parseFloat(road.reviews_avg_rating) : null,
+                user: road.user || { name: 'Unknown User' }
             }));
             
             setPublicRoads(formattedRoads);
         } catch (error) {
             console.error('Error fetching public roads:', error);
-            setSearchError('Failed to fetch public roads. Please try again.');
+            // Don't show error popup for background refreshes
+            if (!isSubmitting) {
+                setSearchError('Failed to fetch public roads. Please try again.');
+            }
         }
     };
 
@@ -852,191 +854,58 @@ export default function Map() {
             alert('Please log in to rate roads');
             return;
         }
-        setSelectedRoadForReview(publicRoads.find(road => road.id === roadId));
+        const road = publicRoads.find(road => road.id === roadId);
+        // Check if user has already reviewed this road
+        const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
+        if (existingReview) {
+            setLocalRating(existingReview.rating);
+            setLocalComment(existingReview.comment || '');
+        } else {
+            setLocalRating(0);
+            setLocalComment('');
+        }
+        setSelectedRoadForReview(road);
         setRatingModalOpen(true);
     };
 
-    const submitReview = async () => {
+    const handleCloseRatingModal = () => {
+        setRatingModalOpen(false);
+        setSelectedRoadForReview(null);
+        setLocalRating(0);
+        setLocalComment('');
+    };
+
+    const handleSubmitReview = async (rating, comment) => {
         if (!selectedRoadForReview) return;
 
         try {
-            // Submit rating if provided
-            if (newRating > 0) {
-                await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/review`, {
-                    rating: newRating
-                }, {
-                    headers: { Authorization: `Bearer ${auth.token}` }
-                });
-            }
+            const response = await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/review`, {
+                rating,
+                comment
+            }, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
 
-            // Submit comment if provided
-            if (newComment.trim()) {
-                await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/comment`, {
-                    comment: newComment
-                }, {
-                    headers: { Authorization: `Bearer ${auth.token}` }
-                });
-            }
+            // Update the road in publicRoads with the new review data
+            const updatedRoad = response.data.road;
+            setPublicRoads(prevRoads => 
+                prevRoads.map(r => r.id === selectedRoadForReview.id ? updatedRoad : r)
+            );
 
-            // Refresh the public roads list
+            // Reset form and close modal
+            handleCloseRatingModal();
+            alert('Thank you for your review!');
+
+            // Refresh public roads list in the background
             if (markerRef.current) {
                 const { lat, lng } = markerRef.current.getLatLng();
                 await fetchPublicRoads(lat, lng);
             }
-
-            // Reset form and close modal
-            setNewRating(0);
-            setNewComment('');
-            setRatingModalOpen(false);
-            setSelectedRoadForReview(null);
-
-            alert('Thank you for your review!');
         } catch (error) {
             console.error('Error submitting review:', error);
-            alert('Failed to submit review. Please try again.');
+            const errorMessage = error.response?.data?.error || 'Failed to submit review. Please try again.';
+            alert(errorMessage);
         }
-    };
-
-    // Add the RatingModal component
-    const RatingModal = ({ isOpen, onClose, road }) => {
-        if (!isOpen || !road) return null;
-
-        return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
-                <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold">{road.road_name}</h2>
-                            <p className="text-gray-600 mt-1">Added by {road.user?.name}</p>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="text-gray-500 hover:text-gray-700"
-                        >
-                            ✕
-                        </button>
-                    </div>
-
-                    {/* Road Details Section */}
-                    <div className="mb-8 bg-gray-50 p-6 rounded-lg">
-                        <div className="grid grid-cols-2 gap-6 mb-4">
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500">Road Statistics</h3>
-                                <div className="mt-2 space-y-2">
-                                    <p className="text-gray-800">Length: {(road.length / 1000).toFixed(2)} km</p>
-                                    <p className="text-gray-800">Corners: {road.corner_count}</p>
-                                    <p className="text-gray-800">
-                                        Average Rating: {typeof road.average_rating === 'number' ? 
-                                            `${road.average_rating.toFixed(1)} ★` : 
-                                            'No ratings yet'
-                                        }
-                                    </p>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-medium text-gray-500">Description</h3>
-                                <p className="mt-2 text-gray-800">{road.description || 'No description provided.'}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Add Review Section */}
-                    <div className="mb-8">
-                        <h3 className="text-lg font-semibold mb-4">Add Your Review</h3>
-                        <div className="flex gap-2 mb-4">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                    key={star}
-                                    onClick={() => setNewRating(star)}
-                                    className={`text-3xl ${
-                                        star <= newRating ? 'text-yellow-400' : 'text-gray-300'
-                                    } hover:text-yellow-400 transition-colors`}
-                                >
-                                    ★
-                                </button>
-                            ))}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Your Comment</label>
-                            <textarea
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                className="w-full px-4 py-3 border rounded-md focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                rows="4"
-                                placeholder="Share your experience with this road..."
-                                style={{
-                                    WebkitAppearance: 'none',
-                                    WebkitTextSecurity: 'none',
-                                    caretColor: 'auto'
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Comments Section */}
-                    <div className="mb-6">
-                        <h3 className="text-lg font-semibold mb-4">Community Reviews</h3>
-                        <div className="space-y-6 max-h-[400px] overflow-y-auto pr-2">
-                            {road.reviews && road.reviews.length > 0 ? (
-                                road.reviews.map((review) => (
-                                    <div key={review.id} className="bg-gray-50 rounded-lg p-4">
-                                        <div className="flex items-center space-x-3 mb-2">
-                                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                                {review.user?.profile_picture ? (
-                                                    <img 
-                                                        src={review.user.profile_picture} 
-                                                        alt={review.user.name}
-                                                        className="w-full h-full rounded-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <span className="text-lg font-medium">
-                                                        {review.user?.name.charAt(0).toUpperCase()}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium">{review.user?.name}</p>
-                                                <div className="flex text-yellow-400">
-                                                    {[...Array(review.rating)].map((_, i) => (
-                                                        <span key={i}>★</span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <span className="text-sm text-gray-500 ml-auto">
-                                                {new Date(review.created_at).toLocaleDateString()}
-                                            </span>
-                                        </div>
-                                        {review.comment && (
-                                            <p className="text-gray-700 mt-2">{review.comment}</p>
-                                        )}
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-gray-500 text-center py-4">
-                                    No reviews yet. Be the first to review this road!
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-4 border-t">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={submitReview}
-                            className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                            disabled={newRating === 0}
-                        >
-                            Submit Review
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
     };
 
     return (
@@ -1301,7 +1170,7 @@ export default function Map() {
                                 <div key={road.id} className="border rounded-lg p-4 hover:bg-gray-50">
                                     <h3 className="font-semibold text-lg">{road.road_name}</h3>
                                     <div className="flex items-center mt-2 space-x-2">
-                                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden">
+                                        <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                                             {road.user?.profile_picture ? (
                                                 <img 
                                                     src={road.user.profile_picture} 
@@ -1309,12 +1178,14 @@ export default function Map() {
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white">
-                                                    {road.user?.name.charAt(0).toUpperCase()}
+                                                <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-sm font-medium">
+                                                    {road.user?.name ? road.user.name.charAt(0).toUpperCase() : '?'}
                                                 </div>
                                             )}
                                         </div>
-                                        <span className="text-sm text-gray-600">Added by {road.user?.name}</span>
+                                        <span className="text-sm text-gray-600">
+                                            Added by {road.user?.name || 'Unknown User'}
+                                        </span>
                                     </div>
                                     
                                     <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1370,13 +1241,12 @@ export default function Map() {
             {/* Rating Modal */}
             <RatingModal
                 isOpen={ratingModalOpen}
-                onClose={() => {
-                    setRatingModalOpen(false);
-                    setNewRating(0);
-                    setNewComment('');
-                    setSelectedRoadForReview(null);
-                }}
+                onClose={handleCloseRatingModal}
+                onSubmit={handleSubmitReview}
                 road={selectedRoadForReview}
+                auth={auth}
+                initialRating={localRating}
+                initialComment={localComment}
             />
         </div>
     );
