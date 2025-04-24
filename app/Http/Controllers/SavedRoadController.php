@@ -34,10 +34,21 @@ class SavedRoadController extends Controller
         return response()->json($road, 201);
     }
 
-    public function destroy(SavedRoad $road)
+    public function destroy($id)
     {
-        $road->delete();
-        return response()->json(['message' => 'Road deleted successfully.']);
+        try {
+            $road = SavedRoad::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+
+            $road->reviews()->delete();
+            $road->comments()->delete();
+            $road->delete();
+
+            return response()->json(['message' => 'Road deleted successfully.'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to delete road.'], 500);
+        }
     }
 
     public function publicRoads(Request $request)
@@ -136,21 +147,30 @@ class SavedRoadController extends Controller
         return response()->json($road);
     }
 
-    public function update(Request $request, SavedRoad $road)
+    public function update(Request $request, $id)
     {
-        $data = $request->validate([
-            'road_name' => 'sometimes|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'road_coordinates' => 'nullable|array',
-            'pictures' => 'nullable|array',
-        ]);
+        try {
+            $road = SavedRoad::where('id', $id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
 
-        if (isset($data['road_coordinates'])) {
-            $data['road_coordinates'] = json_encode($data['road_coordinates']);
+            $data = $request->validate([
+                'road_name' => 'sometimes|string|max:255',
+                'description' => 'nullable|string|max:1000',
+                'road_coordinates' => 'sometimes|string',
+                'twistiness' => 'sometimes|numeric',
+                'corner_count' => 'sometimes|integer',
+                'length' => 'sometimes|numeric',
+            ]);
+
+            $road->update($data);
+
+            return response()->json([
+                'message' => 'Road updated successfully.',
+                'road' => $road->fresh()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Failed to update road.'], 500);
         }
-
-        $road->update($data);
-
-        return response()->json(['message' => 'Road updated successfully.', 'road' => $road]);
     }
 }
