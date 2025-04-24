@@ -21,6 +21,12 @@ export default function Map() {
     const [selectedRoad, setSelectedRoad] = useState(null); // Selected road for display/edit
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
     const [selectedRoadId, setSelectedRoadId] = useState(null);
+    const [showCommunity, setShowCommunity] = useState(false);
+    const [publicRoads, setPublicRoads] = useState([]);
+    const [searchLocation, setSearchLocation] = useState('');
+    const [searchRadius, setSearchRadius] = useState(50);
+    const [searchType, setSearchType] = useState('area'); // 'area' or 'town'
+    const [searchError, setSearchError] = useState(null);
 
     // Initialize auth state from localStorage
     useEffect(() => {
@@ -315,7 +321,6 @@ export default function Map() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSavedRoads(roadsResponse.data);
-                alert("Login successful!");
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
@@ -490,6 +495,23 @@ export default function Map() {
             }
         };
 
+        // Add this inside the expanded view, before the edit/delete buttons
+        const publicToggleButton = (
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleRoadPublic(road.id);
+                }}
+                className={`px-3 py-1 text-sm ${
+                    road.is_public 
+                        ? 'bg-green-500 hover:bg-green-600' 
+                        : 'bg-gray-500 hover:bg-gray-600'
+                } text-white rounded transition-colors`}
+            >
+                {road.is_public ? 'Make Private' : 'Make Public'}
+            </button>
+        );
+
         return (
             <li 
                 className={`mb-4 p-4 border rounded-lg transition-colors duration-200 cursor-pointer ${
@@ -571,6 +593,7 @@ export default function Map() {
                                     </p>
                                 </div>
                                 <div className="flex space-x-2">
+                                    {publicToggleButton}
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -677,9 +700,68 @@ export default function Map() {
         };
     }, []);
 
+    useEffect(() => {
+        if (showCommunity && markerRef.current) {
+            const lat = markerRef.current.getLatLng().lat;
+            const lon = markerRef.current.getLatLng().lng;
+            fetchPublicRoads(lat, lon);
+        }
+    }, [showCommunity, searchType, searchRadius]);
+
+    const fetchPublicRoads = async (lat, lon) => {
+        try {
+            setSearchError(null);
+            const radius = searchType === 'town' ? Math.min(searchRadius, 20) : searchRadius;
+            const response = await axios.get('/api/public-roads', {
+                params: {
+                    lat,
+                    lon,
+                    radius
+                }
+            });
+            setPublicRoads(response.data);
+        } catch (error) {
+            console.error('Error fetching public roads:', error);
+            setSearchError('Failed to fetch public roads. Please try again.');
+        }
+    };
+
+    const handleSearchPublicRoads = () => {
+        if (!markerRef.current) {
+            setSearchError('Please place a marker on the map first by clicking anywhere on the map.');
+            return;
+        }
+        const lat = markerRef.current.getLatLng().lat;
+        const lon = markerRef.current.getLatLng().lng;
+        fetchPublicRoads(lat, lon);
+    };
+
+    const toggleRoadPublic = async (roadId) => {
+        try {
+            const response = await axios.post(`/api/saved-roads/${roadId}/toggle-public`, {}, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
+            
+            // Update the road's public status in the local state
+            setSavedRoads(prevRoads => 
+                prevRoads.map(road => 
+                    road.id === roadId 
+                        ? { ...road, is_public: response.data.is_public }
+                        : road
+                )
+            );
+
+            // Show success message
+            alert(response.data.message);
+        } catch (error) {
+            console.error('Error toggling road public status:', error);
+            alert(error.response?.data?.message || 'Failed to update road visibility');
+        }
+    };
+
     return (
         <div className="flex h-screen">
-            {/* Sidebar */}
+            {/* Main Sidebar */}
             <div className="w-80 p-4 bg-white shadow-md overflow-y-auto">
                 {auth.user ? (
                     <div>
@@ -829,7 +911,103 @@ export default function Map() {
             </div>
 
             {/* Map */}
-            <div className="flex-1" id="map"></div>
+            <div className="flex-1 relative" id="map">
+                {/* Community Toggle Button */}
+                <button
+                    onClick={() => setShowCommunity(!showCommunity)}
+                    className="absolute top-4 right-4 z-[1000] px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50"
+                >
+                    {showCommunity ? 'Hide Community' : 'Show Community'}
+                </button>
+            </div>
+
+            {/* Community Sidebar */}
+            {showCommunity && (
+                <div className="w-96 p-4 bg-white shadow-md overflow-y-auto">
+                    <h2 className="text-xl font-bold mb-4">Community Roads</h2>
+                    
+                    {/* Search Controls */}
+                    <div className="mb-4 space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Search Type</label>
+                            <select
+                                value={searchType}
+                                onChange={(e) => setSearchType(e.target.value)}
+                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            >
+                                <option value="town">Town (up to 20km)</option>
+                                <option value="area">Area (up to 200km)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700">Search Radius (km)</label>
+                            <input
+                                type="range"
+                                min="1"
+                                max={searchType === 'town' ? 20 : 200}
+                                value={searchRadius}
+                                onChange={(e) => setSearchRadius(Number(e.target.value))}
+                                className="w-full"
+                            />
+                            <span className="text-sm text-gray-600">{searchRadius} km</span>
+                        </div>
+                        <div>
+                            <button
+                                onClick={handleSearchPublicRoads}
+                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                            >
+                                Search Public Roads
+                            </button>
+                            {searchError && (
+                                <p className="mt-2 text-sm text-red-600">{searchError}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Public Roads List */}
+                    <div className="space-y-4">
+                        {publicRoads.length === 0 ? (
+                            <p className="text-gray-500 text-center">
+                                No public roads found in this area. Try adjusting your search radius or moving the marker.
+                            </p>
+                        ) : (
+                            publicRoads.map(road => (
+                                <div key={road.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                                    <h3 className="font-semibold">{road.road_name}</h3>
+                                    <p className="text-sm text-gray-600">By: {road.user?.name}</p>
+                                    <div className="mt-2">
+                                        <p>Length: {(road.length / 1000).toFixed(2)} km</p>
+                                        <p>Corners: {road.corner_count}</p>
+                                        <p>Rating: {road.average_rating ? `${road.average_rating.toFixed(1)} ⭐` : 'No ratings'}</p>
+                                    </div>
+                                    {road.comments && road.comments.length > 0 && (
+                                        <div className="mt-2">
+                                            <h4 className="text-sm font-medium">Latest Comment:</h4>
+                                            <p className="text-sm text-gray-600">{road.comments[0].comment}</p>
+                                        </div>
+                                    )}
+                                    <button
+                                        onClick={() => {
+                                            if (mapRef.current && road.road_coordinates) {
+                                                const coordinates = JSON.parse(road.road_coordinates);
+                                                roadsLayerRef.current.clearLayers();
+                                                const polyline = L.polyline(coordinates, {
+                                                    color: '#2563eb',
+                                                    weight: 6
+                                                }).addTo(roadsLayerRef.current);
+                                                mapRef.current.fitBounds(polyline.getBounds());
+                                            }
+                                        }}
+                                        className="mt-2 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        View on Map
+                                    </button>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -17,7 +17,8 @@ class SavedRoad extends Model
         'corner_count',
         'length',
         'user_id',
-        'description'
+        'description',
+        'is_public'
     ];
 
     public function user()

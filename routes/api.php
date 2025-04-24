@@ -16,14 +16,17 @@ Route::middleware('auth:sanctum')->group(function () {
         return $request->user();
     });
 
-    // Saved roads routes
-    Route::get('/saved-roads', [SavedRoadController::class, 'index']);
-    Route::post('/saved-roads', [SavedRoadController::class, 'store']);
-    Route::get('/saved-roads/{road}', [SavedRoadController::class, 'show']);
-    Route::put('/saved-roads/{road}', [SavedRoadController::class, 'update']);
-    Route::delete('/saved-roads/{road}', [SavedRoadController::class, 'destroy']);
-    Route::post('/saved-roads/{road}/review', [SavedRoadController::class, 'addReview']);
-    Route::post('/saved-roads/{road}/comment', [SavedRoadController::class, 'addComment']);
+    // Saved roads management
+    Route::get('/saved-roads', [SavedRoadController::class, 'index'])->name('saved-roads.index');
+    Route::post('/saved-roads', [SavedRoadController::class, 'store'])->name('saved-roads.store');
+    Route::get('/saved-roads/{id}', [SavedRoadController::class, 'show'])->name('saved-roads.show');
+    Route::put('/saved-roads/{id}', [SavedRoadController::class, 'update'])->name('saved-roads.update');
+    Route::delete('/saved-roads/{id}', [SavedRoadController::class, 'destroy'])->name('saved-roads.destroy');
+    
+    // Community interaction routes
+    Route::post('/saved-roads/{id}/review', [SavedRoadController::class, 'addReview'])->name('saved-roads.review');
+    Route::post('/saved-roads/{id}/comment', [SavedRoadController::class, 'addComment'])->name('saved-roads.comment');
+    Route::post('/saved-roads/{id}/toggle-public', [SavedRoadController::class, 'togglePublic'])->name('saved-roads.toggle-public');
 });
 
 // Public routes
