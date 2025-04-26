@@ -132,11 +132,11 @@ export default function Community({ auth }) {
                                 <div>
                                     <h3 className="text-lg font-semibold">{road.road_name}</h3>
                                     <div className="text-sm text-gray-600 mt-1">
-                                        <p>Length: {(road.length / 1000).toFixed(2)} km</p>
-                                        <p>Corners: {road.corner_count}</p>
-                                        <p>Curve Score: {road.twistiness?.toFixed(4)}</p>
-                                        <p>Average Rating: {road.average_rating ? road.average_rating.toFixed(1) : 'No ratings'} ⭐</p>
-                                    </div>
+                                    <p>Length: {(road.length / 1000).toFixed(2)} km</p>
+                                    <p>Corners: {road.corner_count}</p>
+                                    <p>Curve Score: {road.twistiness?.toFixed(4)}</p>
+                                    <p>Average Rating: {road.average_rating ? road.average_rating.toFixed(1) : 'No ratings'} ⭐</p>
+                                </div>
                                 </div>
                                 <div className="flex gap-2">
                                     <button
@@ -148,26 +148,26 @@ export default function Community({ auth }) {
                                 </div>
                             </div>
 
-                            {auth.user && (
+                                    {auth.user && (
                                 <div className="flex items-center gap-2 mb-3">
-                                    <select
-                                        value={rating}
-                                        onChange={(e) => setRating(Number(e.target.value))}
+                                                <select
+                                                    value={rating}
+                                                    onChange={(e) => setRating(Number(e.target.value))}
                                         className="p-1 text-sm border rounded"
-                                    >
+                                                >
                                         <option value="0">Rate this road</option>
-                                        {[1, 2, 3, 4, 5].map(num => (
-                                            <option key={num} value={num}>{num} ⭐</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        onClick={() => handleRateRoad(road.id)}
+                                                    {[1, 2, 3, 4, 5].map(num => (
+                                                        <option key={num} value={num}>{num} ⭐</option>
+                                                    ))}
+                                                </select>
+                                                <button
+                                                    onClick={() => handleRateRoad(road.id)}
                                         className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    >
-                                        Rate
-                                    </button>
-                                </div>
-                            )}
+                                                >
+                                                    Rate
+                                                </button>
+                                        </div>
+                                    )}
 
                             {/* Comments Section */}
                             <div className="mt-3">

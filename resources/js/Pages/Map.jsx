@@ -574,7 +574,7 @@ export default function Map() {
                             {isExpanded ? '▼' : '▶'}
                         </span>
                         <h2 className="font-medium">{road.road_name || 'Unnamed Road'}</h2>
-                    </div>
+                        </div>
                     <div className="flex gap-2">
                         <button
                             onClick={(e) => {
@@ -634,16 +634,16 @@ export default function Map() {
                             </div>
                         ) : (
                             <form onSubmit={(e) => handleEdit(e, road, editData)} className="mt-3">
-                                <input
-                                    type="text"
-                                    value={editData.road_name}
-                                    onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
+                                    <input
+                                        type="text"
+                                        value={editData.road_name}
+                                        onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
                                     className="w-full p-2 border rounded mb-2"
                                     placeholder="Road name"
-                                />
-                                <textarea
-                                    value={editData.description}
-                                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                                    />
+                                    <textarea
+                                        value={editData.description}
+                                        onChange={(e) => setEditData({ ...editData, description: e.target.value })}
                                     className="w-full p-2 border rounded mb-2"
                                     placeholder="Description"
                                     rows="3"
@@ -802,32 +802,83 @@ export default function Map() {
     const searchLocation = async (query) => {
         if (!query.trim()) {
             setSearchResults([]);
+            setIsSearching(false);
             return;
         }
 
         setIsSearching(true);
+        setSearchError(null);
+        
         try {
             const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
                 params: {
                     q: query,
                     format: 'json',
-                    countrycodes: 'lv', // Restrict to Latvia
-                    limit: 5,
-                    addressdetails: 1
+                    limit: 10,
+                    addressdetails: 1,
+                    'accept-language': 'en',
+                    dedupe: 1
                 },
+                withCredentials: false,
                 headers: {
-                    'Accept-Language': 'en' // Get results in English
+                    'Accept': 'application/json'
                 }
             });
-            setSearchResults(response.data);
+            
+            if (response.data.length === 0) {
+                setSearchResults([]);
+                return;
+            }
+
+            // Process and format the results
+            const formattedResults = response.data
+                .filter(result => result.type !== 'house' && result.type !== 'postcode')
+                .map(result => ({
+                    ...result,
+                    displayName: formatLocationName(result)
+                }));
+            
+            setSearchResults(formattedResults);
         } catch (error) {
             console.error('Error searching location:', error);
+            setSearchError('Failed to search location. Please try again.');
+            setSearchResults([]);
         } finally {
             setIsSearching(false);
         }
     };
 
-    // Debounced search
+    // Helper function to format location names
+    const formatLocationName = (result) => {
+        const address = result.address;
+        const parts = [];
+
+        // Add the most specific location first
+        if (address.city || address.town || address.village || address.municipality) {
+            parts.push(address.city || address.town || address.village || address.municipality);
+        }
+
+        // Add county/state/region if available
+        if (address.county) {
+            parts.push(address.county);
+        } else if (address.state || address.region) {
+            parts.push(address.state || address.region);
+        }
+
+        // Always add country
+        if (address.country) {
+            parts.push(address.country);
+        }
+
+        // If no parts were added (e.g., for natural features), use the display name
+        if (parts.length === 0) {
+            return result.display_name.split(',').slice(0, 3).join(',');
+        }
+
+        return parts.join(', ');
+    };
+
+    // Debounced search with proper cleanup
     const handleSearchChange = (e) => {
         const value = e.target.value;
         setSearchQuery(value);
@@ -837,11 +888,27 @@ export default function Map() {
             clearTimeout(searchTimeoutRef.current);
         }
 
+        // Don't search if query is empty
+        if (!value.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+            return;
+        }
+
         // Set new timeout for search
         searchTimeoutRef.current = setTimeout(() => {
             searchLocation(value);
-        }, 300); // Reduced debounce time for better responsiveness
+        }, 300);
     };
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchTimeoutRef.current) {
+                clearTimeout(searchTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // Handle location selection
     const handleLocationSelect = (location) => {
@@ -937,23 +1004,27 @@ export default function Map() {
     return (
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
-            <div className="w-80 p-4 bg-white shadow-md overflow-y-auto z-20">
+            <div className="w-80 p-4 bg-white shadow-md overflow-y-auto z-20 flex flex-col">
                 {/* Search bar with dropdown */}
                 <div className="mb-4 relative">
                     <input
                         type="text"
-                        placeholder="Search for a location in Latvia..."
+                        placeholder="Search for any location..."
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        autoComplete="off"
-                        autoFocus={false}
-                        spellCheck={false}
-                        style={{ 
-                            WebkitAppearance: 'none',
-                            WebkitTextSecurity: 'none',
-                            caretColor: 'auto'
+                        onFocus={() => {
+                            // Clear results when focusing if the query is empty
+                            if (!searchQuery.trim()) {
+                                setSearchResults([]);
+                            }
                         }}
+                        role="combobox"
+                        aria-expanded={searchResults.length > 0}
+                        aria-autocomplete="list"
+                        aria-controls="search-results-list"
+                        autoComplete="off"
+                        spellCheck="false"
                     />
                     {isSearching && (
                         <div className="absolute right-3 top-2.5 text-gray-400">
@@ -964,19 +1035,22 @@ export default function Map() {
                         </div>
                     )}
                     {searchResults.length > 0 && (
-                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <div 
+                            id="search-results-list"
+                            role="listbox"
+                            className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto"
+                        >
                             {searchResults.map((result, index) => (
                                 <button
-                                    key={index}
-                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        handleLocationSelect(result);
-                                    }}
-                                    onMouseDown={(e) => e.preventDefault()} // Prevent blur event
+                                    key={`${result.place_id}-${index}`}
+                                    role="option"
+                                    aria-selected={false}
+                                    className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors duration-150"
+                                    onClick={() => handleLocationSelect(result)}
+                                    onMouseDown={(e) => e.preventDefault()}
                                 >
-                                    <div className="font-medium">{result.address.city || result.address.town || result.address.village || result.address.municipality}</div>
-                                    <div className="text-sm text-gray-600">{result.display_name}</div>
+                                    <div className="font-medium">{result.displayName}</div>
+                                    <div className="text-sm text-gray-600 truncate">{result.display_name}</div>
                                 </button>
                             ))}
                         </div>
@@ -984,8 +1058,8 @@ export default function Map() {
                 </div>
 
                 {auth.user ? (
-                    <div>
-                        <div className="flex items-center mb-4">
+                    <div className="flex-1">
+                        <div className="flex items-start mb-4 p-2 bg-gray-50 rounded-lg">
                             <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                                 {auth.user?.profile_picture_url ? (
                                     <img 
@@ -999,22 +1073,24 @@ export default function Map() {
                                     </div>
                                 )}
                             </div>
-                            <div className="ml-3">
+                            <div className="ml-3 flex-1">
                                 <h3 className="font-semibold">{auth.user.name}</h3>
-                                <Link
-                                    href={route('settings')}
-                                    className="text-sm text-blue-600 hover:text-blue-800"
-                                >
-                                    Settings
-                                </Link>
+                                <div className="flex gap-3 mt-1 text-sm">
+                                    <Link
+                                        href={route('settings')}
+                                        className="text-blue-600 hover:text-blue-800"
+                                    >
+                                        Settings
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="text-red-600 hover:text-red-800"
+                                    >
+                                        Log Out
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-500 text-white px-4 py-1 mt-2 rounded hover:bg-red-600 transition-colors"
-                        >
-                            Log Out
-                        </button>
                         
                         {/* Collapsible Saved Roads Section */}
                         <div className="mt-4">
@@ -1039,6 +1115,42 @@ export default function Map() {
                                 </ul>
                             )}
                         </div>
+
+                        <h3 className="font-semibold mt-4 mb-2">Filters</h3>
+                        <label>Search Radius: {radius} km</label>
+                        <input
+                            type="range"
+                            min="1"
+                            max="50"
+                            value={radius}
+                            onChange={handleRadiusChange}
+                            className="w-full mb-4"
+                        />
+                        <label>Road Type</label>
+                        <select
+                            value={roadType}
+                            onChange={(e) => setRoadType(e.target.value)}
+                            className="w-full mb-2"
+                        >
+                            <option value="all">All Roads</option>
+                            <option value="primary">Primary Roads</option>
+                            <option value="secondary">Secondary Roads</option>
+                        </select>
+                        <label>Curvature Type</label>
+                        <select
+                            value={curvatureType}
+                            onChange={(e) => setCurvatureType(e.target.value)}
+                            className="w-full mb-2"
+                        >
+                            <option value="all">All Curves</option>
+                            <option value="curvy">Very Curved</option>
+                            <option value="moderate">Moderately Curved</option>
+                            <option value="mellow">Mellow</option>
+                        </select>
+                        <button onClick={searchRoads} className="bg-green-500 text-white w-full p-1 mt-2">
+                            Search Roads
+                        </button>
+                        {loading && <p className="text-center text-gray-500 mt-2">Loading roads...</p>}
                     </div>
                 ) : authMode === 'login' ? (
                     <form onSubmit={handleLogin}>
@@ -1117,42 +1229,6 @@ export default function Map() {
                         </button>
                     </form>
                 )}
-
-                <h3 className="font-semibold mt-4 mb-2">Filters</h3>
-                <label>Search Radius: {radius} km</label>
-                <input
-                    type="range"
-                    min="1"
-                    max="50"
-                    value={radius}
-                    onChange={handleRadiusChange}
-                    className="w-full mb-4"
-                />
-                <label>Road Type</label>
-                <select
-                    value={roadType}
-                    onChange={(e) => setRoadType(e.target.value)}
-                    className="w-full mb-2"
-                >
-                    <option value="all">All Roads</option>
-                    <option value="primary">Primary Roads</option>
-                    <option value="secondary">Secondary Roads</option>
-                </select>
-                <label>Curvature Type</label>
-                <select
-                    value={curvatureType}
-                    onChange={(e) => setCurvatureType(e.target.value)}
-                    className="w-full mb-2"
-                >
-                    <option value="all">All Curves</option>
-                    <option value="curvy">Very Curved</option>
-                    <option value="moderate">Moderately Curved</option>
-                    <option value="mellow">Mellow</option>
-                </select>
-                <button onClick={searchRoads} className="bg-green-500 text-white w-full p-1 mt-2">
-                    Search Roads
-                </button>
-                {loading && <p className="text-center text-gray-500 mt-2">Loading roads...</p>}
             </div>
 
             {/* Map */}

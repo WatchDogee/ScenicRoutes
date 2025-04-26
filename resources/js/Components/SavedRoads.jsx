@@ -105,10 +105,10 @@ export default function SavedRoads({ auth }) {
 
             {isListExpanded && (
                 loading ? (
-                    <p>Loading...</p>
-                ) : (
+                <p>Loading...</p>
+            ) : (
                     <div className="space-y-4">
-                        {roads.map(road => (
+                    {roads.map(road => (
                             <div key={road.id} className="border rounded-lg bg-white shadow">
                                 <div 
                                     className="p-3 cursor-pointer"
@@ -128,12 +128,12 @@ export default function SavedRoads({ auth }) {
                                             {road.description || 'No description available'}
                                         </p>
                                         <div className="flex gap-2">
-                                            <button 
-                                                onClick={() => handleNavigateClick(road)}
+                                <button 
+                                    onClick={() => handleNavigateClick(road)}
                                                 className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                                            >
-                                                Navigate
-                                            </button>
+                                >
+                                    Navigate
+                                </button>
                                             <button 
                                                 onClick={() => handleViewDetails(road)}
                                                 className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -150,7 +150,7 @@ export default function SavedRoads({ auth }) {
                                     </div>
                                 )}
                             </div>
-                        ))}
+                    ))}
                     </div>
                 )
             )}
@@ -188,16 +188,16 @@ export default function SavedRoads({ auth }) {
                                 <p className="text-sm text-gray-600">Rating: {road.average_rating || 'No ratings yet'}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button 
+                        <button 
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         handleNavigateClick(road);
                                     }}
                                     className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    Navigate
-                                </button>
+                        >
+                            Navigate
+                        </button>
                             </div>
                         </div>
                         {road.comments && road.comments.length > 0 && (
@@ -206,7 +206,7 @@ export default function SavedRoads({ auth }) {
                                     <div key={comment.id} className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
                                         {comment.comment}
                                     </div>
-                                ))}
+                            ))}
                             </div>
                         )}
                     </div>
