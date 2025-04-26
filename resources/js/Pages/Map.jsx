@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import RatingModal from '../Components/RatingModal';
+import { Link } from '@inertiajs/react';
 
 export default function Map() {
     const mapRef = useRef(null);
@@ -960,15 +961,27 @@ export default function Map() {
                 {auth.user ? (
                     <div>
                         <div className="flex items-center mb-4">
-                            <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0"></div>
+                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                                {auth.user?.profile_picture_url ? (
+                                    <img 
+                                        src={auth.user.profile_picture_url} 
+                                        alt={auth.user.name} 
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-sm font-medium">
+                                        {auth.user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
                             <div className="ml-3">
                                 <h3 className="font-semibold">{auth.user.name}</h3>
-                                <button
-                                    onClick={() => window.location.href = '/profile'}
-                                    className="text-sm text-blue-600"
+                                <Link
+                                    href={route('settings')}
+                                    className="text-sm text-blue-600 hover:text-blue-800"
                                 >
                                     Settings
-                                </button>
+                                </Link>
                             </div>
                         </div>
                         <button
@@ -1228,7 +1241,7 @@ export default function Map() {
                                             onClick={() => handleRateRoad(road.id)}
                                             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                                         >
-                                            Rate & Comment
+                                            View Details
                                         </button>
                                     </div>
                                 </div>

@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'profile_picture',
     ];
 
     /**
@@ -33,6 +34,13 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * The attributes that should be appended.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['profile_picture_url'];
 
     /**
      * Get the attributes that should be cast.
@@ -47,8 +55,18 @@ class User extends Authenticatable
         ];
     }
 
+    public function getProfilePictureUrlAttribute()
+    {
+        if ($this->profile_picture) {
+            return asset('storage/' . $this->profile_picture);
+        }
+        
+        // Generate initials-based placeholder if no profile picture
+        return "https://ui-avatars.com/api/?name=" . urlencode($this->name) . "&background=random&color=fff&size=256";
+    }
+
     public function savedRoads()
     {
-    return $this->hasMany(SavedRoad::class);
+        return $this->hasMany(SavedRoad::class);
     }
 }

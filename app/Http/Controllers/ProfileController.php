@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -27,17 +31,54 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request)
     {
-        $request->user()->fill($request->validated());
+        try {
+            $user = $request->user();
+            
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    Rule::unique('users')->ignore($user->id),
+                ],
+                'current_password' => ['nullable', 'required_with:new_password'],
+                'new_password' => ['nullable', 'min:8', 'confirmed'],
+                'new_password_confirmation' => ['nullable', 'required_with:new_password'],
+            ]);
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+            // Handle password update if provided
+            if (isset($validated['new_password'])) {
+                if (!Hash::check($validated['current_password'], $user->password)) {
+                    return response()->json([
+                        'message' => 'The provided password does not match your current password.',
+                        'errors' => ['current_password' => ['The provided password is incorrect.']]
+                    ], 422);
+                }
+                $validated['password'] = Hash::make($validated['new_password']);
+                unset($validated['current_password'], $validated['new_password'], $validated['new_password_confirmation']);
+            }
+
+            if ($request->user()->isDirty('email')) {
+                $request->user()->email_verified_at = null;
+            }
+
+            $user->update($validated);
+
+            return response()->json([
+                'message' => 'Profile updated successfully',
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Profile update error: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Failed to update profile',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $request->user()->save();
-
-        return Redirect::route('profile.edit');
     }
 
     /**
@@ -59,5 +100,107 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return Redirect::to('/');
+    }
+
+    public function updateProfilePicture(Request $request): JsonResponse
+    {
+        try {
+            \Log::info('Profile picture update request received');
+            
+            try {
+                $validated = $request->validate([
+                    'profile_picture' => [
+                        'required',
+                        'file',
+                        'image',
+                        'mimes:jpeg,png,jpg,gif',
+                        'max:5120'
+                    ]
+                ]);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                \Log::error('Validation error details: ' . json_encode($e->errors()));
+                
+                // Get the specific validation error message
+                $errorMessages = $e->errors()['profile_picture'] ?? ['Unknown validation error'];
+                $specificError = $errorMessages[0];
+                
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'message' => $specificError,
+                    'details' => [
+                        'rules' => [
+                            'allowed_types' => ['jpeg', 'png', 'jpg', 'gif'],
+                            'max_size' => '5MB',
+                        ],
+                        'received' => [
+                            'mime_type' => $request->file('profile_picture')?->getMimeType(),
+                            'size' => $request->file('profile_picture')?->getSize(),
+                            'original_name' => $request->file('profile_picture')?->getClientOriginalName(),
+                        ]
+                    ]
+                ], 422);
+            }
+
+            if (!$request->hasFile('profile_picture')) {
+                \Log::error('No file present in request');
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'message' => 'No file uploaded.'
+                ], 422);
+            }
+
+            $file = $request->file('profile_picture');
+            
+            \Log::info('File details', [
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'error' => $file->getError()
+            ]);
+
+            if (!$file->isValid()) {
+                \Log::error('Invalid file upload: ' . $file->getErrorMessage());
+                return response()->json([
+                    'error' => 'Validation failed',
+                    'message' => 'Invalid file upload: ' . $file->getErrorMessage()
+                ], 422);
+            }
+
+            $user = $request->user();
+
+            // Delete old profile picture if it exists
+            if ($user->profile_picture) {
+                \Log::info('Deleting old profile picture: ' . $user->profile_picture);
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+
+            // Store the new profile picture with a unique name
+            $fileName = 'profile-' . $user->id . '-' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('profile-pictures', $fileName, 'public');
+            
+            if (!$path) {
+                \Log::error('Failed to store the profile picture');
+                throw new \Exception('Failed to store the profile picture.');
+            }
+
+            \Log::info('New profile picture stored at: ' . $path);
+
+            $user->update([
+                'profile_picture' => $path
+            ]);
+
+            return response()->json([
+                'message' => 'Profile picture updated successfully',
+                'profile_picture_url' => $user->profile_picture_url,
+                'user' => $user
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Profile picture update error: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            return response()->json([
+                'error' => 'Failed to update profile picture',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }
