@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
+import NavigationAppSelector from './NavigationAppSelector';
 
 export default function Community({ auth }) {
     const [publicRoads, setPublicRoads] = useState([]);
@@ -10,6 +11,7 @@ export default function Community({ auth }) {
     const [selectedRoad, setSelectedRoad] = useState(null);
     const [comment, setComment] = useState('');
     const [rating, setRating] = useState(0);
+    const [showNavigationSelector, setShowNavigationSelector] = useState(false);
 
     useEffect(() => {
         fetchPublicRoads();
@@ -77,6 +79,16 @@ export default function Community({ auth }) {
         }
     };
 
+    const handleNavigateClick = (e, road) => {
+        e.stopPropagation(); // Prevent event bubbling
+        if (!road.road_coordinates) {
+            alert('No coordinates available for this road');
+            return;
+        }
+        setSelectedRoad(road);
+        setShowNavigationSelector(true);
+    };
+
     return (
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-4">Community Roads</h2>
@@ -113,50 +125,57 @@ export default function Community({ auth }) {
             {loading ? (
                 <div>Loading...</div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {publicRoads.map(road => (
                         <div key={road.id} className="border rounded-lg p-4 bg-white shadow">
-                            <h3 className="text-xl font-semibold mb-2">{road.road_name}</h3>
-                            <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div className="flex justify-between items-start mb-3">
                                 <div>
-                                    <p>Length: {(road.length / 1000).toFixed(2)} km</p>
-                                    <p>Corners: {road.corner_count}</p>
-                                    <p>Curve Score: {road.twistiness?.toFixed(4)}</p>
-                                    <p>Average Rating: {road.average_rating ? road.average_rating.toFixed(1) : 'No ratings'} ⭐</p>
+                                    <h3 className="text-lg font-semibold">{road.road_name}</h3>
+                                    <div className="text-sm text-gray-600 mt-1">
+                                        <p>Length: {(road.length / 1000).toFixed(2)} km</p>
+                                        <p>Corners: {road.corner_count}</p>
+                                        <p>Curve Score: {road.twistiness?.toFixed(4)}</p>
+                                        <p>Average Rating: {road.average_rating ? road.average_rating.toFixed(1) : 'No ratings'} ⭐</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    {auth.user && (
-                                        <div className="space-y-2">
-                                            <div className="flex items-center gap-2">
-                                                <select
-                                                    value={rating}
-                                                    onChange={(e) => setRating(Number(e.target.value))}
-                                                    className="p-1 border rounded"
-                                                >
-                                                    <option value="0">Select rating</option>
-                                                    {[1, 2, 3, 4, 5].map(num => (
-                                                        <option key={num} value={num}>{num} ⭐</option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    onClick={() => handleRateRoad(road.id)}
-                                                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
-                                                >
-                                                    Rate
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={(e) => handleNavigateClick(e, road)}
+                                        className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                        Navigate
+                                    </button>
                                 </div>
                             </div>
 
+                            {auth.user && (
+                                <div className="flex items-center gap-2 mb-3">
+                                    <select
+                                        value={rating}
+                                        onChange={(e) => setRating(Number(e.target.value))}
+                                        className="p-1 text-sm border rounded"
+                                    >
+                                        <option value="0">Rate this road</option>
+                                        {[1, 2, 3, 4, 5].map(num => (
+                                            <option key={num} value={num}>{num} ⭐</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => handleRateRoad(road.id)}
+                                        className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Rate
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Comments Section */}
-                            <div className="mt-4">
-                                <h4 className="font-semibold mb-2">Comments</h4>
-                                <div className="space-y-2 mb-4">
+                            <div className="mt-3">
+                                <h4 className="font-medium text-sm mb-2">Comments</h4>
+                                <div className="space-y-2 mb-3">
                                     {road.comments?.map(comment => (
-                                        <div key={comment.id} className="bg-gray-50 p-2 rounded">
-                                            <p className="text-sm text-gray-600">{comment.user?.name}:</p>
+                                        <div key={comment.id} className="bg-gray-50 p-2 rounded text-sm">
+                                            <p className="text-gray-600">{comment.user?.name}:</p>
                                             <p>{comment.comment}</p>
                                         </div>
                                     ))}
@@ -168,11 +187,11 @@ export default function Community({ auth }) {
                                             placeholder="Add a comment..."
                                             value={comment}
                                             onChange={(e) => setComment(e.target.value)}
-                                            className="flex-1 p-2 border rounded"
+                                            className="flex-1 p-2 text-sm border rounded"
                                         />
                                         <button
                                             onClick={() => handleComment(road.id)}
-                                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
                                         >
                                             Comment
                                         </button>
@@ -181,6 +200,29 @@ export default function Community({ auth }) {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Navigation App Selector Modal */}
+            {showNavigationSelector && selectedRoad && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                        <div className="flex justify-between items-start mb-4">
+                            <NavigationAppSelector 
+                                coordinates={JSON.parse(selectedRoad.road_coordinates)}
+                                roadName={selectedRoad.road_name}
+                            />
+                            <button 
+                                onClick={() => {
+                                    setShowNavigationSelector(false);
+                                    setSelectedRoad(null);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

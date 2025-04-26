@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import RatingModal from '../Components/RatingModal';
+import NavigationAppSelector from '../Components/NavigationAppSelector';
 import { Link } from '@inertiajs/react';
 
 export default function Map() {
@@ -20,7 +21,7 @@ export default function Map() {
     const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
     const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
     const [savedRoads, setSavedRoads] = useState([]); // List of saved roads
-    const [selectedRoad, setSelectedRoad] = useState(null); // Selected road for display/edit
+    const [selectedRoad, setSelectedRoad] = useState(null);
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
     const [selectedRoadId, setSelectedRoadId] = useState(null);
     const [showCommunity, setShowCommunity] = useState(false);
@@ -36,6 +37,8 @@ export default function Map() {
     const [searchError, setSearchError] = useState(null);
     const [searchType, setSearchType] = useState('town'); // Add searchType state
     const [searchRadius, setSearchRadius] = useState(10); // Add searchRadius state
+    const [isSavedRoadsExpanded, setIsSavedRoadsExpanded] = useState(true);
+    const [showNavigationSelector, setShowNavigationSelector] = useState(false);
 
     // Initialize auth state from localStorage
     useEffect(() => {
@@ -409,10 +412,15 @@ export default function Map() {
     };
 
     // Move edit form to be part of each road item
-    const RoadItem = ({ road, isSelected, onSelect }) => {
+    const RoadItem = ({ road, onNavigateClick }) => {
+        const [showReviewModal, setShowReviewModal] = useState(false);
+        const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+        const [showEditModal, setShowEditModal] = useState(false);
+        const [showShareModal, setShowShareModal] = useState(false);
         const [isEditing, setIsEditing] = useState(false);
         const [isExpanded, setIsExpanded] = useState(false);
         const [isDeleting, setIsDeleting] = useState(false);
+        const [showNavigationSelector, setShowNavigationSelector] = useState(false);
         const [editData, setEditData] = useState({
             road_name: road.road_name || '',
             description: road.description || ''
@@ -504,14 +512,14 @@ export default function Map() {
         };
 
         const handleViewOnMap = () => {
-            onSelect(road.id);
+            onNavigateClick(road.id);
             if (mapRef.current && road.road_coordinates) {
                 const coordinates = JSON.parse(road.road_coordinates);
                 
                 // Clear existing layers and add the new road
                 roadsLayerRef.current.clearLayers();
                 const polyline = L.polyline(coordinates, { 
-                    color: isSelected ? '#2563eb' : '#4ade80', // Blue when selected, green otherwise
+                    color: selectedRoadId === road.id ? '#2563eb' : '#4ade80', // Blue when selected, green otherwise
                     weight: 6,
                     opacity: 0.8
                 }).addTo(roadsLayerRef.current);
@@ -521,6 +529,10 @@ export default function Map() {
                     padding: [50, 50] // Add some padding around the bounds
                 });
             }
+        };
+
+        const handleNavigateClick = () => {
+            setShowNavigationSelector(true);
         };
 
         // Add this inside the expanded view, before the edit/delete buttons
@@ -549,111 +561,132 @@ export default function Map() {
 
         return (
             <li 
-                className={`mb-4 p-4 border rounded-lg transition-colors duration-200 cursor-pointer ${
-                    isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
+                className={`mb-2 border rounded-lg transition-colors duration-200 ${
+                    selectedRoadId === road.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
                 }`}
-                onClick={handleViewOnMap}
             >
-                <div className="flex justify-between items-start">
-                    <div className="flex-grow">
-                        <h2 className="text-lg font-semibold">{road.road_name || 'Unnamed Road'}</h2>
-                        <div className="mt-1 text-sm text-gray-600 space-y-1">
-                            <p>Length: {formatLength(road.length)}</p>
-                            <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
-                            <p>Corners: {road.corner_count}</p>
-                        </div>
+                <div 
+                    className="p-3 flex justify-between items-center cursor-pointer"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                >
+                    <div className="flex items-center gap-2">
+                        <span className="text-gray-500">
+                            {isExpanded ? '▼' : '▶'}
+                        </span>
+                        <h2 className="font-medium">{road.road_name || 'Unnamed Road'}</h2>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setIsExpanded(!isExpanded);
+                                handleViewOnMap();
                             }}
-                            className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                         >
-                            {isExpanded ? 'Hide Details' : 'Show Details'}
+                            View on Map
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleNavigateClick();
+                            }}
+                            className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                            Navigate
                         </button>
                     </div>
                 </div>
 
                 {isExpanded && (
                     <div 
-                        className="mt-4 border-t pt-4"
+                        className="px-3 pb-3 border-t"
                         onClick={(e) => e.stopPropagation()}
                     >
+                        <div className="mt-2 text-sm text-gray-600 space-y-1">
+                            <p>Length: {formatLength(road.length)}</p>
+                            <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
+                            <p>Corners: {road.corner_count}</p>
+                        </div>
+                        
                         {!isEditing ? (
-                            <div className="space-y-4">
+                            <div className="mt-3 space-y-3">
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-700">Description</h3>
-                                    <p className="mt-1 text-gray-600">
+                                    <p className="mt-1 text-sm text-gray-600">
                                         {road.description || 'No description provided'}
                                     </p>
                                 </div>
-                                <div className="flex space-x-2">
+                                <div className="flex gap-2">
                                     {publicToggleButton}
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setIsEditing(true);
-                                        }}
-                                        className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                        onClick={() => setIsEditing(true)}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                                     >
-                                        Edit Details
+                                        Edit
                                     </button>
                                     <button
                                         onClick={handleDeleteClick}
-                                        className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
                                     >
-                                        Delete Road
+                                        Delete
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <form onSubmit={(e) => handleEdit(e, road, editData)} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Name</label>
-                                    <input
-                                        type="text"
-                                        value={editData.road_name}
-                                        onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700">Description</label>
-                                    <textarea
-                                        value={editData.description}
-                                        onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                                        rows={3}
-                                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                        onClick={(e) => e.stopPropagation()}
-                                    />
-                                </div>
-                                <div className="flex space-x-2">
+                            <form onSubmit={(e) => handleEdit(e, road, editData)} className="mt-3">
+                                <input
+                                    type="text"
+                                    value={editData.road_name}
+                                    onChange={(e) => setEditData({ ...editData, road_name: e.target.value })}
+                                    className="w-full p-2 border rounded mb-2"
+                                    placeholder="Road name"
+                                />
+                                <textarea
+                                    value={editData.description}
+                                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                                    className="w-full p-2 border rounded mb-2"
+                                    placeholder="Description"
+                                    rows="3"
+                                />
+                                <div className="flex gap-2">
                                     <button
                                         type="submit"
-                                        className="px-4 py-2 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                                     >
-                                        Save Changes
+                                        Save
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setIsEditing(false);
-                                            setEditData({
-                                                road_name: road.road_name || '',
-                                                description: road.description || ''
-                                            });
-                                        }}
-                                        className="px-4 py-2 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                                        onClick={() => setIsEditing(false)}
+                                        className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600"
                                     >
                                         Cancel
                                     </button>
                                 </div>
                             </form>
                         )}
+                    </div>
+                )}
+
+                {showNavigationSelector && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                            <div className="flex justify-between items-start mb-4">
+                                <NavigationAppSelector 
+                                    coordinates={JSON.parse(road.road_coordinates)}
+                                    roadName={road.road_name}
+                                />
+                                <button 
+                                    onClick={() => {
+                                        setShowNavigationSelector(false);
+                                        setSelectedRoad(null);
+                                    }}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 )}
             </li>
@@ -877,36 +910,28 @@ export default function Map() {
     };
 
     const handleSubmitReview = async (rating, comment) => {
-        if (!selectedRoadForReview) return;
-
         try {
-            const response = await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/review`, {
-                rating,
-                comment
-            }, {
-                headers: { Authorization: `Bearer ${auth.token}` }
-            });
-
-            // Update the road in publicRoads with the new review data
-            const updatedRoad = response.data.road;
-            setPublicRoads(prevRoads => 
-                prevRoads.map(r => r.id === selectedRoadForReview.id ? updatedRoad : r)
-            );
-
-            // Reset form and close modal
+            await addReview(selectedRoadForReview.id, rating);
+            if (comment) {
+                await addComment(selectedRoadForReview.id, comment);
+            }
             handleCloseRatingModal();
-            alert('Thank you for your review!');
-
-            // Refresh public roads list in the background
-            if (markerRef.current) {
-                const { lat, lng } = markerRef.current.getLatLng();
-                await fetchPublicRoads(lat, lng);
+            // Refresh the public roads list
+            if (showCommunity) {
+                handleSearchPublicRoads();
             }
         } catch (error) {
             console.error('Error submitting review:', error);
-            const errorMessage = error.response?.data?.error || 'Failed to submit review. Please try again.';
-            alert(errorMessage);
         }
+    };
+
+    const handleNavigateClick = (road) => {
+        if (!road.road_coordinates) {
+            alert('No coordinates available for this road');
+            return;
+        }
+        setSelectedRoad(road);
+        setShowNavigationSelector(true);
     };
 
     return (
@@ -990,17 +1015,30 @@ export default function Map() {
                         >
                             Log Out
                         </button>
-                        <h3 className="font-semibold mt-4">Saved Roads</h3>
-                        <ul className="mt-2 space-y-4">
-                            {savedRoads.map((road) => (
-                                <RoadItem 
-                                    key={road.id} 
-                                    road={road}
-                                    isSelected={road.id === selectedRoadId}
-                                    onSelect={setSelectedRoadId}
-                                />
-                            ))}
-                        </ul>
+                        
+                        {/* Collapsible Saved Roads Section */}
+                        <div className="mt-4">
+                            <div 
+                                className="flex justify-between items-center cursor-pointer py-2"
+                                onClick={() => setIsSavedRoadsExpanded(!isSavedRoadsExpanded)}
+                            >
+                                <h3 className="font-semibold">Saved Roads</h3>
+                                <span className="text-gray-500">
+                                    {isSavedRoadsExpanded ? '▼' : '▶'}
+                                </span>
+                            </div>
+                            {isSavedRoadsExpanded && (
+                                <ul className="mt-2 space-y-4">
+                                    {savedRoads.map((road) => (
+                                        <RoadItem 
+                                            key={road.id} 
+                                            road={road}
+                                            onNavigateClick={setSelectedRoadId}
+                                        />
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
                     </div>
                 ) : authMode === 'login' ? (
                     <form onSubmit={handleLogin}>
@@ -1119,7 +1157,6 @@ export default function Map() {
 
             {/* Map */}
             <div className="flex-1 relative" id="map" style={{ zIndex: 10 }}>
-                {/* Community Toggle Button - Updated z-index and styling */}
                 <button
                     onClick={() => setShowCommunity(!showCommunity)}
                     className="absolute top-4 right-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
@@ -1238,6 +1275,21 @@ export default function Map() {
                                             View on Map
                                         </button>
                                         <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (!road.road_coordinates) {
+                                                    alert('No coordinates available for this road');
+                                                    return;
+                                                }
+                                                setSelectedRoad(road);
+                                                setShowNavigationSelector(true);
+                                            }}
+                                            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                                        >
+                                            Navigate
+                                        </button>
+                                        <button
                                             onClick={() => handleRateRoad(road.id)}
                                             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                                         >
@@ -1261,6 +1313,29 @@ export default function Map() {
                 initialRating={localRating}
                 initialComment={localComment}
             />
+
+            {/* Navigation App Selector Modal */}
+            {showNavigationSelector && selectedRoad && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                        <div className="flex justify-between items-start mb-4">
+                            <NavigationAppSelector 
+                                coordinates={JSON.parse(selectedRoad.road_coordinates)}
+                                roadName={selectedRoad.road_name}
+                            />
+                            <button 
+                                onClick={() => {
+                                    setShowNavigationSelector(false);
+                                    setSelectedRoad(null);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
