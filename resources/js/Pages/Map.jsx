@@ -177,7 +177,7 @@ export default function Map() {
             return;
         }
 
-        setLoading(true); // Show loading indicator
+        setLoading(true);
         const lat = markerRef.current.getLatLng().lat;
         const lon = markerRef.current.getLatLng().lng;
 
@@ -203,12 +203,11 @@ export default function Map() {
                 if (!way.geometry) return;
 
                 const roadLength = getRoadLength(way.geometry);
-                if (roadLength < 1750) return; // Filter roads by length
+                if (roadLength < 1750) return;
 
                 const twistinessData = calculateTwistiness(way.geometry);
-                if (twistinessData === 0) return; // Skip if twistiness calculation fails
+                if (twistinessData === 0) return;
 
-                // Apply user-selected curvature type filters
                 if (curvatureType === "curvy" && twistinessData.twistiness <= 0.007) return;
                 if (curvatureType === "moderate" && (twistinessData.twistiness < 0.0035 || twistinessData.twistiness > 0.007)) return;
                 if (curvatureType === "mellow" && twistinessData.twistiness > 0.0035) return;
@@ -217,29 +216,40 @@ export default function Map() {
                 const name = way.tags.name || "Unnamed Road";
 
                 let color = "green"; 
-                if (twistinessData.twistiness > 0.007) color = "red"; // Very Curvy
-                else if (twistinessData.twistiness > 0.0035) color = "yellow"; // Moderately Curvy
+                if (twistinessData.twistiness > 0.007) color = "red";
+                else if (twistinessData.twistiness > 0.0035) color = "yellow";
 
                 const polyline = L.polyline(coordinates, { color, weight: 8 }).addTo(roadsLayerRef.current);
 
                 const popupContent = `
-                    <b>${name}</b><br>
-                    Length: ${(roadLength / 1000).toFixed(2)} km<br>
-                    Corners: ${twistinessData.corner_count}<br>
-                    Curve Score: ${twistinessData.twistiness.toFixed(4)}<br>
-                    <button id="save-road-${way.id}">Save Road</button>
+                    <div class="road-popup">
+                        <h3 class="font-bold">${name}</h3>
+                        <p>Length: ${(roadLength / 1000).toFixed(2)} km</p>
+                        <p>Corners: ${twistinessData.corner_count}</p>
+                        <p>Curve Score: ${twistinessData.twistiness.toFixed(4)}</p>
+                        ${auth.user ? 
+                            `<button id="save-road-${way.id}" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Save Road</button>` :
+                            '<p class="text-sm text-gray-500 mt-2">Log in to save roads</p>'
+                        }
+                    </div>
                 `;
 
-                polyline.bindPopup(popupContent);
-                polyline.on("popupopen", () => {
-                    document.getElementById(`save-road-${way.id}`).addEventListener('click', () => saveRoad({ 
-                        name, 
-                        coordinates, 
-                        twistiness: twistinessData.twistiness, 
-                        corner_count: twistinessData.corner_count, 
-                        length: roadLength 
-                    }));
-                });
+                const popup = L.popup().setContent(popupContent);
+                polyline.bindPopup(popup);
+
+                if (auth.user) {
+                    polyline.on("popupopen", () => {
+                        document.getElementById(`save-road-${way.id}`)?.addEventListener('click', () => 
+                            saveRoad({ 
+                                name, 
+                                coordinates, 
+                                twistiness: twistinessData.twistiness, 
+                                corner_count: twistinessData.corner_count, 
+                                length: roadLength 
+                            })
+                        );
+                    });
+                }
 
                 newRoads.push({ id: way.id, name, coordinates });
             });
@@ -247,14 +257,15 @@ export default function Map() {
             setRoads(newRoads);
         } catch (error) {
             console.error("Error fetching roads:", error);
+            alert("Failed to fetch roads. Please try again.");
         } finally {
-            setLoading(false); // Hide loading indicator
+            setLoading(false);
         }
     };
 
     const saveRoad = async (road) => {
         if (!auth.token) {
-            alert("Please log in to save roads.");
+            alert("Please log in to save roads");
             return;
         }
 
@@ -270,7 +281,7 @@ export default function Map() {
             const response = await axios.post('/api/saved-roads', payload, {
                 headers: { Authorization: `Bearer ${auth.token}` },
             });
-            setSavedRoads([...savedRoads, response.data]); // Add road to saved list
+            setSavedRoads([...savedRoads, response.data]);
             alert("Road saved successfully!");
         } catch (error) {
             console.error("Error saving road:", error.response?.data || error.message);
@@ -333,6 +344,11 @@ export default function Map() {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSavedRoads(roadsResponse.data);
+
+                // Redirect to map page if not already there
+                if (window.location.pathname !== '/map') {
+                    window.location.href = '/map';
+                }
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
@@ -618,6 +634,12 @@ export default function Map() {
                                 </div>
                                 <div className="flex gap-2">
                                     {publicToggleButton}
+                                    <button
+                                        onClick={() => handleRateRoad(road.id)}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        View Details
+                                    </button>
                                     <button
                                         onClick={() => setIsEditing(true)}
                                         className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
@@ -955,18 +977,24 @@ export default function Map() {
             alert('Please log in to rate roads');
             return;
         }
-        const road = publicRoads.find(road => road.id === roadId);
-        // Check if user has already reviewed this road
-        const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
-        if (existingReview) {
-            setLocalRating(existingReview.rating);
-            setLocalComment(existingReview.comment || '');
-        } else {
-            setLocalRating(0);
-            setLocalComment('');
+        try {
+            const response = await axios.get(`/api/saved-roads/${roadId}`);
+            const road = response.data;
+            // Check if user has already reviewed this road
+            const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
+            if (existingReview) {
+                setLocalRating(existingReview.rating);
+                setLocalComment(existingReview.comment || '');
+            } else {
+                setLocalRating(0);
+                setLocalComment('');
+            }
+            setSelectedRoadForReview(road);
+            setRatingModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching road details:', error);
+            alert('Failed to load road details');
         }
-        setSelectedRoadForReview(road);
-        setRatingModalOpen(true);
     };
 
     const handleCloseRatingModal = () => {
@@ -978,10 +1006,12 @@ export default function Map() {
 
     const handleSubmitReview = async (rating, comment) => {
         try {
-            await addReview(selectedRoadForReview.id, rating);
-            if (comment) {
-                await addComment(selectedRoadForReview.id, comment);
-            }
+            await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/review`, {
+                rating,
+                comment
+            }, {
+                headers: { Authorization: `Bearer ${auth.token}` }
+            });
             handleCloseRatingModal();
             // Refresh the public roads list
             if (showCommunity) {
@@ -989,6 +1019,7 @@ export default function Map() {
             }
         } catch (error) {
             console.error('Error submitting review:', error);
+            alert('Failed to submit review');
         }
     };
 
@@ -1014,7 +1045,6 @@ export default function Map() {
                         value={searchQuery}
                         onChange={handleSearchChange}
                         onFocus={() => {
-                            // Clear results when focusing if the query is empty
                             if (!searchQuery.trim()) {
                                 setSearchResults([]);
                             }
@@ -1057,9 +1087,104 @@ export default function Map() {
                     )}
                 </div>
 
-                {auth.user ? (
-                    <div className="flex-1">
-                        <div className="flex items-start mb-4 p-2 bg-gray-50 rounded-lg">
+                {/* Auth Section - Moved to top */}
+                {!auth.user ? (
+                    <div className="mb-6 pb-4 border-b">
+                        {authMode === 'login' ? (
+                            <>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-semibold">Login</h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAuthMode('register')}
+                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                    >
+                                        Create Account
+                                    </button>
+                                </div>
+                                <form onSubmit={handleLogin} className="space-y-2">
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={loginForm.email}
+                                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        value={loginForm.password}
+                                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                    >
+                                        Log In
+                                    </button>
+                                </form>
+                            </>
+                        ) : (
+                            <>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="font-semibold">Create Account</h3>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAuthMode('login')}
+                                        className="text-sm text-blue-600 hover:text-blue-800"
+                                    >
+                                        Back to Login
+                                    </button>
+                                </div>
+                                <form onSubmit={handleRegister} className="space-y-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Name"
+                                        value={registerForm.name}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <input
+                                        type="email"
+                                        placeholder="Email"
+                                        value={registerForm.email}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Password"
+                                        value={registerForm.password}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <input
+                                        type="password"
+                                        placeholder="Confirm Password"
+                                        value={registerForm.password_confirmation}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, password_confirmation: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                        required
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                                    >
+                                        Register
+                                    </button>
+                                </form>
+                            </>
+                        )}
+                    </div>
+                ) : (
+                    <div className="mb-6 pb-4 border-b">
+                        <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                                 {auth.user?.profile_picture_url ? (
                                     <img 
@@ -1073,7 +1198,7 @@ export default function Map() {
                                     </div>
                                 )}
                             </div>
-                            <div className="ml-3 flex-1">
+                            <div className="flex-1">
                                 <h3 className="font-semibold">{auth.user.name}</h3>
                                 <div className="flex gap-3 mt-1 text-sm">
                                     <Link
@@ -1091,143 +1216,75 @@ export default function Map() {
                                 </div>
                             </div>
                         </div>
-                        
-                        {/* Collapsible Saved Roads Section */}
-                        <div className="mt-4">
-                            <div 
-                                className="flex justify-between items-center cursor-pointer py-2"
-                                onClick={() => setIsSavedRoadsExpanded(!isSavedRoadsExpanded)}
-                            >
-                                <h3 className="font-semibold">Saved Roads</h3>
-                                <span className="text-gray-500">
-                                    {isSavedRoadsExpanded ? '▼' : '▶'}
-                                </span>
-                            </div>
-                            {isSavedRoadsExpanded && (
-                                <ul className="mt-2 space-y-4">
-                                    {savedRoads.map((road) => (
-                                        <RoadItem 
-                                            key={road.id} 
-                                            road={road}
-                                            onNavigateClick={setSelectedRoadId}
-                                        />
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-
-                        <h3 className="font-semibold mt-4 mb-2">Filters</h3>
-                        <label>Search Radius: {radius} km</label>
-                        <input
-                            type="range"
-                            min="1"
-                            max="50"
-                            value={radius}
-                            onChange={handleRadiusChange}
-                            className="w-full mb-4"
-                        />
-                        <label>Road Type</label>
-                        <select
-                            value={roadType}
-                            onChange={(e) => setRoadType(e.target.value)}
-                            className="w-full mb-2"
-                        >
-                            <option value="all">All Roads</option>
-                            <option value="primary">Primary Roads</option>
-                            <option value="secondary">Secondary Roads</option>
-                        </select>
-                        <label>Curvature Type</label>
-                        <select
-                            value={curvatureType}
-                            onChange={(e) => setCurvatureType(e.target.value)}
-                            className="w-full mb-2"
-                        >
-                            <option value="all">All Curves</option>
-                            <option value="curvy">Very Curved</option>
-                            <option value="moderate">Moderately Curved</option>
-                            <option value="mellow">Mellow</option>
-                        </select>
-                        <button onClick={searchRoads} className="bg-green-500 text-white w-full p-1 mt-2">
-                            Search Roads
-                        </button>
-                        {loading && <p className="text-center text-gray-500 mt-2">Loading roads...</p>}
                     </div>
-                ) : authMode === 'login' ? (
-                    <form onSubmit={handleLogin}>
-                        <h3 className="font-semibold mb-2">Login</h3>
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={loginForm.email}
-                            onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={loginForm.password}
-                            onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <button type="submit" className="bg-blue-500 text-white w-full p-1">
-                            Log In
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setAuthMode('register')}
-                            className="text-sm text-blue-600 mt-2"
+                )}
+
+                {/* Filters Section */}
+                <div className="mb-6">
+                    <h3 className="font-semibold mb-2">Search Filters</h3>
+                    <label className="block mb-1">Search Radius: {radius} km</label>
+                    <input
+                        type="range"
+                        min="1"
+                        max="50"
+                        value={radius}
+                        onChange={handleRadiusChange}
+                        className="w-full mb-4"
+                    />
+                    <label className="block mb-1">Road Type</label>
+                    <select
+                        value={roadType}
+                        onChange={(e) => setRoadType(e.target.value)}
+                        className="w-full mb-2 p-2 border rounded"
+                    >
+                        <option value="all">All Roads</option>
+                        <option value="primary">Primary Roads</option>
+                        <option value="secondary">Secondary Roads</option>
+                    </select>
+                    <label className="block mb-1">Curvature Type</label>
+                    <select
+                        value={curvatureType}
+                        onChange={(e) => setCurvatureType(e.target.value)}
+                        className="w-full mb-2 p-2 border rounded"
+                    >
+                        <option value="all">All Curves</option>
+                        <option value="curvy">Very Curved</option>
+                        <option value="moderate">Moderately Curved</option>
+                        <option value="mellow">Mellow</option>
+                    </select>
+                    <button 
+                        onClick={searchRoads} 
+                        className="bg-green-500 text-white w-full p-2 rounded hover:bg-green-600 transition-colors"
+                    >
+                        Search Roads
+                    </button>
+                    {loading && <p className="text-center text-gray-500 mt-2">Loading roads...</p>}
+                </div>
+
+                {/* Saved Roads Section - Only for logged in users */}
+                {auth.user && (
+                    <div className="mt-4">
+                        <div 
+                            className="flex justify-between items-center cursor-pointer py-2"
+                            onClick={() => setIsSavedRoadsExpanded(!isSavedRoadsExpanded)}
                         >
-                            Don't have an account? Register
-                        </button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleRegister}>
-                        <h3 className="font-semibold mb-2">Register</h3>
-                        <input
-                            type="text"
-                            placeholder="Name"
-                            value={registerForm.name}
-                            onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <input
-                            type="email"
-                            placeholder="Email"
-                            value={registerForm.email}
-                            onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            value={registerForm.password}
-                            onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirm Password"
-                            value={registerForm.password_confirmation}
-                            onChange={(e) => setRegisterForm({ ...registerForm, password_confirmation: e.target.value })}
-                            className="w-full mb-2 p-1 border"
-                            required
-                        />
-                        <button type="submit" className="bg-green-500 text-white w-full p-1">
-                            Register
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setAuthMode('login')}
-                            className="text-sm text-blue-600 mt-2"
-                        >
-                            Already have an account? Log In
-                        </button>
-                    </form>
+                            <h3 className="font-semibold">Saved Roads</h3>
+                            <span className="text-gray-500">
+                                {isSavedRoadsExpanded ? '▼' : '▶'}
+                            </span>
+                        </div>
+                        {isSavedRoadsExpanded && (
+                            <ul className="mt-2 space-y-4">
+                                {savedRoads.map((road) => (
+                                    <RoadItem 
+                                        key={road.id} 
+                                        road={road}
+                                        onNavigateClick={setSelectedRoadId}
+                                    />
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -1392,25 +1449,11 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-                        <div className="flex justify-between items-start mb-4">
-                            <NavigationAppSelector 
-                                coordinates={JSON.parse(selectedRoad.road_coordinates)}
-                                roadName={selectedRoad.road_name}
-                            />
-                            <button 
-                                onClick={() => {
-                                    setShowNavigationSelector(false);
-                                    setSelectedRoad(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <NavigationAppSelector
+                    isOpen={showNavigationSelector}
+                    onClose={() => setShowNavigationSelector(false)}
+                    coordinates={selectedRoad.road_coordinates}
+                />
             )}
         </div>
     );

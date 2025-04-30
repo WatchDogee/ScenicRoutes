@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
 import NavigationAppSelector from './NavigationAppSelector';
+import RatingModal from './RatingModal';
 
 export default function Community({ auth }) {
     const [publicRoads, setPublicRoads] = useState([]);
@@ -9,9 +10,11 @@ export default function Community({ auth }) {
     const [searchLocation, setSearchLocation] = useState('');
     const [searchRadius, setSearchRadius] = useState(50); // Default 50km radius
     const [selectedRoad, setSelectedRoad] = useState(null);
-    const [comment, setComment] = useState('');
-    const [rating, setRating] = useState(0);
     const [showNavigationSelector, setShowNavigationSelector] = useState(false);
+    const [ratingModalOpen, setRatingModalOpen] = useState(false);
+    const [selectedRoadForReview, setSelectedRoadForReview] = useState(null);
+    const [localRating, setLocalRating] = useState(0);
+    const [localComment, setLocalComment] = useState('');
 
     useEffect(() => {
         fetchPublicRoads();
@@ -38,44 +41,51 @@ export default function Community({ auth }) {
         fetchPublicRoads(searchLocation);
     };
 
-    const handleRateRoad = async (roadId) => {
+    const handleViewDetails = async (road) => {
         if (!auth.user) {
-            alert('Please log in to rate roads');
+            alert('Please log in to view road details');
             return;
         }
-
         try {
-            await axios.post(`/api/saved-roads/${roadId}/review`, { rating }, {
-                headers: { Authorization: `Bearer ${auth.token}` }
-            });
-            fetchPublicRoads(searchLocation); // Refresh the list
-            setRating(0);
+            const response = await axios.get(`/api/saved-roads/${road.id}`);
+            setSelectedRoadForReview(response.data);
+            setRatingModalOpen(true);
+            
+            // If user has already reviewed, pre-fill the form
+            const existingReview = response.data.reviews?.find(review => review.user?.id === auth.user.id);
+            if (existingReview) {
+                setLocalRating(existingReview.rating);
+                setLocalComment(existingReview.comment || '');
+            } else {
+                setLocalRating(0);
+                setLocalComment('');
+            }
         } catch (error) {
-            console.error('Error rating road:', error);
-            alert('Failed to submit rating');
+            console.error('Error fetching road details:', error);
+            alert('Failed to load road details');
         }
     };
 
-    const handleComment = async (roadId) => {
-        if (!auth.user) {
-            alert('Please log in to comment');
-            return;
-        }
+    const handleCloseRatingModal = () => {
+        setRatingModalOpen(false);
+        setSelectedRoadForReview(null);
+        setLocalRating(0);
+        setLocalComment('');
+    };
 
-        if (!comment.trim()) {
-            alert('Please enter a comment');
-            return;
-        }
-
+    const handleSubmitReview = async (rating, comment) => {
         try {
-            await axios.post(`/api/saved-roads/${roadId}/comment`, { comment }, {
+            await axios.post(`/api/saved-roads/${selectedRoadForReview.id}/review`, {
+                rating,
+                comment
+            }, {
                 headers: { Authorization: `Bearer ${auth.token}` }
             });
-            setComment('');
+            handleCloseRatingModal();
             fetchPublicRoads(searchLocation); // Refresh the list
         } catch (error) {
-            console.error('Error posting comment:', error);
-            alert('Failed to post comment');
+            console.error('Error submitting review:', error);
+            alert('Failed to submit review');
         }
     };
 
@@ -145,86 +155,39 @@ export default function Community({ auth }) {
                                     >
                                         Navigate
                                     </button>
+                                    <button
+                                        onClick={() => handleViewDetails(road)}
+                                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        View Details
+                                    </button>
                                 </div>
-                            </div>
-
-                                    {auth.user && (
-                                <div className="flex items-center gap-2 mb-3">
-                                                <select
-                                                    value={rating}
-                                                    onChange={(e) => setRating(Number(e.target.value))}
-                                        className="p-1 text-sm border rounded"
-                                                >
-                                        <option value="0">Rate this road</option>
-                                                    {[1, 2, 3, 4, 5].map(num => (
-                                                        <option key={num} value={num}>{num} ⭐</option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    onClick={() => handleRateRoad(road.id)}
-                                        className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                >
-                                                    Rate
-                                                </button>
-                                        </div>
-                                    )}
-
-                            {/* Comments Section */}
-                            <div className="mt-3">
-                                <h4 className="font-medium text-sm mb-2">Comments</h4>
-                                <div className="space-y-2 mb-3">
-                                    {road.comments?.map(comment => (
-                                        <div key={comment.id} className="bg-gray-50 p-2 rounded text-sm">
-                                            <p className="text-gray-600">{comment.user?.name}:</p>
-                                            <p>{comment.comment}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                                {auth.user && (
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="Add a comment..."
-                                            value={comment}
-                                            onChange={(e) => setComment(e.target.value)}
-                                            className="flex-1 p-2 text-sm border rounded"
-                                        />
-                                        <button
-                                            onClick={() => handleComment(road.id)}
-                                            className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                        >
-                                            Comment
-                                        </button>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     ))}
                 </div>
             )}
 
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={ratingModalOpen}
+                onClose={handleCloseRatingModal}
+                onSubmit={handleSubmitReview}
+                road={selectedRoadForReview}
+                auth={auth}
+                initialRating={localRating}
+                initialComment={localComment}
+            />
+
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-                        <div className="flex justify-between items-start mb-4">
-                            <NavigationAppSelector 
-                                coordinates={JSON.parse(selectedRoad.road_coordinates)}
-                                roadName={selectedRoad.road_name}
-                            />
-                            <button 
-                                onClick={() => {
-                                    setShowNavigationSelector(false);
-                                    setSelectedRoad(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                <NavigationAppSelector
+                    isOpen={showNavigationSelector}
+                    onClose={() => setShowNavigationSelector(false)}
+                    coordinates={selectedRoad.road_coordinates}
+                />
             )}
         </div>
     );
+} 
 } 

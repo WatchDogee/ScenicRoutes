@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../utils/apiClient';
 import NavigationAppSelector from './NavigationAppSelector';
+import RatingModal from './RatingModal';
 
 export default function SavedRoads({ auth }) {
     const [roads, setRoads] = useState([]);
@@ -11,6 +12,10 @@ export default function SavedRoads({ auth }) {
     const [showNavigationSelector, setShowNavigationSelector] = useState(false);
     const [expandedRoads, setExpandedRoads] = useState({});
     const [isListExpanded, setIsListExpanded] = useState(true);
+    const [ratingModalOpen, setRatingModalOpen] = useState(false);
+    const [selectedRoadForReview, setSelectedRoadForReview] = useState(null);
+    const [localRating, setLocalRating] = useState(0);
+    const [localComment, setLocalComment] = useState('');
 
     useEffect(() => {
         if (auth.token) {
@@ -86,6 +91,49 @@ export default function SavedRoads({ auth }) {
         }));
     };
 
+    const handleViewDetails = async (road) => {
+        try {
+            // Fetch the latest road data with reviews and comments
+            const response = await apiClient.get(`/saved-roads/${road.id}`);
+            setSelectedRoadForReview(response.data);
+            setRatingModalOpen(true);
+            
+            // If user has already reviewed, pre-fill the form
+            const existingReview = response.data.reviews?.find(review => review.user?.id === auth?.user?.id);
+            if (existingReview) {
+                setLocalRating(existingReview.rating);
+                setLocalComment(existingReview.comment || '');
+            } else {
+                setLocalRating(0);
+                setLocalComment('');
+            }
+        } catch (error) {
+            console.error('Error fetching road details:', error);
+        }
+    };
+
+    const handleCloseRatingModal = () => {
+        setRatingModalOpen(false);
+        setSelectedRoadForReview(null);
+        setLocalRating(0);
+        setLocalComment('');
+    };
+
+    const handleSubmitReview = async (rating, comment) => {
+        try {
+            await apiClient.post(`/saved-roads/${selectedRoadForReview.id}/review`, {
+                rating,
+                comment
+            });
+            handleCloseRatingModal();
+            // Refresh the roads lists
+            fetchSavedRoads();
+            fetchPublicRoads();
+        } catch (error) {
+            console.error('Error submitting review:', error);
+        }
+    };
+
     if (error) {
         return <div className="error-message">{error}</div>;
     }
@@ -155,29 +203,6 @@ export default function SavedRoads({ auth }) {
                 )
             )}
 
-            {/* Navigation App Selector Modal */}
-            {showNavigationSelector && selectedRoad && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-                        <div className="flex justify-between items-start mb-4">
-                            <NavigationAppSelector 
-                                coordinates={JSON.parse(selectedRoad.road_coordinates)}
-                                roadName={selectedRoad.road_name}
-                            />
-                            <button 
-                                onClick={() => {
-                                    setShowNavigationSelector(false);
-                                    setSelectedRoad(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <h2 className="text-xl font-bold mt-8 mb-4">Public Roads</h2>
             <div className="space-y-4">
                 {publicRoads.map(road => (
@@ -188,30 +213,47 @@ export default function SavedRoads({ auth }) {
                                 <p className="text-sm text-gray-600">Rating: {road.average_rating || 'No ratings yet'}</p>
                             </div>
                             <div className="flex gap-2">
-                        <button 
+                                <button 
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         handleNavigateClick(road);
                                     }}
                                     className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                        >
-                            Navigate
-                        </button>
+                                >
+                                    Navigate
+                                </button>
+                                <button
+                                    onClick={() => handleViewDetails(road)}
+                                    className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                >
+                                    View Details
+                                </button>
                             </div>
                         </div>
-                        {road.comments && road.comments.length > 0 && (
-                            <div className="mt-3 space-y-2">
-                                {road.comments.map(comment => (
-                                    <div key={comment.id} className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                                        {comment.comment}
-                                    </div>
-                            ))}
-                            </div>
-                        )}
                     </div>
                 ))}
             </div>
+
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={ratingModalOpen}
+                onClose={handleCloseRatingModal}
+                onSubmit={handleSubmitReview}
+                road={selectedRoadForReview}
+                auth={auth}
+                initialRating={localRating}
+                initialComment={localComment}
+            />
+
+            {/* Navigation App Selector Modal */}
+            {showNavigationSelector && selectedRoad && (
+                <NavigationAppSelector
+                    isOpen={showNavigationSelector}
+                    onClose={() => setShowNavigationSelector(false)}
+                    coordinates={selectedRoad.road_coordinates}
+                />
+            )}
         </div>
     );
 }
