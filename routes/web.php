@@ -5,6 +5,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\AuthController;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -26,12 +27,23 @@ Route::get('/map', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
-        return Inertia::render('Login');
+        return Inertia::render('Auth/Login');
     })->name('login');
 
     Route::get('/register', function () {
-        return Inertia::render('Register');
+        return Inertia::render('Auth/Register');
     })->name('register');
+
+    // Password reset routes - moved outside of middleware group
+
+    // Email verification route
+    Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
+        return Inertia::render('Auth/VerifyEmailPage', [
+            'id' => $id,
+            'hash' => $hash,
+            'email' => request()->query('email'),
+        ]);
+    })->name('verification.verify');
 
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register'])->name('register');
@@ -59,5 +71,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+// Password reset routes that work for both logged in and logged out users
+// This route is now handled by the PasswordResetLinkController in auth.php
+
+Route::get('/reset-password/{token}', function (Request $request, $token) {
+    return Inertia::render('Auth/ResetPasswordPage', [
+        'token' => $token,
+        'email' => $request->email,
+    ]);
+})->name('password.reset');
 
 require __DIR__.'/auth.php';

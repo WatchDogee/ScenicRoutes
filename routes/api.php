@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 // Auth routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail']);
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('api.verification.verify');
+
+// Password reset routes
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
@@ -27,7 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/saved-roads/{id}', [SavedRoadController::class, 'show']);
     Route::put('/saved-roads/{id}', [SavedRoadController::class, 'update']);
     Route::delete('/saved-roads/{id}', [SavedRoadController::class, 'destroy']);
-    
+
     // Community interaction routes
     Route::post('/saved-roads/{id}/review', [SavedRoadController::class, 'addReview']);
     Route::post('/saved-roads/{id}/comment', [SavedRoadController::class, 'addComment']);

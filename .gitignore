@@ -21,3 +21,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+delete_users.md
+email_setup_instructions.md
+mailtrap_setup_guide.md

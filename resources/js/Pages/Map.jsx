@@ -62,7 +62,7 @@ export default function Map() {
         if (token) {
             // Set axios default authorization header
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-            
+
             // Fetch user data to verify token and restore session
             axios.get('/api/user', {
                 headers: { Authorization: `Bearer ${token}` }
@@ -138,14 +138,14 @@ export default function Map() {
         const earthRadius = 6371000; // Earth's radius in meters
         const dLat = (lat2 - lat1) * (Math.PI / 180);
         const dLon = (lon2 - lon1) * (Math.PI / 180);
-    
+
         const a = Math.sin(dLat / 2) ** 2 +
                   Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
                   Math.sin(dLon / 2) ** 2;
-    
+
         return earthRadius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     };
-    
+
     const getRoadLength = (geometry) => {
         let length = 0;
         for (let i = 1; i < geometry.length; i++) {
@@ -156,32 +156,32 @@ export default function Map() {
         }
         return length;
     };
-    
+
     const calculateTwistiness = (geometry) => {
         let totalAngle = 0;
         let totalDistance = 0;
         let cornerCount = 0;
-    
+
         for (let i = 1; i < geometry.length - 1; i++) {
             const prev = geometry[i - 1];
             const curr = geometry[i];
             const next = geometry[i + 1];
-    
+
             const segmentDistance = getDistance(curr.lat, curr.lon, next.lat, next.lon);
             totalDistance += segmentDistance;
-    
+
             const angle1 = Math.atan2(curr.lat - prev.lat, curr.lon - prev.lon);
             const angle2 = Math.atan2(next.lat - curr.lat, next.lon - curr.lon);
             let angle = Math.abs(angle2 - angle1);
-    
+
             if (angle > Math.PI) angle = 2 * Math.PI - angle;
             if (angle > 0.087) cornerCount++;
-    
+
             totalAngle += angle;
         }
-    
+
         if (totalDistance === 0) return 0;
-    
+
         const twistiness = totalAngle / totalDistance;
         return twistiness < 0.0025 && cornerCount < 1 ? 0 : { twistiness, corner_count: cornerCount };
     };
@@ -231,7 +231,7 @@ export default function Map() {
                 const coordinates = way.geometry.map(point => [point.lat, point.lon]);
                 const name = way.tags.name || "Unnamed Road";
 
-                let color = "green"; 
+                let color = "green";
                 if (twistinessData.twistiness > 0.007) color = "red";
                 else if (twistinessData.twistiness > 0.0035) color = "yellow";
 
@@ -243,7 +243,7 @@ export default function Map() {
                         <p>Length: ${(roadLength / 1000).toFixed(2)} km</p>
                         <p>Corners: ${twistinessData.corner_count}</p>
                         <p>Curve Score: ${twistinessData.twistiness.toFixed(4)}</p>
-                        ${auth.user ? 
+                        ${auth.user ?
                             `<button id="save-road-${way.id}" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Save Road</button>` :
                             '<p class="text-sm text-gray-500 mt-2">Log in to save roads</p>'
                         }
@@ -255,13 +255,13 @@ export default function Map() {
 
                 if (auth.user) {
                     polyline.on("popupopen", () => {
-                        document.getElementById(`save-road-${way.id}`)?.addEventListener('click', () => 
-                            saveRoad({ 
-                                name, 
-                                coordinates, 
-                                twistiness: twistinessData.twistiness, 
-                                corner_count: twistinessData.corner_count, 
-                                length: roadLength 
+                        document.getElementById(`save-road-${way.id}`)?.addEventListener('click', () =>
+                            saveRoad({
+                                name,
+                                coordinates,
+                                twistiness: twistinessData.twistiness,
+                                corner_count: twistinessData.corner_count,
+                                length: roadLength
                             })
                         );
                     });
@@ -354,17 +354,14 @@ export default function Map() {
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 setAuth({ user, token });
                 setLoginForm({ email: '', password: '' });
-                
+
                 // Load saved roads immediately after login
                 const roadsResponse = await axios.get('/api/saved-roads', {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSavedRoads(roadsResponse.data);
 
-                // Redirect to map page if not already there
-                if (window.location.pathname !== '/map') {
-                    window.location.href = '/map';
-                }
+                // Stay on the map page, no need to redirect
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
@@ -475,16 +472,16 @@ export default function Map() {
                 if (response.status === 200) {
                     // Remove road from savedRoads
                     setSavedRoads(prevRoads => prevRoads.filter(r => r.id !== roadId));
-                    
+
                     // Remove from publicRoads if present
                     setPublicRoads(prevRoads => prevRoads.filter(r => r.id !== roadId));
-                    
+
                     // Clear the road from the map if it was selected
                     if (selectedRoadId === roadId) {
                         roadsLayerRef.current.clearLayers();
                         setSelectedRoadId(null);
                     }
-                    
+
                     alert("Road deleted successfully!");
                 }
             } catch (error) {
@@ -512,14 +509,14 @@ export default function Map() {
 
                 if (response.data && response.data.road) {
                     const updatedRoad = response.data.road;
-                    
+
                     // Update the road in savedRoads
-                    setSavedRoads(prevRoads => 
+                    setSavedRoads(prevRoads =>
                         prevRoads.map(r => r.id === road.id ? updatedRoad : r)
                     );
 
                     // Update the road in publicRoads if it exists there
-                    setPublicRoads(prevRoads => 
+                    setPublicRoads(prevRoads =>
                         prevRoads.map(r => r.id === road.id ? updatedRoad : r)
                     );
 
@@ -541,10 +538,10 @@ export default function Map() {
             onNavigateClick(road.id);
             if (mapRef.current && road.road_coordinates) {
                 const coordinates = JSON.parse(road.road_coordinates);
-                
+
                 // Clear existing layers and add the new road
                 roadsLayerRef.current.clearLayers();
-                const polyline = L.polyline(coordinates, { 
+                const polyline = L.polyline(coordinates, {
                     color: selectedRoadId === road.id ? '#2563eb' : '#4ade80', // Blue when selected, green otherwise
                     weight: 6,
                     opacity: 0.8
@@ -569,8 +566,8 @@ export default function Map() {
                     toggleRoadPublic(road.id);
                 }}
                 className={`px-3 py-1 text-sm ${
-                    road.is_public 
-                        ? 'bg-green-500 hover:bg-green-600' 
+                    road.is_public
+                        ? 'bg-green-500 hover:bg-green-600'
                         : 'bg-gray-500 hover:bg-gray-600'
                 } text-white rounded transition-colors`}
             >
@@ -586,12 +583,12 @@ export default function Map() {
         };
 
         return (
-            <li 
+            <li
                 className={`mb-2 border rounded-lg transition-colors duration-200 ${
                     selectedRoadId === road.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
                 }`}
             >
-                <div 
+                <div
                     className="p-3 flex justify-between items-center cursor-pointer"
                     onClick={() => setIsExpanded(!isExpanded)}
                 >
@@ -624,7 +621,7 @@ export default function Map() {
                 </div>
 
                 {isExpanded && (
-                    <div 
+                    <div
                         className="px-3 pb-3 border-t"
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -633,7 +630,7 @@ export default function Map() {
                             <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
                             <p>Corners: {road.corner_count}</p>
                         </div>
-                        
+
                         {!isEditing ? (
                             <div className="mt-3 space-y-3">
                                 <div>
@@ -704,11 +701,11 @@ export default function Map() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                         <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
                             <div className="flex justify-between items-start mb-4">
-                                <NavigationAppSelector 
+                                <NavigationAppSelector
                                     coordinates={JSON.parse(road.road_coordinates)}
                                     roadName={road.road_name}
                                 />
-                                <button 
+                                <button
                                     onClick={() => {
                                         setShowNavigationSelector(false);
                                         setSelectedRoad(null);
@@ -779,14 +776,14 @@ export default function Map() {
                     radius
                 }
             });
-            
+
             // Ensure average_rating is properly formatted and user data is present
             const formattedRoads = response.data.map(road => ({
                 ...road,
                 average_rating: road.reviews_avg_rating ? parseFloat(road.reviews_avg_rating) : null,
                 user: road.user || { name: 'Unknown User' }
             }));
-            
+
             setPublicRoads(formattedRoads);
         } catch (error) {
             console.error('Error fetching public roads:', error);
@@ -819,7 +816,7 @@ export default function Map() {
                     sort_by: sortBy
                 }
             });
-            
+
             setPublicRoads(response.data);
         } catch (error) {
             console.error('Error fetching public roads:', error);
@@ -832,11 +829,11 @@ export default function Map() {
             const response = await axios.post(`/api/saved-roads/${roadId}/toggle-public`, {}, {
                 headers: { Authorization: `Bearer ${auth.token}` }
             });
-            
+
             // Update the road's public status in the local state
-            setSavedRoads(prevRoads => 
-                prevRoads.map(road => 
-                    road.id === roadId 
+            setSavedRoads(prevRoads =>
+                prevRoads.map(road =>
+                    road.id === roadId
                         ? { ...road, is_public: response.data.is_public }
                         : road
                 )
@@ -900,7 +897,7 @@ export default function Map() {
 
         setSearchingState(true);
         setSearchError(null);
-        
+
         try {
             const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
                 params: {
@@ -916,7 +913,7 @@ export default function Map() {
                     'Accept': 'application/json'
                 }
             });
-            
+
             if (response.data.length === 0) {
                 setResults([]);
                 return;
@@ -928,7 +925,7 @@ export default function Map() {
                     ...result,
                     displayName: formatLocationName(result)
                 }));
-            
+
             setResults(formattedResults);
         } catch (error) {
             console.error('Error searching location:', error);
@@ -1101,7 +1098,7 @@ export default function Map() {
                         </div>
                     )}
                     {searchResults.length > 0 && (
-                        <div 
+                        <div
                             id="search-results-list"
                             role="listbox"
                             className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto"
@@ -1155,12 +1152,20 @@ export default function Map() {
                                         className="w-full p-2 border rounded"
                                         required
                                     />
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
                                     >
                                         Log In
                                     </button>
+                                    <div className="text-center mt-2">
+                                        <a
+                                            href="/forgot-password"
+                                            className="text-sm text-blue-600 hover:text-blue-800"
+                                        >
+                                            Forgot your password?
+                                        </a>
+                                    </div>
                                 </form>
                             </>
                         ) : (
@@ -1208,8 +1213,8 @@ export default function Map() {
                                         className="w-full p-2 border rounded"
                                         required
                                     />
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         className="w-full p-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
                                     >
                                         Register
@@ -1223,9 +1228,9 @@ export default function Map() {
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                                 {auth.user?.profile_picture_url ? (
-                                    <img 
-                                        src={auth.user.profile_picture_url} 
-                                        alt={auth.user.name} 
+                                    <img
+                                        src={auth.user.profile_picture_url}
+                                        alt={auth.user.name}
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
@@ -1288,8 +1293,8 @@ export default function Map() {
                         <option value="moderate">Moderately Curved</option>
                         <option value="mellow">Mellow</option>
                     </select>
-                    <button 
-                        onClick={searchRoads} 
+                    <button
+                        onClick={searchRoads}
                         className="bg-green-500 text-white w-full p-2 rounded hover:bg-green-600 transition-colors"
                     >
                         Search Roads
@@ -1300,7 +1305,7 @@ export default function Map() {
                 {/* Saved Roads Section - Only for logged in users */}
                 {auth.user && (
                     <div className="mt-4">
-                        <div 
+                        <div
                             className="flex justify-between items-center cursor-pointer py-2"
                             onClick={() => setIsSavedRoadsExpanded(!isSavedRoadsExpanded)}
                         >
@@ -1312,8 +1317,8 @@ export default function Map() {
                         {isSavedRoadsExpanded && (
                             <ul className="mt-2 space-y-4">
                                 {savedRoads.map((road) => (
-                                    <RoadItem 
-                                        key={road.id} 
+                                    <RoadItem
+                                        key={road.id}
                                         road={road}
                                         onNavigateClick={setSelectedRoadId}
                                     />
@@ -1339,7 +1344,7 @@ export default function Map() {
             {showCommunity && (
                 <div className="w-96 p-4 bg-white shadow-md overflow-y-auto z-20">
                     <h2 className="text-xl font-bold mb-4">Community Roads</h2>
-                    
+
                     {/* Search Controls */}
                     <div className="mb-6 space-y-4">
                         {/* Location Search */}
@@ -1418,7 +1423,7 @@ export default function Map() {
                         {/* Advanced Filters */}
                         <div className="border rounded-md p-4 space-y-4">
                             <h3 className="font-medium text-gray-700">Advanced Filters</h3>
-                            
+
                             {/* Road Length */}
                             <div>
                                 <label className="block text-sm text-gray-600 mb-1">Road Length</label>
@@ -1515,9 +1520,9 @@ export default function Map() {
                                     <div className="flex items-center mt-2 space-x-2">
                                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
                                             {road.user?.profile_picture ? (
-                                                <img 
-                                                    src={road.user.profile_picture} 
-                                                    alt={road.user.name} 
+                                                <img
+                                                    src={road.user.profile_picture}
+                                                    alt={road.user.name}
                                                     className="w-full h-full object-cover"
                                                 />
                                             ) : (
@@ -1530,7 +1535,7 @@ export default function Map() {
                                             Added by {road.user?.name || 'Unknown User'}
                                         </span>
                                     </div>
-                                    
+
                                     <div className="mt-3 grid grid-cols-2 gap-4">
                                         <div className="text-sm">
                                             <p>Length: {(road.length / 1000).toFixed(2)} km</p>
@@ -1540,10 +1545,10 @@ export default function Map() {
                                         <div className="text-sm text-right">
                                             <p className="flex items-center justify-end">
                                                 <span className="text-yellow-400 mr-1">★</span>
-                                                {typeof road.average_rating === 'number' ? 
-                                                    road.average_rating.toFixed(1) : 
+                                                {typeof road.average_rating === 'number' ?
+                                                    road.average_rating.toFixed(1) :
                                                     'No ratings'
-                                                } 
+                                                }
                                                 <span className="text-gray-500 ml-1">
                                                     ({road.reviews?.length || 0} reviews)
                                                 </span>
@@ -1591,7 +1596,7 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                            <NavigationAppSelector 
+                            <NavigationAppSelector
                     isOpen={showNavigationSelector}
                     onClose={() => setShowNavigationSelector(false)}
                     coordinates={selectedRoad.road_coordinates}

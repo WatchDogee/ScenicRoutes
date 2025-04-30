@@ -33,7 +33,8 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('map', absolute: false));
+        // Always redirect to the map page, ignoring the intended URL
+        return redirect()->route('map');
     }
 
     /**

@@ -4,8 +4,9 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
+import { useEffect } from 'react';
 
-export default function ResetPassword({ token, email }) {
+export default function ResetPassword({ token, email, status }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         token: token,
         email: email,
@@ -13,10 +14,22 @@ export default function ResetPassword({ token, email }) {
         password_confirmation: '',
     });
 
+    // Check if the password was reset successfully
+    useEffect(() => {
+        if (status === 'passwords.reset') {
+            // Redirect to map page after successful password reset
+            window.location.href = route('map');
+        }
+    }, [status]);
+
     const submit = (e) => {
         e.preventDefault();
 
         post(route('password.store'), {
+            onSuccess: () => {
+                // Redirect to map page after successful password reset
+                window.location.href = route('map');
+            },
             onFinish: () => reset('password', 'password_confirmation'),
         });
     };
@@ -24,6 +37,12 @@ export default function ResetPassword({ token, email }) {
     return (
         <GuestLayout>
             <Head title="Reset Password" />
+
+            {status && (
+                <div className="mb-4 font-medium text-sm text-green-600">
+                    Your password has been reset successfully! Redirecting to map page...
+                </div>
+            )}
 
             <form onSubmit={submit}>
                 <div>

@@ -19,6 +19,7 @@ class PasswordResetLinkController extends Controller
     {
         return Inertia::render('Auth/ForgotPassword', [
             'status' => session('status'),
+            'user' => auth()->user(),
         ]);
     }
 
@@ -41,6 +42,12 @@ class PasswordResetLinkController extends Controller
         );
 
         if ($status == Password::RESET_LINK_SENT) {
+            // If the user is logged in, redirect to the map page with a status message
+            if (auth()->check()) {
+                return redirect()->route('map')->with('status', __($status));
+            }
+
+            // Otherwise, redirect back to the forgot password page with a status message
             return back()->with('status', __($status));
         }
 

@@ -7,39 +7,18 @@ export default function Dashboard() {
     const [savedRoads, setSavedRoads] = useState([]);
 
     useEffect(() => {
-        apiClient.get('/saved-roads')
-            .then((response) => setSavedRoads(response.data))
-            .catch((error) => console.error('Failed to fetch saved roads:', error));
+        // Redirect to the map page
+        window.location.href = '/map';
     }, []);
 
+    // Return a minimal loading component to prevent flashing content
     return (
-        <AuthenticatedLayout
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800">
-                    Dashboard
-                </h2>
-            }
-        >
-            <Head title="Dashboard" />
-
-            <div className="py-12">
-                <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            You're logged in!
-                        </div>
-                    </div>
-                </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <Head title="Redirecting..." />
+            <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Redirecting to map...</p>
             </div>
-
-            <div>
-                <h2>Saved Roads</h2>
-                <ul>
-                    {savedRoads.map((road) => (
-                        <li key={road.id}>{road.name}</li>
-                    ))}
-                </ul>
-            </div>
-        </AuthenticatedLayout>
+        </div>
     );
 }

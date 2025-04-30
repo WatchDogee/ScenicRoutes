@@ -1,0 +1,61 @@
+import React, { useState, useEffect } from 'react';
+import { Head, Link } from '@inertiajs/react';
+import ForgotPassword from '@/Components/ForgotPassword';
+import axios from 'axios';
+
+export default function ForgotPasswordPage() {
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+    // Check if the user is logged in
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            // Check if the token is valid
+            axios.get('/api/user', {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(response => {
+                if (response.data) {
+                    setIsLoggedIn(true);
+                }
+            })
+            .catch(() => {
+                // If token is invalid, clear it
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+            });
+        }
+    }, []);
+
+    return (
+        <>
+            <Head title="Forgot Password" />
+
+            <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
+                <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+                    <ForgotPassword
+                        onSwitchToLogin={() => window.location.href = route('login')}
+                    />
+
+                    <div className="mt-4 text-center">
+                        {isLoggedIn ? (
+                            <Link
+                                href="/map"
+                                className="text-sm text-gray-600 hover:text-gray-900"
+                            >
+                                Back to Map
+                            </Link>
+                        ) : (
+                            <Link
+                                href={route('login')}
+                                className="text-sm text-gray-600 hover:text-gray-900"
+                            >
+                                Back to Login
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}

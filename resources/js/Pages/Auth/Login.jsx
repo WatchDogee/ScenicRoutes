@@ -1,16 +1,62 @@
-import React from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, Link } from '@inertiajs/react';
+import EmailVerification from '@/Components/EmailVerification';
+import ForgotPassword from '@/Components/ForgotPassword';
+import apiClient from '@/utils/apiClient';
 
-export default function Login() {
-    const { data, setData, post, processing, errors } = useForm({
-        email: '',
+export default function Login({ status }) {
+    // Check if email was verified from localStorage
+    const emailVerified = localStorage.getItem('email_verified') === 'true';
+    const verifiedEmail = localStorage.getItem('verified_email') || '';
+
+    const { data, setData, post, processing, errors, setError } = useForm({
+        email: verifiedEmail || '',
         password: '',
         remember: false,
     });
 
-    const submit = (e) => {
+    const [showEmailVerification, setShowEmailVerification] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [apiError, setApiError] = useState('');
+    const [verificationSuccess, setVerificationSuccess] = useState(emailVerified);
+
+    // Clear verification status from localStorage after using it
+    useEffect(() => {
+        if (emailVerified) {
+            localStorage.removeItem('email_verified');
+            localStorage.removeItem('verified_email');
+
+            // Auto-hide the success message after 5 seconds
+            const timer = setTimeout(() => {
+                setVerificationSuccess(false);
+            }, 5000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [emailVerified]);
+
+    const submit = async (e) => {
         e.preventDefault();
-        post(route('login'));
+        setApiError('');
+
+        try {
+            // First try the API login to check for email verification
+            const response = await apiClient.post('/login', {
+                email: data.email,
+                password: data.password
+            });
+
+            // If successful, proceed with Inertia login
+            post(route('login'));
+        } catch (error) {
+            // Check if this is an email verification error
+            if (error.response?.status === 403 && error.response?.data?.verification_needed) {
+                setShowEmailVerification(true);
+            } else {
+                // Handle other errors
+                setApiError(error.response?.data?.message || 'Invalid credentials');
+            }
+        }
     };
 
     return (
@@ -18,75 +64,126 @@ export default function Login() {
             <Head title="Log in" />
 
             <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-                <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                    <h2 className="text-2xl font-bold text-center mb-6">Log in</h2>
+                {showEmailVerification ? (
+                    <div className="w-full sm:max-w-md mt-6">
+                        <EmailVerification
+                            email={data.email}
+                            onClose={() => setShowEmailVerification(false)}
+                        />
+                    </div>
+                ) : showForgotPassword ? (
+                    <div className="w-full sm:max-w-md mt-6">
+                        <ForgotPassword
+                            onClose={() => setShowForgotPassword(false)}
+                            onSwitchToLogin={() => setShowForgotPassword(false)}
+                        />
+                    </div>
+                ) : (
+                    <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
+                        <h2 className="text-2xl font-bold text-center mb-6">Log in</h2>
 
-                    <form onSubmit={submit}>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                                Email
-                            </label>
-                            <input
-                                id="email"
-                                type="email"
-                                name="email"
-                                value={data.email}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                onChange={(e) => setData('email', e.target.value)}
-                                required
-                            />
-                            {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
-                        </div>
+                        {status && (
+                            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+                                {status}
+                            </div>
+                        )}
 
-                        <div className="mb-6">
-                            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                type="password"
-                                name="password"
-                                value={data.password}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                onChange={(e) => setData('password', e.target.value)}
-                                required
-                            />
-                            {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
-                        </div>
+                        {verificationSuccess && (
+                            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+                                Your email has been verified successfully! You can now log in.
+                            </div>
+                        )}
 
-                        <div className="flex items-center justify-between mb-6">
-                            <label className="flex items-center">
+                        {apiError && (
+                            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+                                {apiError}
+                            </div>
+                        )}
+
+                        <form onSubmit={submit}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+                                    Email
+                                </label>
                                 <input
-                                    type="checkbox"
-                                    name="remember"
-                                    checked={data.remember}
-                                    onChange={(e) => setData('remember', e.target.checked)}
-                                    className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                    id="email"
+                                    type="email"
+                                    name="email"
+                                    value={data.email}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    onChange={(e) => setData('email', e.target.value)}
+                                    required
                                 />
-                                <span className="ml-2 text-sm text-gray-600">Remember me</span>
-                            </label>
-                        </div>
+                                {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                            </div>
 
-                        <div className="flex flex-col space-y-4">
-                            <button
-                                type="submit"
-                                className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                disabled={processing}
-                            >
-                                Log in
-                            </button>
+                            <div className="mb-6">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="password">
+                                    Password
+                                </label>
+                                <input
+                                    id="password"
+                                    type="password"
+                                    name="password"
+                                    value={data.password}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    onChange={(e) => setData('password', e.target.value)}
+                                    required
+                                />
+                                {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
+                            </div>
 
-                            <div className="text-center">
+                            <div className="flex items-center justify-between mb-6">
+                                <label className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        name="remember"
+                                        checked={data.remember}
+                                        onChange={(e) => setData('remember', e.target.checked)}
+                                        className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                    />
+                                    <span className="ml-2 text-sm text-gray-600">Remember me</span>
+                                </label>
+
                                 <a
-                                    href={route('register')}
-                                    className="text-sm text-gray-600 hover:text-gray-900"
+                                    href="/forgot-password"
+                                    className="text-sm text-blue-500 hover:text-blue-700"
                                 >
-                                    Don't have an account? Register
+                                    Forgot password?
                                 </a>
                             </div>
-                        </div>
-                    </form>
-                </div>
+
+                            <div className="flex flex-col space-y-4">
+                                <button
+                                    type="submit"
+                                    className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                                    disabled={processing}
+                                >
+                                    Log in
+                                </button>
+
+                                <div className="text-center space-y-2">
+                                    <Link
+                                        href={route('register')}
+                                        className="text-sm text-gray-600 hover:text-gray-900"
+                                    >
+                                        Don't have an account? Register
+                                    </Link>
+
+                                    <div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowForgotPassword(true)}
+                                            className="text-sm text-blue-500 hover:text-blue-700 mt-2"
+                                        >
+                                            Forgot your password? Reset it here
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                )}
             </div>
         </>
     );
