@@ -213,16 +213,16 @@ export default function SavedRoads({ auth }) {
                                 <p className="text-sm text-gray-600">Rating: {road.average_rating || 'No ratings yet'}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button 
+                        <button 
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();
                                         handleNavigateClick(road);
                                     }}
                                     className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    Navigate
-                                </button>
+                        >
+                            Navigate
+                        </button>
                                 <button
                                     onClick={() => handleViewDetails(road)}
                                     className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"

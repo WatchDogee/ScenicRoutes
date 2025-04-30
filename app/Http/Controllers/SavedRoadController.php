@@ -58,6 +58,10 @@ class SavedRoadController extends Controller
             $lat = filter_var($request->input('lat'), FILTER_VALIDATE_FLOAT);
             $lon = filter_var($request->input('lon'), FILTER_VALIDATE_FLOAT);
             $radius = filter_var($request->input('radius', 50), FILTER_VALIDATE_FLOAT);
+            $lengthFilter = $request->input('length_filter', 'all');
+            $curvinessFilter = $request->input('curviness_filter', 'all');
+            $minRating = filter_var($request->input('min_rating', 0), FILTER_VALIDATE_FLOAT);
+            $sortBy = $request->input('sort_by', 'rating');
 
             if ($lat === false || $lon === false || $radius === false) {
                 return response()->json(['error' => 'Invalid coordinates or radius format'], 400);
@@ -66,60 +70,98 @@ class SavedRoadController extends Controller
             // Cap radius at 200km
             $radius = min((float) $radius, 200);
 
-            // Calculate the bounding box
-            $earthRadius = 6371; // Earth's radius in kilometers
-            $latDelta = rad2deg($radius / $earthRadius);
-            $lonDelta = rad2deg($radius / $earthRadius / cos(deg2rad($lat)));
+            // Start building the query
+            $query = SavedRoad::where('is_public', true)
+                ->with(['user:id,name', 'reviews.user:id,name', 'comments.user:id,name'])
+                ->withAvg('reviews', 'rating');
 
-            $minLat = $lat - $latDelta;
-            $maxLat = $lat + $latDelta;
-            $minLon = $lon - $lonDelta;
-            $maxLon = $lon + $lonDelta;
+            // Get all roads first
+            $roads = $query->get();
 
-            // Get public roads with their relationships
-            $roads = SavedRoad::where('is_public', true)
-                ->with(['user:id,name', 'reviews', 'comments.user:id,name'])
-                ->withAvg('reviews', 'rating')
-                ->get();
-
-            // Filter roads based on coordinates
-            $filteredRoads = $roads->filter(function ($road) use ($minLat, $maxLat, $minLon, $maxLon) {
+            // Filter roads based on coordinates and calculate distances
+            $filteredRoads = $roads->filter(function ($road) use ($lat, $lon, $radius) {
                 try {
-                    $coordinates = json_decode($road->road_coordinates, true);
+                    $coordinates = json_decode($road->road_coordinates);
+                    if (!$coordinates || empty($coordinates)) return false;
+
+                    // Find the minimum distance from any point of the road to the search center
+                    $minDistance = PHP_FLOAT_MAX;
+                    foreach ($coordinates as $point) {
+                        $distance = $this->calculateDistance($lat, $lon, $point[0], $point[1]);
+                        $minDistance = min($minDistance, $distance);
+                        }
+
+                    // Store the minimum distance in the road object for sorting
+                    $road->distance_to_search = $minDistance;
                     
-                    if (!is_array($coordinates) || empty($coordinates)) {
-                        \Log::warning("Invalid coordinates format for road ID: " . $road->id);
-                        return false;
-                    }
-
-                    // Check if any point of the road is within the bounding box
-                    foreach ($coordinates as $coord) {
-                        if (!is_array($coord) || count($coord) < 2) {
-                            continue;
-                        }
-
-                        $pointLat = (float) $coord[0];
-                        $pointLon = (float) $coord[1];
-
-                        if (!is_finite($pointLat) || !is_finite($pointLon)) {
-                            continue;
-                        }
-
-                        if ($pointLat >= $minLat && $pointLat <= $maxLat && 
-                            $pointLon >= $minLon && $pointLon <= $maxLon) {
-                            return true;
-                        }
-                    }
-
-                    return false;
+                    return $minDistance <= $radius;
                 } catch (\Exception $e) {
-                    \Log::error("Error processing road ID: " . $road->id . " - " . $e->getMessage());
+                    \Log::error("Error processing road coordinates: " . $e->getMessage());
                     return false;
                 }
             });
 
+            // Apply length filter
+            if ($lengthFilter !== 'all') {
+                $filteredRoads = $filteredRoads->filter(function ($road) use ($lengthFilter) {
+                    $lengthKm = $road->length / 1000;
+                    switch ($lengthFilter) {
+                        case 'short':
+                            return $lengthKm < 5;
+                        case 'medium':
+                            return $lengthKm >= 5 && $lengthKm <= 15;
+                        case 'long':
+                            return $lengthKm > 15;
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            // Apply curviness filter
+            if ($curvinessFilter !== 'all') {
+                $filteredRoads = $filteredRoads->filter(function ($road) use ($curvinessFilter) {
+                    switch ($curvinessFilter) {
+                        case 'mellow':
+                            return $road->twistiness <= 0.0035;
+                        case 'moderate':
+                            return $road->twistiness > 0.0035 && $road->twistiness <= 0.007;
+                        case 'very':
+                            return $road->twistiness > 0.007;
+                        default:
+                            return true;
+                    }
+                });
+            }
+
+            // Apply rating filter only if minRating is greater than 0
+            if ($minRating > 0) {
+                $filteredRoads = $filteredRoads->filter(function ($road) use ($minRating) {
+                    return ($road->reviews_avg_rating ?? 0) >= $minRating;
+                });
+            }
+
+            // Sort the results
+            $sortedRoads = $filteredRoads->sortBy(function ($road) use ($sortBy) {
+                switch ($sortBy) {
+                    case 'rating':
+                        return -($road->reviews_avg_rating ?? 0);
+                    case 'reviews':
+                        return -($road->reviews->count() ?? 0);
+                    case 'recent':
+                        return -strtotime($road->created_at);
+                    case 'length':
+                        return -$road->length;
+                    case 'distance':
+                        return $road->distance_to_search;
+                    default:
+                        // Default sort by distance and then rating
+                        return [$road->distance_to_search, -($road->reviews_avg_rating ?? 0)];
+                }
+            });
+
             // Format the response
-            $formattedRoads = $filteredRoads->map(function ($road) {
+            $formattedRoads = $sortedRoads->map(function ($road) {
                 return [
                     'id' => $road->id,
                     'road_name' => $road->road_name,
@@ -129,13 +171,15 @@ class SavedRoadController extends Controller
                     'corner_count' => $road->corner_count,
                     'length' => $road->length,
                     'is_public' => $road->is_public,
+                    'created_at' => $road->created_at,
+                    'distance' => round($road->distance_to_search, 1),
                     'user' => [
                         'id' => $road->user->id,
                         'name' => $road->user->name,
                     ],
                     'reviews' => $road->reviews,
                     'comments' => $road->comments,
-                    'reviews_avg_rating' => $road->reviews_avg_rating
+                    'average_rating' => $road->reviews_avg_rating
                 ];
             });
 
@@ -146,6 +190,21 @@ class SavedRoadController extends Controller
             \Log::error($e->getTraceAsString());
             return response()->json(['error' => 'Internal server error'], 500);
         }
+    }
+
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
+    {
+        $earthRadius = 6371; // Earth's radius in kilometers
+
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat/2) * sin($dLat/2) +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon/2) * sin($dLon/2);
+
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        return $earthRadius * $c;
     }
 
     public function addReview(Request $request, $id)

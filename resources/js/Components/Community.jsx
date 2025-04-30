@@ -155,12 +155,12 @@ export default function Community({ auth }) {
                                     >
                                         Navigate
                                     </button>
-                                    <button
+                                                <button
                                         onClick={() => handleViewDetails(road)}
                                         className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    >
+                                                >
                                         View Details
-                                    </button>
+                                                </button>
                                 </div>
                             </div>
                         </div>
@@ -181,7 +181,7 @@ export default function Community({ auth }) {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                <NavigationAppSelector
+                            <NavigationAppSelector 
                     isOpen={showNavigationSelector}
                     onClose={() => setShowNavigationSelector(false)}
                     coordinates={selectedRoad.road_coordinates}

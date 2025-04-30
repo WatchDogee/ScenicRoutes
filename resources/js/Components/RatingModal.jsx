@@ -20,7 +20,7 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" style={{ zIndex: 9999 }}>
-            <div className="bg-white rounded-lg p-6 max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-start mb-6">
                     <div>
                         <h2 className="text-2xl font-bold">{road.road_name}</h2>
@@ -108,7 +108,7 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                                         </span>
                                     </div>
                                     {review.comment && (
-                                        <p className="text-gray-700 mt-2">{review.comment}</p>
+                                        <p className="text-gray-700 mt-2 whitespace-pre-wrap">{review.comment}</p>
                                     )}
                                 </div>
                             ))

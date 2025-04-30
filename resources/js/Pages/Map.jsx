@@ -11,6 +11,14 @@ export default function Map() {
     const markerRef = useRef(null);
     const radiusCircleRef = useRef(null);
     const roadsLayerRef = useRef(null);
+
+    // Helper function to get twistiness label
+    const getTwistinessLabel = (twistiness) => {
+        if (twistiness > 0.007) return 'Very Curvy';
+        if (twistiness > 0.0035) return 'Moderately Curvy';
+        return 'Mellow';
+    };
+
     const [radius, setRadius] = useState(10);
     const [roadType, setRoadType] = useState('all');
     const [curvatureType, setCurvatureType] = useState('all');
@@ -27,18 +35,26 @@ export default function Map() {
     const [showCommunity, setShowCommunity] = useState(false);
     const [publicRoads, setPublicRoads] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [communitySearchQuery, setCommunitySearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
+    const [communitySearchResults, setCommunitySearchResults] = useState([]);
     const [selectedRoadForReview, setSelectedRoadForReview] = useState(null);
     const [ratingModalOpen, setRatingModalOpen] = useState(false);
     const [localRating, setLocalRating] = useState(0);
     const [localComment, setLocalComment] = useState('');
     const searchTimeoutRef = useRef(null);
+    const communitySearchTimeoutRef = useRef(null);
     const [isSearching, setIsSearching] = useState(false);
+    const [isCommunitySearching, setIsCommunitySearching] = useState(false);
     const [searchError, setSearchError] = useState(null);
-    const [searchType, setSearchType] = useState('town'); // Add searchType state
-    const [searchRadius, setSearchRadius] = useState(10); // Add searchRadius state
+    const [searchType, setSearchType] = useState('town');
+    const [searchRadius, setSearchRadius] = useState(10);
     const [isSavedRoadsExpanded, setIsSavedRoadsExpanded] = useState(true);
     const [showNavigationSelector, setShowNavigationSelector] = useState(false);
+    const [lengthFilter, setLengthFilter] = useState('all');
+    const [curvinessFilter, setCurvinessFilter] = useState('all');
+    const [minRating, setMinRating] = useState(0);
+    const [sortBy, setSortBy] = useState('rating');
 
     // Initialize auth state from localStorage
     useEffect(() => {
@@ -521,12 +537,6 @@ export default function Map() {
             return (meters / 1000).toFixed(2) + ' km';
         };
 
-        const getTwistinessLabel = (twistiness) => {
-            if (twistiness > 0.007) return 'Very Curvy';
-            if (twistiness > 0.0035) return 'Moderately Curvy';
-            return 'Mellow';
-        };
-
         const handleViewOnMap = () => {
             onNavigateClick(road.id);
             if (mapRef.current && road.road_coordinates) {
@@ -787,14 +797,34 @@ export default function Map() {
         }
     };
 
-    const handleSearchPublicRoads = () => {
-        if (!markerRef.current) {
-            setSearchError('Please place a marker on the map first by clicking anywhere on the map.');
+    const handleSearchPublicRoads = async (providedLat, providedLon) => {
+        if (!markerRef.current && !providedLat) {
+            setSearchError("Please select a location first");
             return;
         }
-        const lat = markerRef.current.getLatLng().lat;
-        const lon = markerRef.current.getLatLng().lng;
-        fetchPublicRoads(lat, lon);
+
+        try {
+            setSearchError(null);
+            const lat = providedLat || markerRef.current.getLatLng().lat;
+            const lon = providedLon || markerRef.current.getLatLng().lng;
+
+            const response = await axios.get('/api/public-roads', {
+                params: {
+                    lat,
+                    lon,
+                    radius: searchRadius,
+                    length_filter: lengthFilter,
+                    curviness_filter: curvinessFilter,
+                    min_rating: minRating,
+                    sort_by: sortBy
+                }
+            });
+            
+            setPublicRoads(response.data);
+        } catch (error) {
+            console.error('Error fetching public roads:', error);
+            setSearchError('Failed to fetch public roads. Please try again.');
+        }
     };
 
     const toggleRoadPublic = async (roadId) => {
@@ -820,15 +850,55 @@ export default function Map() {
         }
     };
 
-    // Replace Google Places with Nominatim search
-    const searchLocation = async (query) => {
-        if (!query.trim()) {
+    // Update the main search handler
+    const handleSearchChange = (e) => {
+        const value = e.target.value;
+        setSearchQuery(value);
+
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
+        }
+
+        if (!value.trim()) {
             setSearchResults([]);
             setIsSearching(false);
             return;
         }
 
-        setIsSearching(true);
+        searchTimeoutRef.current = setTimeout(() => {
+            searchLocation(value, setSearchResults, setIsSearching);
+        }, 300);
+    };
+
+    // Add community search handler
+    const handleCommunitySearchChange = (e) => {
+        const value = e.target.value;
+        setCommunitySearchQuery(value);
+
+        if (communitySearchTimeoutRef.current) {
+            clearTimeout(communitySearchTimeoutRef.current);
+        }
+
+        if (!value.trim()) {
+            setCommunitySearchResults([]);
+            setIsCommunitySearching(false);
+            return;
+        }
+
+        communitySearchTimeoutRef.current = setTimeout(() => {
+            searchLocation(value, setCommunitySearchResults, setIsCommunitySearching);
+        }, 300);
+    };
+
+    // Update searchLocation to handle different result states
+    const searchLocation = async (query, setResults, setSearchingState) => {
+        if (!query.trim()) {
+            setResults([]);
+            setSearchingState(false);
+            return;
+        }
+
+        setSearchingState(true);
         setSearchError(null);
         
         try {
@@ -848,11 +918,10 @@ export default function Map() {
             });
             
             if (response.data.length === 0) {
-                setSearchResults([]);
+                setResults([]);
                 return;
             }
 
-            // Process and format the results
             const formattedResults = response.data
                 .filter(result => result.type !== 'house' && result.type !== 'postcode')
                 .map(result => ({
@@ -860,13 +929,13 @@ export default function Map() {
                     displayName: formatLocationName(result)
                 }));
             
-            setSearchResults(formattedResults);
+            setResults(formattedResults);
         } catch (error) {
             console.error('Error searching location:', error);
             setSearchError('Failed to search location. Please try again.');
-            setSearchResults([]);
+            setResults([]);
         } finally {
-            setIsSearching(false);
+            setSearchingState(false);
         }
     };
 
@@ -900,52 +969,34 @@ export default function Map() {
         return parts.join(', ');
     };
 
-    // Debounced search with proper cleanup
-    const handleSearchChange = (e) => {
-        const value = e.target.value;
-        setSearchQuery(value);
-
-        // Clear existing timeout
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-
-        // Don't search if query is empty
-        if (!value.trim()) {
-            setSearchResults([]);
-            setIsSearching(false);
-            return;
-        }
-
-        // Set new timeout for search
-        searchTimeoutRef.current = setTimeout(() => {
-            searchLocation(value);
-        }, 300);
+    // Update location selection handlers
+    const handleMainLocationSelect = (location) => {
+        setSearchQuery(location.displayName);
+        setSearchResults([]); // Clear results immediately
+        updateMapLocation(location);
     };
 
-    // Cleanup timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (searchTimeoutRef.current) {
-                clearTimeout(searchTimeoutRef.current);
+    const handleCommunityLocationSelect = (location) => {
+        setCommunitySearchQuery(location.displayName);
+        setCommunitySearchResults([]); // Clear results immediately
+        updateMapLocation(location);
+        if (showCommunity) {
+            handleSearchPublicRoads(location.lat, location.lon);
             }
         };
-    }, []);
 
-    // Handle location selection
-    const handleLocationSelect = (location) => {
+    // Helper function to update map location
+    const updateMapLocation = (location) => {
         const lat = parseFloat(location.lat);
         const lon = parseFloat(location.lon);
 
         if (mapRef.current) {
-            // Update marker position
             if (markerRef.current) {
                 markerRef.current.setLatLng([lat, lon]);
             } else {
                 markerRef.current = L.marker([lat, lon]).addTo(mapRef.current);
             }
 
-            // Update circle position
             if (radiusCircleRef.current) {
                 radiusCircleRef.current.setLatLng([lat, lon]);
             } else {
@@ -957,18 +1008,8 @@ export default function Map() {
                 }).addTo(mapRef.current);
             }
 
-            // Center map on the location
             mapRef.current.setView([lat, lon], 13);
-
-            // Fetch public roads for this location
-            if (showCommunity) {
-                fetchPublicRoads(lat, lon);
             }
-        }
-
-        // Clear search results
-        setSearchResults([]);
-        setSearchQuery(location.display_name);
     };
 
     // Add these functions for handling ratings and comments
@@ -980,17 +1021,17 @@ export default function Map() {
         try {
             const response = await axios.get(`/api/saved-roads/${roadId}`);
             const road = response.data;
-            // Check if user has already reviewed this road
-            const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
-            if (existingReview) {
-                setLocalRating(existingReview.rating);
-                setLocalComment(existingReview.comment || '');
-            } else {
-                setLocalRating(0);
-                setLocalComment('');
-            }
-            setSelectedRoadForReview(road);
-            setRatingModalOpen(true);
+        // Check if user has already reviewed this road
+        const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
+        if (existingReview) {
+            setLocalRating(existingReview.rating);
+            setLocalComment(existingReview.comment || '');
+        } else {
+            setLocalRating(0);
+            setLocalComment('');
+        }
+        setSelectedRoadForReview(road);
+        setRatingModalOpen(true);
         } catch (error) {
             console.error('Error fetching road details:', error);
             alert('Failed to load road details');
@@ -1044,11 +1085,6 @@ export default function Map() {
                         className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         value={searchQuery}
                         onChange={handleSearchChange}
-                        onFocus={() => {
-                            if (!searchQuery.trim()) {
-                                setSearchResults([]);
-                            }
-                        }}
                         role="combobox"
                         aria-expanded={searchResults.length > 0}
                         aria-autocomplete="list"
@@ -1076,7 +1112,7 @@ export default function Map() {
                                     role="option"
                                     aria-selected={false}
                                     className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors duration-150"
-                                    onClick={() => handleLocationSelect(result)}
+                                    onClick={() => handleMainLocationSelect(result)}
                                     onMouseDown={(e) => e.preventDefault()}
                                 >
                                     <div className="font-medium">{result.displayName}</div>
@@ -1305,48 +1341,172 @@ export default function Map() {
                     <h2 className="text-xl font-bold mb-4">Community Roads</h2>
                     
                     {/* Search Controls */}
-                    <div className="mb-4 space-y-4">
+                    <div className="mb-6 space-y-4">
+                        {/* Location Search */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Search Type</label>
-                            <select
-                                value={searchType}
-                                onChange={(e) => setSearchType(e.target.value)}
-                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Search Location
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Enter city, region, or place..."
+                                value={communitySearchQuery}
+                                onChange={handleCommunitySearchChange}
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            {communitySearchResults.length > 0 && (
+                                <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                    {communitySearchResults.map((result, index) => (
+                                        <button
+                                            key={`${result.place_id}-${index}`}
+                                            className="w-full px-4 py-2 text-left hover:bg-gray-100 focus:bg-gray-100"
+                                            onClick={() => handleCommunityLocationSelect(result)}
+                                        >
+                                            <div className="font-medium">{result.displayName}</div>
+                                            <div className="text-sm text-gray-600 truncate">
+                                                {result.display_name}
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Search Area Type */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <button
+                                onClick={() => {
+                                    setSearchType('city');
+                                    setSearchRadius(20);
+                                }}
+                                className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                    searchType === 'city'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                                }`}
                             >
-                                <option value="town">Town (up to 20km)</option>
-                                <option value="area">Area (up to 200km)</option>
+                                City Area
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSearchType('region');
+                                    setSearchRadius(75);
+                                }}
+                                className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                    searchType === 'region'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                                }`}
+                            >
+                                Regional
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setSearchType('country');
+                                    setSearchRadius(200);
+                                }}
+                                className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                                    searchType === 'country'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                                }`}
+                            >
+                                Country
+                            </button>
+                        </div>
+
+                        {/* Advanced Filters */}
+                        <div className="border rounded-md p-4 space-y-4">
+                            <h3 className="font-medium text-gray-700">Advanced Filters</h3>
+                            
+                            {/* Road Length */}
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Road Length</label>
+                            <select
+                                    className="w-full px-3 py-2 border rounded-md"
+                                    value={lengthFilter}
+                                    onChange={(e) => setLengthFilter(e.target.value)}
+                                >
+                                    <option value="all">All Lengths</option>
+                                    <option value="short">Short (less than 5km)</option>
+                                    <option value="medium">Medium (5-15km)</option>
+                                    <option value="long">Long (over 15km)</option>
                             </select>
                         </div>
+
+                            {/* Curviness */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700">Search Radius (km)</label>
-                            <input
-                                type="range"
-                                min="1"
-                                max={searchType === 'town' ? 20 : 200}
-                                value={searchRadius}
-                                onChange={(e) => setSearchRadius(Number(e.target.value))}
-                                className="w-full"
-                            />
-                            <span className="text-sm text-gray-600">{searchRadius} km</span>
+                                <label className="block text-sm text-gray-600 mb-1">Curviness</label>
+                                <select
+                                    className="w-full px-3 py-2 border rounded-md"
+                                    value={curvinessFilter}
+                                    onChange={(e) => setCurvinessFilter(e.target.value)}
+                                >
+                                    <option value="all">All Types</option>
+                                    <option value="mellow">Mellow</option>
+                                    <option value="moderate">Moderate</option>
+                                    <option value="very">Very Curvy</option>
+                                </select>
                         </div>
+
+                            {/* Rating Filter */}
                         <div>
+                                <label className="block text-sm text-gray-600 mb-1">Minimum Rating</label>
+                                <div className="flex gap-2">
+                                    {[1, 2, 3, 4, 5].map((star) => (
                             <button
-                                onClick={handleSearchPublicRoads}
+                                            key={star}
+                                            onClick={() => setMinRating(star)}
+                                            className={`text-2xl ${
+                                                star <= minRating ? 'text-yellow-400' : 'text-gray-300'
+                                            } hover:text-yellow-400 transition-colors`}
+                                        >
+                                            ★
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Sort Options */}
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Sort By</label>
+                                <select
+                                    className="w-full px-3 py-2 border rounded-md"
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                >
+                                    <option value="rating">Highest Rated</option>
+                                    <option value="reviews">Most Reviewed</option>
+                                    <option value="recent">Recently Added</option>
+                                    <option value="length">Longest Routes</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {/* Search Button */}
+                        <button
+                            onClick={() => handleSearchPublicRoads(null, null)}
                                 className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                             >
-                                Search Public Roads
+                            Search Roads
                             </button>
                             {searchError && (
                                 <p className="mt-2 text-sm text-red-600">{searchError}</p>
                             )}
                         </div>
+
+                    {/* Results Count */}
+                    {publicRoads.length > 0 && (
+                        <div className="mb-4 text-sm text-gray-600">
+                            Found {publicRoads.length} roads
                     </div>
+                    )}
 
                     {/* Public Roads List */}
                     <div className="space-y-4">
                         {publicRoads.length === 0 ? (
                             <p className="text-gray-500 text-center">
-                                No public roads found in this area. Try adjusting your search radius or moving the marker.
+                                No public roads found in this area. Try adjusting your search criteria.
                             </p>
                         ) : (
                             publicRoads.map(road => (
@@ -1375,6 +1535,7 @@ export default function Map() {
                                         <div className="text-sm">
                                             <p>Length: {(road.length / 1000).toFixed(2)} km</p>
                                             <p>Corners: {road.corner_count}</p>
+                                            <p>Curve Rating: {getTwistinessLabel(road.twistiness)}</p>
                                         </div>
                                         <div className="text-sm text-right">
                                             <p className="flex items-center justify-end">
@@ -1392,32 +1553,13 @@ export default function Map() {
 
                                     <div className="mt-3 flex gap-2">
                                         <button
-                                            onClick={() => {
-                                                if (mapRef.current && road.road_coordinates) {
-                                                    const coordinates = JSON.parse(road.road_coordinates);
-                                                    roadsLayerRef.current.clearLayers();
-                                                    const polyline = L.polyline(coordinates, {
-                                                        color: '#2563eb',
-                                                        weight: 6
-                                                    }).addTo(roadsLayerRef.current);
-                                                    mapRef.current.fitBounds(polyline.getBounds());
-                                                }
-                                            }}
+                                            onClick={() => handleViewOnMap(road)}
                                             className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
                                         >
                                             View on Map
                                         </button>
                                         <button
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                if (!road.road_coordinates) {
-                                                    alert('No coordinates available for this road');
-                                                    return;
-                                                }
-                                                setSelectedRoad(road);
-                                                setShowNavigationSelector(true);
-                                            }}
+                                            onClick={() => handleNavigateClick(road)}
                                             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                                         >
                                             Navigate
@@ -1449,7 +1591,7 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                <NavigationAppSelector
+                            <NavigationAppSelector 
                     isOpen={showNavigationSelector}
                     onClose={() => setShowNavigationSelector(false)}
                     coordinates={selectedRoad.road_coordinates}
