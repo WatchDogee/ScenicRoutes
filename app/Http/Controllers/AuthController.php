@@ -14,7 +14,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|min:8',
+            'password' => 'required|min:8|confirmed',
         ]);
 
         $user = User::create([
@@ -49,9 +49,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        // TEMPORARY: Email verification check is bypassed for testing
-        // Uncomment the following code to re-enable email verification
-        /*
+        // Check if the user has verified their email
         if (!$user->hasVerifiedEmail()) {
             return response()->json([
                 'message' => 'Please verify your email address before logging in.',
@@ -59,14 +57,13 @@ class AuthController extends Controller
                 'verification_needed' => true
             ], 403);
         }
-        */
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
-            'email_verified' => true
+            'email_verified' => $user->hasVerifiedEmail()
         ]);
     }
 

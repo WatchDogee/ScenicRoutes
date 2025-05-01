@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// Temporarily comment out MustVerifyEmail to bypass verification
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+// Enable email verification
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-class User extends Authenticatable /* implements MustVerifyEmail */
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -71,14 +71,15 @@ class User extends Authenticatable /* implements MustVerifyEmail */
         return $this->hasMany(SavedRoad::class);
     }
 
+    // Users need to verify their email address
+
     /**
-     * The "booted" method of the model.
-     * Automatically mark new users as verified for testing purposes.
+     * Send the email verification notification.
+     *
+     * @return void
      */
-    protected static function booted()
+    public function sendEmailVerificationNotification()
     {
-        static::creating(function ($user) {
-            $user->email_verified_at = now();
-        });
+        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }

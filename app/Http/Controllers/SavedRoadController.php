@@ -72,7 +72,7 @@ class SavedRoadController extends Controller
 
             // Start building the query
             $query = SavedRoad::where('is_public', true)
-                ->with(['user:id,name', 'reviews.user:id,name', 'comments.user:id,name'])
+                ->with(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture'])
                 ->withAvg('reviews', 'rating');
 
             // Get all roads first
@@ -93,7 +93,7 @@ class SavedRoadController extends Controller
 
                     // Store the minimum distance in the road object for sorting
                     $road->distance_to_search = $minDistance;
-                    
+
                     return $minDistance <= $radius;
                 } catch (\Exception $e) {
                     \Log::error("Error processing road coordinates: " . $e->getMessage());
@@ -176,10 +176,36 @@ class SavedRoadController extends Controller
                     'user' => [
                         'id' => $road->user->id,
                         'name' => $road->user->name,
+                        'profile_picture_url' => $road->user->profile_picture_url,
                     ],
-                    'reviews' => $road->reviews,
-                    'comments' => $road->comments,
-                    'average_rating' => $road->reviews_avg_rating
+                    'reviews' => $road->reviews->map(function ($review) {
+                        return [
+                            'id' => $review->id,
+                            'rating' => $review->rating,
+                            'comment' => $review->comment,
+                            'created_at' => $review->created_at,
+                            'updated_at' => $review->updated_at,
+                            'user' => [
+                                'id' => $review->user->id,
+                                'name' => $review->user->name,
+                                'profile_picture_url' => $review->user->profile_picture_url,
+                            ],
+                        ];
+                    }),
+                    'comments' => $road->comments->map(function ($comment) {
+                        return [
+                            'id' => $comment->id,
+                            'comment' => $comment->comment,
+                            'created_at' => $comment->created_at,
+                            'updated_at' => $comment->updated_at,
+                            'user' => [
+                                'id' => $comment->user->id,
+                                'name' => $comment->user->name,
+                                'profile_picture_url' => $comment->user->profile_picture_url,
+                            ],
+                        ];
+                    }),
+                    'average_rating' => $road->reviews_avg_rating !== null ? (float) $road->reviews_avg_rating : null
                 ];
             });
 
@@ -211,7 +237,7 @@ class SavedRoadController extends Controller
     {
         try {
             $road = SavedRoad::findOrFail($id);
-            
+
             $validatedData = $request->validate([
                 'rating' => 'required|integer|between:1,5',
                 'comment' => 'nullable|string|max:500'
@@ -234,7 +260,7 @@ class SavedRoadController extends Controller
             $road->update(['average_rating' => $avgRating]);
 
             // Refresh the road data with updated relationships
-            $road = $road->fresh(['reviews.user:id,name', 'comments.user:id,name']);
+            $road = $road->fresh(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture']);
 
             return response()->json([
                 'message' => 'Review added successfully',
@@ -255,7 +281,7 @@ class SavedRoadController extends Controller
     public function addComment(Request $request, $id)
     {
         $road = SavedRoad::findOrFail($id);
-        
+
         $request->validate([
             'comment' => 'required|string|max:500'
         ]);
@@ -285,8 +311,15 @@ class SavedRoadController extends Controller
 
     public function show($id)
     {
-        $road = SavedRoad::with(['user:id,name,profile_picture', 'reviews.user:id,name', 'comments.user:id,name'])
+        $road = SavedRoad::with(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture'])
+            ->withAvg('reviews', 'rating')
             ->findOrFail($id);
+
+        // Ensure average_rating is properly formatted
+        if ($road->reviews_avg_rating !== null) {
+            $road->average_rating = (float) $road->reviews_avg_rating;
+        }
+
         return response()->json($road);
     }
 
@@ -315,7 +348,7 @@ class SavedRoadController extends Controller
             $road->update($updateData);
 
             // Load the relationships before returning
-            $road = $road->fresh(['user:id,name', 'reviews.user:id,name', 'comments.user:id,name']);
+            $road = $road->fresh(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture']);
 
             return response()->json([
                 'message' => 'Road updated successfully.',

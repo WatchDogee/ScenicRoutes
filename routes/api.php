@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail']);
-Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('api.verification.verify');
 
 // Password reset routes
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');

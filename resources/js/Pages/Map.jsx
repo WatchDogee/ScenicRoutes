@@ -365,7 +365,31 @@ export default function Map() {
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
-            alert(error.response?.data?.message || "Failed to log in.");
+
+            // Check if this is an email verification error
+            if (error.response?.data?.verification_needed) {
+                const email = loginForm.email;
+                const message = `Please verify your email address before logging in. We've sent a verification link to ${email}.`;
+                alert(message);
+
+                // Show option to resend verification email
+                if (confirm("Would you like us to resend the verification email?")) {
+                    try {
+                        await axios.post('/api/email/verification-notification', { email }, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        alert("Verification email has been resent. Please check your inbox.\n\nIf you're having trouble with the verification link, please check your spam folder or contact support.");
+                    } catch (resendError) {
+                        console.error("Error resending verification email:", resendError);
+                        alert("Failed to resend verification email. Please try again later.");
+                    }
+                }
+            } else {
+                alert(error.response?.data?.message || "Failed to log in.");
+            }
         }
     };
 
@@ -400,7 +424,7 @@ export default function Map() {
                 withCredentials: true
             });
 
-            alert("Registration successful! Please log in.");
+            alert("Registration successful! Please check your email to verify your account before logging in.");
             setAuthMode('login');
             setRegisterForm({ name: '', email: '', password: '', password_confirmation: '' });
         } catch (error) {
@@ -1519,9 +1543,9 @@ export default function Map() {
                                     <h3 className="font-semibold text-lg">{road.road_name}</h3>
                                     <div className="flex items-center mt-2 space-x-2">
                                         <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                                            {road.user?.profile_picture ? (
+                                            {road.user?.profile_picture_url ? (
                                                 <img
-                                                    src={road.user.profile_picture}
+                                                    src={road.user.profile_picture_url}
                                                     alt={road.user.name}
                                                     className="w-full h-full object-cover"
                                                 />
@@ -1545,9 +1569,11 @@ export default function Map() {
                                         <div className="text-sm text-right">
                                             <p className="flex items-center justify-end">
                                                 <span className="text-yellow-400 mr-1">★</span>
-                                                {typeof road.average_rating === 'number' ?
-                                                    road.average_rating.toFixed(1) :
-                                                    'No ratings'
+                                                {road.average_rating || road.reviews_avg_rating ?
+                                                    (road.average_rating || road.reviews_avg_rating).toFixed(1) :
+                                                    (road.reviews && road.reviews.length > 0 ?
+                                                        (road.reviews.reduce((sum, review) => sum + review.rating, 0) / road.reviews.length).toFixed(1) :
+                                                        'No ratings')
                                                 }
                                                 <span className="text-gray-500 ml-1">
                                                     ({road.reviews?.length || 0} reviews)

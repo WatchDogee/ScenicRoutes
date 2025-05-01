@@ -42,9 +42,11 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                                 <p className="text-gray-800">Length: {(road.length / 1000).toFixed(2)} km</p>
                                 <p className="text-gray-800">Corners: {road.corner_count}</p>
                                 <p className="text-gray-800">
-                                    Average Rating: {typeof road.average_rating === 'number' ? 
-                                        `${road.average_rating.toFixed(1)} ★` : 
-                                        'No ratings yet'
+                                    Average Rating: {road.average_rating || road.reviews_avg_rating ?
+                                        `${(road.average_rating || road.reviews_avg_rating).toFixed(1)} ★` :
+                                        (road.reviews && road.reviews.length > 0 ?
+                                            `${(road.reviews.reduce((sum, review) => sum + review.rating, 0) / road.reviews.length).toFixed(1)} ★` :
+                                            'No ratings yet')
                                     }
                                 </p>
                             </div>
@@ -90,10 +92,18 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                             road.reviews.map((review) => (
                                 <div key={review.id} className="bg-gray-50 rounded-lg p-4">
                                     <div className="flex items-center space-x-3 mb-2">
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                            <span className="text-lg font-medium">
-                                                {review.user?.name.charAt(0).toUpperCase()}
-                                            </span>
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                                            {review.user?.profile_picture_url ? (
+                                                <img
+                                                    src={review.user.profile_picture_url}
+                                                    alt={review.user.name}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            ) : (
+                                                <span className="text-lg font-medium">
+                                                    {review.user?.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            )}
                                         </div>
                                         <div>
                                             <p className="font-medium">{review.user?.name}</p>
@@ -140,4 +150,4 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
             </div>
         </div>
     );
-} 
+}

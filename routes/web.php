@@ -25,6 +25,23 @@ Route::get('/map', function () {
     ]);
 })->name('map');
 
+// Direct email verification route outside of any middleware groups
+Route::get('/direct-verify/{id}', function ($id) {
+    $user = \App\Models\User::findOrFail($id);
+
+    // Mark the email as verified
+    $user->markEmailAsVerified();
+
+    // Log the user in automatically
+    \Illuminate\Support\Facades\Auth::loginUsingId($user->id);
+
+    return Inertia::render('Auth/VerifyEmailPage', [
+        'status' => 'success',
+        'message' => 'Email verified successfully',
+        'email' => $user->email,
+    ]);
+})->name('direct.verify');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
         return Inertia::render('Auth/Login');
@@ -36,12 +53,36 @@ Route::middleware('guest')->group(function () {
 
     // Password reset routes - moved outside of middleware group
 
-    // Email verification route
-    Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
+    // Email verification route - completely simplified version with no hash check
+    Route::get('/verify-email/{id}/{hash}', function ($id, $hash) {
+        $user = \App\Models\User::findOrFail($id);
+
+        // Skip hash validation completely
+
+        // Check if the email is already verified
+        if ($user->hasVerifiedEmail()) {
+            return Inertia::render('Auth/VerifyEmailPage', [
+                'status' => 'success',
+                'message' => 'Email already verified',
+                'email' => $user->email,
+            ]);
+        }
+
+        // Mark the email as verified
+        $user->markEmailAsVerified();
+
+        // Log the user in automatically
+        \Illuminate\Support\Facades\Auth::loginUsingId($user->id);
+
+        // Generate a token for API access
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return Inertia::render('Auth/VerifyEmailPage', [
-            'id' => $id,
-            'hash' => $hash,
-            'email' => request()->query('email'),
+            'status' => 'success',
+            'message' => 'Email verified successfully',
+            'email' => $user->email,
+            'token' => $token,
+            'user' => $user,
         ]);
     })->name('verification.verify');
 

@@ -2,47 +2,33 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import apiClient from '@/utils/apiClient';
 
-export default function VerifyEmailPage({ id, hash, email }) {
-    const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
-    const [message, setMessage] = useState('');
+export default function VerifyEmailPage({ status = 'verifying', message = '', email, token, user }) {
     const [isResending, setIsResending] = useState(false);
     const [resendMessage, setResendMessage] = useState('');
 
     useEffect(() => {
-        const verifyEmail = async () => {
-            try {
-                // Add a query parameter to ensure we're using a fresh request
-                const response = await apiClient.get(`/email/verify/${id}/${hash}?_=${new Date().getTime()}`);
-                setStatus('success');
-                setMessage(response.data.message || 'Email verified successfully!');
+        // If verification was successful, update the UI immediately
+        if (status === 'success' && message === 'Email verified successfully') {
+            console.log('Email verified successfully!');
 
-                // If verification was successful, update the UI immediately
-                if (response.data.message === 'Email verified successfully') {
-                    console.log('Email verified successfully!');
+            // Store verification status and auth data in localStorage
+            localStorage.setItem('email_verified', 'true');
+            localStorage.setItem('verified_email', email);
 
-                    // Store verification status in localStorage
-                    localStorage.setItem('email_verified', 'true');
-                    localStorage.setItem('verified_email', email);
+            // If token is provided, store it and set up auth
+            if (token && user) {
+                localStorage.setItem('token', token);
+                apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-                    // Wait a moment to show the success message, then redirect to the login page
-                    setTimeout(() => {
-                        window.location.href = '/'; // Redirect to home page instead
-                    }, 3000); // 3 seconds delay
-                }
-            } catch (error) {
-                setStatus('error');
-                setMessage(error.response?.data?.message || 'Failed to verify email. The link may be invalid or expired.');
-                console.error('Email verification error:', error);
+                console.log('User logged in automatically after verification');
             }
-        };
 
-        if (id && hash) {
-            verifyEmail();
-        } else {
-            setStatus('error');
-            setMessage('Invalid verification link.');
+            // Wait a moment to show the success message, then redirect to the map page
+            setTimeout(() => {
+                window.location.href = '/map'; // Redirect to map page
+            }, 3000); // 3 seconds delay
         }
-    }, [id, hash, email]);
+    }, [status, message, email, token, user]);
 
     const resendVerificationEmail = async () => {
         if (!email) return;
@@ -82,14 +68,14 @@ export default function VerifyEmailPage({ id, hash, email }) {
                                 {message}
                             </div>
                             <p className="mb-6 text-gray-600">
-                                Your email has been verified. You will be redirected to the home page in a few seconds.
+                                Your email has been verified and you have been automatically logged in. You will be redirected to the map page in a few seconds.
                             </p>
                             <div className="flex flex-col space-y-4">
                                 <Link
-                                    href={route('login')}
+                                    href={route('map')}
                                     className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors"
                                 >
-                                    Go to Login
+                                    Go to Map
                                 </Link>
                                 <Link
                                     href="/"

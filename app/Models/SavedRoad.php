@@ -18,7 +18,8 @@ class SavedRoad extends Model
         'length',
         'user_id',
         'description',
-        'is_public'
+        'is_public',
+        'average_rating'
     ];
 
     public function user()
