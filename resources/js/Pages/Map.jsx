@@ -4,6 +4,9 @@ import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import RatingModal from '../Components/RatingModal';
 import NavigationAppSelector from '../Components/NavigationAppSelector';
+import ProfilePicture from '../Components/ProfilePicture';
+import StarRating from '../Components/StarRating';
+import RoadCard from '../Components/RoadCard';
 import { Link } from '@inertiajs/react';
 
 export default function Map() {
