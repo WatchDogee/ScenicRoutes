@@ -36,4 +36,12 @@ class SavedRoad extends Model
     {
         return $this->hasMany(Comment::class);
     }
+
+    /**
+     * Get the photos for the road.
+     */
+    public function photos()
+    {
+        return $this->hasMany(RoadPhoto::class);
+    }
 }

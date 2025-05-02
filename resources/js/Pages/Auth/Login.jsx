@@ -10,7 +10,7 @@ export default function Login({ status }) {
     const verifiedEmail = localStorage.getItem('verified_email') || '';
 
     const { data, setData, post, processing, errors, setError } = useForm({
-        email: verifiedEmail || '',
+        login: verifiedEmail || '',
         password: '',
         remember: false,
     });
@@ -42,7 +42,7 @@ export default function Login({ status }) {
         try {
             // First try the API login to check for email verification
             const response = await apiClient.post('/login', {
-                email: data.email,
+                login: data.login,
                 password: data.password
             });
 
@@ -67,7 +67,7 @@ export default function Login({ status }) {
                 {showEmailVerification ? (
                     <div className="w-full sm:max-w-md mt-6">
                         <EmailVerification
-                            email={data.email}
+                            email={data.login}
                             onClose={() => setShowEmailVerification(false)}
                         />
                     </div>
@@ -102,19 +102,19 @@ export default function Login({ status }) {
 
                         <form onSubmit={submit}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-                                    Email
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="login">
+                                    Email or Username
                                 </label>
                                 <input
-                                    id="email"
-                                    type="email"
-                                    name="email"
-                                    value={data.email}
+                                    id="login"
+                                    type="text"
+                                    name="login"
+                                    value={data.login}
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                    onChange={(e) => setData('email', e.target.value)}
+                                    onChange={(e) => setData('login', e.target.value)}
                                     required
                                 />
-                                {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                                {errors.login && <div className="text-red-500 text-xs mt-1">{errors.login}</div>}
                             </div>
 
                             <div className="mb-6">

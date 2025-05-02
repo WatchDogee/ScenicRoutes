@@ -1,6 +1,7 @@
 import React from 'react';
 import ProfilePicture from './ProfilePicture';
 import StarRating from './StarRating';
+import PhotoGallery from './PhotoGallery';
 
 export default function ReviewCard({ review }) {
     return (
@@ -19,6 +20,13 @@ export default function ReviewCard({ review }) {
             </div>
             {review.comment && (
                 <p className="rating-modal-review-comment">{review.comment}</p>
+            )}
+
+            {/* Display review photos if available */}
+            {review.photos && Array.isArray(review.photos) && review.photos.length > 0 && (
+                <div className="mt-3">
+                    <PhotoGallery photos={review.photos} />
+                </div>
             )}
         </div>
     );

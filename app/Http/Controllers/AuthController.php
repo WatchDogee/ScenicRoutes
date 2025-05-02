@@ -14,12 +14,31 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
+            'username' => 'nullable|string|max:255|unique:users,username',
             'password' => 'required|min:8|confirmed',
         ]);
+
+        // Generate a username if not provided
+        if (empty($data['username'])) {
+            $emailParts = explode('@', $data['email']);
+            $baseUsername = $emailParts[0];
+
+            // Check if username already exists and append a number if needed
+            $username = $baseUsername;
+            $counter = 1;
+
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+
+            $data['username'] = $username;
+        }
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
+            'username' => $data['username'],
             'password' => Hash::make($data['password']),
         ]);
 
@@ -38,13 +57,31 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $data = $request->validate([
-            'email' => 'required|email',
+        $credentials = $request->validate([
+            'login' => 'required|string',
             'password' => 'required',
         ]);
 
-        if (!Auth::attempt($data)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+        // Determine if the login input is an email or username
+        $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        // Attempt to authenticate with the appropriate field
+        $authData = [
+            $loginField => $credentials['login'],
+            'password' => $credentials['password']
+        ];
+
+        if (!Auth::attempt($authData)) {
+            // If authentication fails, try the other field as a fallback
+            $alternativeField = $loginField === 'email' ? 'username' : 'email';
+            $alternativeAuthData = [
+                $alternativeField => $credentials['login'],
+                'password' => $credentials['password']
+            ];
+
+            if (!Auth::attempt($alternativeAuthData)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
+            }
         }
 
         $user = Auth::user();
@@ -54,7 +91,8 @@ class AuthController extends Controller
             return response()->json([
                 'message' => 'Please verify your email address before logging in.',
                 'email_verified' => false,
-                'verification_needed' => true
+                'verification_needed' => true,
+                'email' => $user->email
             ], 403);
         }
 

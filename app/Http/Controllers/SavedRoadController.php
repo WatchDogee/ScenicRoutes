@@ -72,7 +72,13 @@ class SavedRoadController extends Controller
 
             // Start building the query
             $query = SavedRoad::where('is_public', true)
-                ->with(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture'])
+                ->with([
+                    'user:id,name,profile_picture',
+                    'reviews.user:id,name,profile_picture',
+                    'reviews.photos',
+                    'comments.user:id,name,profile_picture',
+                    'photos'
+                ])
                 ->withAvg('reviews', 'rating');
 
             // Get all roads first
@@ -190,6 +196,14 @@ class SavedRoadController extends Controller
                                 'name' => $review->user->name,
                                 'profile_picture_url' => $review->user->profile_picture_url,
                             ],
+                            'photos' => $review->photos ? $review->photos->map(function ($photo) {
+                                return [
+                                    'id' => $photo->id,
+                                    'photo_url' => $photo->photo_url,
+                                    'caption' => $photo->caption,
+                                    'created_at' => $photo->created_at,
+                                ];
+                            }) : [],
                         ];
                     }),
                     'comments' => $road->comments->map(function ($comment) {
@@ -205,7 +219,16 @@ class SavedRoadController extends Controller
                             ],
                         ];
                     }),
-                    'average_rating' => $road->reviews_avg_rating !== null ? (float) $road->reviews_avg_rating : null
+                    'average_rating' => $road->reviews_avg_rating !== null ? (float) $road->reviews_avg_rating : null,
+                    'photos' => $road->photos ? $road->photos->map(function ($photo) {
+                        return [
+                            'id' => $photo->id,
+                            'photo_url' => $photo->photo_url,
+                            'caption' => $photo->caption,
+                            'created_at' => $photo->created_at,
+                            'user_id' => $photo->user_id,
+                        ];
+                    }) : []
                 ];
             });
 
@@ -260,7 +283,13 @@ class SavedRoadController extends Controller
             $road->update(['average_rating' => $avgRating]);
 
             // Refresh the road data with updated relationships
-            $road = $road->fresh(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture']);
+            $road = $road->fresh([
+                'user:id,name,profile_picture',
+                'reviews.user:id,name,profile_picture',
+                'reviews.photos',
+                'comments.user:id,name,profile_picture',
+                'photos'
+            ]);
 
             return response()->json([
                 'message' => 'Review added successfully',
@@ -311,16 +340,47 @@ class SavedRoadController extends Controller
 
     public function show($id)
     {
-        $road = SavedRoad::with(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture'])
-            ->withAvg('reviews', 'rating')
-            ->findOrFail($id);
+        try {
+            $road = SavedRoad::with([
+                    'user:id,name,profile_picture',
+                    'reviews.user:id,name,profile_picture',
+                    'reviews.photos',
+                    'comments.user:id,name,profile_picture',
+                    'photos'
+                ])
+                ->withAvg('reviews', 'rating')
+                ->findOrFail($id);
 
-        // Ensure average_rating is properly formatted
-        if ($road->reviews_avg_rating !== null) {
-            $road->average_rating = (float) $road->reviews_avg_rating;
+            // Ensure average_rating is properly formatted
+            if ($road->reviews_avg_rating !== null) {
+                $road->average_rating = (float) $road->reviews_avg_rating;
+            }
+
+            return response()->json($road);
+        } catch (\Exception $e) {
+            // If there's an error with the photos relationships, try without them
+            \Log::error('Error in show method: ' . $e->getMessage());
+
+            try {
+                $road = SavedRoad::with([
+                        'user:id,name,profile_picture',
+                        'reviews.user:id,name,profile_picture',
+                        'comments.user:id,name,profile_picture'
+                    ])
+                    ->withAvg('reviews', 'rating')
+                    ->findOrFail($id);
+
+                // Ensure average_rating is properly formatted
+                if ($road->reviews_avg_rating !== null) {
+                    $road->average_rating = (float) $road->reviews_avg_rating;
+                }
+
+                return response()->json($road);
+            } catch (\Exception $e) {
+                \Log::error('Error in fallback show method: ' . $e->getMessage());
+                return response()->json(['error' => 'Failed to fetch road details'], 500);
+            }
         }
-
-        return response()->json($road);
     }
 
     public function update(Request $request, $id)
@@ -348,7 +408,13 @@ class SavedRoadController extends Controller
             $road->update($updateData);
 
             // Load the relationships before returning
-            $road = $road->fresh(['user:id,name,profile_picture', 'reviews.user:id,name,profile_picture', 'comments.user:id,name,profile_picture']);
+            $road = $road->fresh([
+                'user:id,name,profile_picture',
+                'reviews.user:id,name,profile_picture',
+                'reviews.photos',
+                'comments.user:id,name,profile_picture',
+                'photos'
+            ]);
 
             return response()->json([
                 'message' => 'Road updated successfully.',

@@ -37,6 +37,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/saved-roads/{id}/review', [SavedRoadController::class, 'addReview']);
     Route::post('/saved-roads/{id}/comment', [SavedRoadController::class, 'addComment']);
     Route::post('/saved-roads/{id}/toggle-public', [SavedRoadController::class, 'togglePublic']);
+
+    // Photo management routes
+    Route::post('/saved-roads/{roadId}/photos', [\App\Http\Controllers\RoadPhotoController::class, 'store']);
+    Route::delete('/road-photos/{photoId}', [\App\Http\Controllers\RoadPhotoController::class, 'destroy']);
+    Route::post('/reviews/{reviewId}/photos', [\App\Http\Controllers\ReviewPhotoController::class, 'store']);
+    Route::delete('/review-photos/{photoId}', [\App\Http\Controllers\ReviewPhotoController::class, 'destroy']);
 });
 
 // Public routes

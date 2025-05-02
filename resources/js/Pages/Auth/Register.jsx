@@ -7,6 +7,7 @@ export default function Register() {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
+        username: '',
         password: '',
         password_confirmation: '',
     });
@@ -23,7 +24,9 @@ export default function Register() {
             const response = await apiClient.post('/register', {
                 name: data.name,
                 email: data.email,
-                password: data.password
+                username: data.username,
+                password: data.password,
+                password_confirmation: data.password_confirmation
             });
 
             // If successful, show verification message
@@ -108,6 +111,22 @@ export default function Register() {
                                     required
                                 />
                                 {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+                            </div>
+
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="username">
+                                    Username (optional)
+                                </label>
+                                <input
+                                    id="username"
+                                    type="text"
+                                    name="username"
+                                    value={data.username}
+                                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    onChange={(e) => setData('username', e.target.value)}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">If not provided, a username will be generated from your email</p>
+                                {errors.username && <div className="text-red-500 text-xs mt-1">{errors.username}</div>}
                             </div>
 
                             <div className="mb-4">

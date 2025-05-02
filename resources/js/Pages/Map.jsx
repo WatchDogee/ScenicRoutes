@@ -7,6 +7,8 @@ import NavigationAppSelector from '../Components/NavigationAppSelector';
 import ProfilePicture from '../Components/ProfilePicture';
 import StarRating from '../Components/StarRating';
 import RoadCard from '../Components/RoadCard';
+import PhotoGallery from '../Components/PhotoGallery';
+import PhotoUploader from '../Components/PhotoUploader';
 import { Link } from '@inertiajs/react';
 
 export default function Map() {
@@ -28,9 +30,9 @@ export default function Map() {
     const [loading, setLoading] = useState(false);
     const [roads, setRoads] = useState([]);
     const [auth, setAuth] = useState({ user: null, token: null });
-    const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+    const [loginForm, setLoginForm] = useState({ login: '', password: '' });
     const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
-    const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
+    const [registerForm, setRegisterForm] = useState({ name: '', email: '', username: '', password: '', password_confirmation: '' });
     const [savedRoads, setSavedRoads] = useState([]); // List of saved roads
     const [selectedRoad, setSelectedRoad] = useState(null);
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
@@ -356,7 +358,7 @@ export default function Map() {
                 localStorage.setItem('token', token);
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
                 setAuth({ user, token });
-                setLoginForm({ email: '', password: '' });
+                setLoginForm({ login: '', password: '' });
 
                 // Load saved roads immediately after login
                 const roadsResponse = await axios.get('/api/saved-roads', {
@@ -371,7 +373,11 @@ export default function Map() {
 
             // Check if this is an email verification error
             if (error.response?.data?.verification_needed) {
-                const email = loginForm.email;
+                // Determine if login is an email or username
+                const loginValue = loginForm.login;
+                const isEmail = loginValue.includes('@');
+                const email = isEmail ? loginValue : error.response?.data?.email || loginValue;
+
                 const message = `Please verify your email address before logging in. We've sent a verification link to ${email}.`;
                 alert(message);
 
@@ -429,7 +435,7 @@ export default function Map() {
 
             alert("Registration successful! Please check your email to verify your account before logging in.");
             setAuthMode('login');
-            setRegisterForm({ name: '', email: '', password: '', password_confirmation: '' });
+            setRegisterForm({ name: '', email: '', username: '', password: '', password_confirmation: '' });
         } catch (error) {
             console.error("Registration error:", error.response?.data || error.message);
             if (error.response?.data?.errors) {
@@ -481,13 +487,24 @@ export default function Map() {
             road_name: road.road_name || '',
             description: road.description || ''
         });
+        const [roadPhotos, setRoadPhotos] = useState(road.photos || []);
 
-        // Update editData when road prop changes
+        // Update editData and roadPhotos when road prop changes
         useEffect(() => {
-            setEditData({
-                road_name: road.road_name || '',
-                description: road.description || ''
-            });
+            try {
+                setEditData({
+                    road_name: road.road_name || '',
+                    description: road.description || ''
+                });
+                setRoadPhotos(road.photos || []);
+            } catch (error) {
+                console.error("Error updating road data:", error);
+                setEditData({
+                    road_name: road.road_name || '',
+                    description: road.description || ''
+                });
+                setRoadPhotos([]);
+            }
         }, [road]);
 
         const handleDelete = async (roadId) => {
@@ -585,6 +602,45 @@ export default function Map() {
             setShowNavigationSelector(true);
         };
 
+        const handlePhotoUploaded = (data) => {
+            if (data.photo && data.road) {
+                // Update the road photos
+                setRoadPhotos([...roadPhotos, data.photo]);
+
+                // Update the road in savedRoads to include the new photo
+                setSavedRoads(prevRoads =>
+                    prevRoads.map(r => {
+                        if (r.id === road.id) {
+                            const updatedRoad = { ...r };
+                            if (!updatedRoad.photos) {
+                                updatedRoad.photos = [];
+                            }
+                            updatedRoad.photos = [...updatedRoad.photos, data.photo];
+                            return updatedRoad;
+                        }
+                        return r;
+                    })
+                );
+            }
+        };
+
+        const handlePhotoDeleted = (photoId, photoType) => {
+            // Remove the photo from roadPhotos
+            setRoadPhotos(roadPhotos.filter(photo => photo.id !== photoId));
+
+            // Update the road in savedRoads
+            setSavedRoads(prevRoads =>
+                prevRoads.map(r => {
+                    if (r.id === road.id && r.photos) {
+                        const updatedRoad = { ...r };
+                        updatedRoad.photos = updatedRoad.photos.filter(photo => photo.id !== photoId);
+                        return updatedRoad;
+                    }
+                    return r;
+                })
+            );
+        };
+
         // Add this inside the expanded view, before the edit/delete buttons
         const publicToggleButton = (
             <button
@@ -665,6 +721,23 @@ export default function Map() {
                                     <p className="mt-1 text-sm text-gray-600">
                                         {road.description || 'No description provided'}
                                     </p>
+                                </div>
+
+                                {/* Road Photos */}
+                                <div className="mt-3">
+                                    <h3 className="text-sm font-medium text-gray-700 mb-2">Photos</h3>
+                                    <PhotoGallery
+                                        photos={roadPhotos}
+                                        onPhotoDeleted={handlePhotoDeleted}
+                                        canDelete={true}
+                                        className="mb-3"
+                                    />
+
+                                    <PhotoUploader
+                                        endpoint={`/api/saved-roads/${road.id}/photos`}
+                                        onPhotoUploaded={handlePhotoUploaded}
+                                        existingPhotos={roadPhotos}
+                                    />
                                 </div>
                                 <div className="flex gap-2">
                                     {publicToggleButton}
@@ -1164,10 +1237,10 @@ export default function Map() {
                                 </div>
                                 <form onSubmit={handleLogin} className="space-y-2">
                                     <input
-                                        type="email"
-                                        placeholder="Email"
-                                        value={loginForm.email}
-                                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                                        type="text"
+                                        placeholder="Email or Username"
+                                        value={loginForm.login}
+                                        onChange={(e) => setLoginForm({ ...loginForm, login: e.target.value })}
                                         className="w-full p-2 border rounded"
                                         required
                                     />
@@ -1224,6 +1297,14 @@ export default function Map() {
                                         className="w-full p-2 border rounded"
                                         required
                                     />
+                                    <input
+                                        type="text"
+                                        placeholder="Username (optional)"
+                                        value={registerForm.username}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1 mb-2">If not provided, a username will be generated from your email</p>
                                     <input
                                         type="password"
                                         placeholder="Password"
