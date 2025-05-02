@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
@@ -10,8 +10,10 @@ import RoadCard from '../Components/RoadCard';
 import PhotoGallery from '../Components/PhotoGallery';
 import PhotoUploader from '../Components/PhotoUploader';
 import { Link } from '@inertiajs/react';
+import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 
 export default function Map() {
+    const { userSettings } = useContext(UserSettingsContext);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const radiusCircleRef = useRef(null);
@@ -60,6 +62,12 @@ export default function Map() {
     const [curvinessFilter, setCurvinessFilter] = useState('all');
     const [minRating, setMinRating] = useState(0);
     const [sortBy, setSortBy] = useState('rating');
+    // Local state for settings that need to be tracked in this component
+    const [localSettings, setLocalSettings] = useState({
+        default_search_radius: 10,
+        default_search_type: 'town',
+        show_community_by_default: false,
+    });
 
     // Initialize auth state from localStorage
     useEffect(() => {
@@ -107,6 +115,30 @@ export default function Map() {
 
         loadSavedRoads();
     }, [auth.token]); // Reload when auth token changes
+
+    // Effect to apply user settings from context
+    useEffect(() => {
+        if (userSettings) {
+            // Apply settings to the UI
+            setRadius(userSettings.default_search_radius);
+            setSearchType(userSettings.default_search_type);
+            setShowCommunity(userSettings.show_community_by_default);
+
+            // Update local settings
+            setLocalSettings({
+                default_search_radius: userSettings.default_search_radius,
+                default_search_type: userSettings.default_search_type,
+                show_community_by_default: userSettings.show_community_by_default,
+            });
+
+            // Apply theme if needed
+            if (userSettings.theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+    }, [userSettings]); // Reload when userSettings changes
 
     const handleRadiusChange = (e) => {
         setRadius(Number(e.target.value));
@@ -242,12 +274,47 @@ export default function Map() {
 
                 const polyline = L.polyline(coordinates, { color, weight: 8 }).addTo(roadsLayerRef.current);
 
+                // Convert distance based on user settings
+                const distanceInKm = roadLength / 1000;
+                const distanceInMiles = distanceInKm * 0.621371;
+                const displayDistance = userSettings.measurement_units === 'imperial'
+                    ? `${distanceInMiles.toFixed(2)} miles`
+                    : `${distanceInKm.toFixed(2)} km`;
+
+                // Get elevation data from the API response if available
+                const elevationGain = way.elevation_gain ?
+                    userSettings.measurement_units === 'imperial' ?
+                        `${Math.round(way.elevation_gain * 3.28084)} ft` :
+                        `${Math.round(way.elevation_gain)} m` :
+                    'N/A';
+
+                const elevationLoss = way.elevation_loss ?
+                    userSettings.measurement_units === 'imperial' ?
+                        `${Math.round(way.elevation_loss * 3.28084)} ft` :
+                        `${Math.round(way.elevation_loss)} m` :
+                    'N/A';
+
+                const maxElevation = way.max_elevation ?
+                    userSettings.measurement_units === 'imperial' ?
+                        `${Math.round(way.max_elevation * 3.28084)} ft` :
+                        `${Math.round(way.max_elevation)} m` :
+                    'N/A';
+
                 const popupContent = `
                     <div class="road-popup">
                         <h3 class="font-bold">${name}</h3>
-                        <p>Length: ${(roadLength / 1000).toFixed(2)} km</p>
+                        <p>Length: ${displayDistance}</p>
                         <p>Corners: ${twistinessData.corner_count}</p>
                         <p>Curve Score: ${twistinessData.twistiness.toFixed(4)}</p>
+                        <p>Elevation Gain: ${elevationGain} ↑</p>
+                        <p>Elevation Loss: ${elevationLoss} ↓</p>
+                        <p>Max Elevation: ${maxElevation}</p>
+                        <p class="text-xs text-gray-500">Debug: ${JSON.stringify({
+                            gain: way.elevation_gain,
+                            loss: way.elevation_loss,
+                            max: way.max_elevation,
+                            min: way.min_elevation
+                        })}</p>
                         ${auth.user ?
                             `<button id="save-road-${way.id}" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Save Road</button>` :
                             '<p class="text-sm text-gray-500 mt-2">Log in to save roads</p>'
@@ -266,7 +333,11 @@ export default function Map() {
                                 coordinates,
                                 twistiness: twistinessData.twistiness,
                                 corner_count: twistinessData.corner_count,
-                                length: roadLength
+                                length: roadLength,
+                                elevation_gain: way.elevation_gain,
+                                elevation_loss: way.elevation_loss,
+                                max_elevation: way.max_elevation,
+                                min_elevation: way.min_elevation
                             })
                         );
                     });
@@ -297,6 +368,10 @@ export default function Map() {
                 twistiness: road.twistiness,
                 corner_count: road.corner_count,
                 length: road.length,
+                elevation_gain: road.elevation_gain,
+                elevation_loss: road.elevation_loss,
+                max_elevation: road.max_elevation,
+                min_elevation: road.min_elevation,
             };
 
             const response = await axios.post('/api/saved-roads', payload, {
@@ -575,7 +650,18 @@ export default function Map() {
         };
 
         const formatLength = (meters) => {
+            if (userSettings.measurement_units === 'imperial') {
+                return ((meters / 1000) * 0.621371).toFixed(2) + ' miles';
+            }
             return (meters / 1000).toFixed(2) + ' km';
+        };
+
+        const formatElevation = (meters) => {
+            if (!meters && meters !== 0) return 'N/A';
+            if (userSettings.measurement_units === 'imperial') {
+                return Math.round(meters * 3.28084) + ' ft';
+            }
+            return Math.round(meters) + ' m';
         };
 
         const handleViewOnMap = () => {
@@ -712,6 +798,12 @@ export default function Map() {
                             <p>Length: {formatLength(road.length)}</p>
                             <p>Curve Rating: {getTwistinessLabel(road.twistiness)} ({(road.twistiness * 1000).toFixed(2)})</p>
                             <p>Corners: {road.corner_count}</p>
+                            {road.elevation_gain && road.elevation_loss && (
+                                <p>Elevation Change: {formatElevation(road.elevation_gain)} ↑ {formatElevation(road.elevation_loss)} ↓</p>
+                            )}
+                            {road.max_elevation && road.min_elevation && (
+                                <p>Elevation Range: {formatElevation(road.min_elevation)} - {formatElevation(road.max_elevation)}</p>
+                            )}
                         </div>
 
                         {!isEditing ? (
@@ -1350,12 +1442,12 @@ export default function Map() {
                             <div className="flex-1">
                                 <h3 className="font-semibold">{auth.user.name}</h3>
                                 <div className="flex gap-3 mt-1 text-sm">
-                                    <Link
-                                        href={route('settings')}
+                                    <a
+                                        href="/settings"
                                         className="text-blue-600 hover:text-blue-800"
                                     >
                                         Settings
-                                    </Link>
+                                    </a>
                                     <button
                                         onClick={handleLogout}
                                         className="text-red-600 hover:text-red-800"
@@ -1371,7 +1463,9 @@ export default function Map() {
                 {/* Filters Section */}
                 <div className="mb-6">
                     <h3 className="font-semibold mb-2">Search Filters</h3>
-                    <label className="block mb-1">Search Radius: {radius} km</label>
+                    <label className="block mb-1">
+                        Search Radius: {radius} {userSettings.measurement_units === 'imperial' ? 'miles' : 'km'}
+                    </label>
                     <input
                         type="range"
                         min="1"
@@ -1646,7 +1740,9 @@ export default function Map() {
 
                                     <div className="mt-3 grid grid-cols-2 gap-4">
                                         <div className="text-sm">
-                                            <p>Length: {(road.length / 1000).toFixed(2)} km</p>
+                                            <p>Length: {userSettings.measurement_units === 'imperial'
+                                                ? ((road.length / 1000) * 0.621371).toFixed(2) + ' miles'
+                                                : (road.length / 1000).toFixed(2) + ' km'}</p>
                                             <p>Corners: {road.corner_count}</p>
                                             <p>Curve Rating: {getTwistinessLabel(road.twistiness)}</p>
                                         </div>

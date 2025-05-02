@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { AuthProvider } from './Contexts/AuthContext';
+import { UserSettingsProvider } from './Contexts/UserSettingsContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -22,7 +23,9 @@ createInertiaApp({
         const root = createRoot(el);
         root.render(
             <AuthProvider>
-                <App {...props} />
+                <UserSettingsProvider>
+                    <App {...props} />
+                </UserSettingsProvider>
             </AuthProvider>
         );
     },

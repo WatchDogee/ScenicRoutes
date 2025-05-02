@@ -43,6 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/road-photos/{photoId}', [\App\Http\Controllers\RoadPhotoController::class, 'destroy']);
     Route::post('/reviews/{reviewId}/photos', [\App\Http\Controllers\ReviewPhotoController::class, 'store']);
     Route::delete('/review-photos/{photoId}', [\App\Http\Controllers\ReviewPhotoController::class, 'destroy']);
+
+    // User settings routes
+    Route::get('/settings', [\App\Http\Controllers\UserSettingController::class, 'index']);
+    Route::post('/settings', [\App\Http\Controllers\UserSettingController::class, 'update']);
+    Route::post('/settings/batch', [\App\Http\Controllers\UserSettingController::class, 'updateMultiple']);
 });
 
 // Public routes

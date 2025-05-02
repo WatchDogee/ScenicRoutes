@@ -4,9 +4,26 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Services\ElevationService;
+use Illuminate\Support\Facades\Log;
 
 class GetRoadsController extends Controller
 {
+    /**
+     * The elevation service instance.
+     */
+    protected $elevationService;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param  \App\Services\ElevationService  $elevationService
+     * @return void
+     */
+    public function __construct(ElevationService $elevationService)
+    {
+        $this->elevationService = $elevationService;
+    }
     public function search(Request $request)
     {
         $lat = $request->input('lat');
@@ -51,7 +68,7 @@ class GetRoadsController extends Controller
                 $coordinates = array_map(fn($p) => [$p['lat'], $p['lon']], $geometry);
                 $name = $way['tags']['name'] ?? 'Unnamed Road';
 
-                $roads[] = [
+                $roadData = [
                     'id' => $way['id'],
                     'name' => $name,
                     'coordinates' => $coordinates,
@@ -59,6 +76,45 @@ class GetRoadsController extends Controller
                     'length' => $length,
                     'corner_count' => $twistinessData['corner_count'],
                 ];
+
+                // Get elevation data and calculate statistics
+                try {
+                    Log::info('Fetching elevation data for OSM road', [
+                        'road_id' => $way['id'],
+                        'road_name' => $name,
+                        'coordinates_count' => count($coordinates)
+                    ]);
+
+                    $elevations = $this->elevationService->getElevations($coordinates);
+
+                    if ($elevations) {
+                        Log::info('Elevation data received for OSM road', [
+                            'road_id' => $way['id'],
+                            'elevations_count' => count($elevations),
+                            'sample_elevations' => array_slice($elevations, 0, 5)
+                        ]);
+
+                        $elevationStats = $this->elevationService->calculateElevationStats($elevations);
+                        Log::info('Elevation statistics calculated for OSM road', [
+                            'road_id' => $way['id'],
+                            'stats' => $elevationStats
+                        ]);
+
+                        $roadData = array_merge($roadData, $elevationStats);
+                    } else {
+                        Log::warning('No elevation data received for OSM road', [
+                            'road_id' => $way['id'],
+                            'road_name' => $name
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('Error getting elevation data for OSM road ' . $way['id'] . ': ' . $e->getMessage(), [
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue without elevation data if there's an error
+                }
+
+                $roads[] = $roadData;
             }
         }
 

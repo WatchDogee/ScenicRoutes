@@ -72,6 +72,44 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(SavedRoad::class);
     }
 
+    /**
+     * Get the settings for the user.
+     */
+    public function settings()
+    {
+        return $this->hasMany(UserSetting::class);
+    }
+
+    /**
+     * Get a specific setting value.
+     *
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getSetting($key, $default = null)
+    {
+        $setting = $this->settings()->where('key', $key)->first();
+        return $setting ? $setting->value : $default;
+    }
+
+    /**
+     * Set a specific setting value.
+     *
+     * @param string $key
+     * @param mixed $value
+     * @return UserSetting
+     */
+    public function setSetting($key, $value)
+    {
+        $setting = $this->settings()->updateOrCreate(
+            ['key' => $key],
+            ['value' => $value]
+        );
+
+        return $setting;
+    }
+
     // Users need to verify their email address
 
     /**

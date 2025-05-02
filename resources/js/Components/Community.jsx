@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import L from 'leaflet';
 import NavigationAppSelector from './NavigationAppSelector';
 import RatingModal from './RatingModal';
+import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 
 export default function Community({ auth }) {
+    const { userSettings } = useContext(UserSettingsContext);
     const [publicRoads, setPublicRoads] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchLocation, setSearchLocation] = useState('');
@@ -50,7 +52,7 @@ export default function Community({ auth }) {
             const response = await axios.get(`/api/saved-roads/${road.id}`);
             setSelectedRoadForReview(response.data);
             setRatingModalOpen(true);
-            
+
             // If user has already reviewed, pre-fill the form
             const existingReview = response.data.reviews?.find(review => review.user?.id === auth.user.id);
             if (existingReview) {
@@ -102,7 +104,7 @@ export default function Community({ auth }) {
     return (
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-4">Community Roads</h2>
-            
+
             {/* Search Form */}
             <form onSubmit={handleSearch} className="mb-6">
                 <div className="flex gap-4">
@@ -142,9 +144,16 @@ export default function Community({ auth }) {
                                 <div>
                                     <h3 className="text-lg font-semibold">{road.road_name}</h3>
                                     <div className="text-sm text-gray-600 mt-1">
-                                    <p>Length: {(road.length / 1000).toFixed(2)} km</p>
+                                    <p>Length: {userSettings?.measurement_units === 'imperial' ?
+                                        ((road.length / 1000) * 0.621371).toFixed(2) + ' miles' :
+                                        (road.length / 1000).toFixed(2) + ' km'}</p>
                                     <p>Corners: {road.corner_count}</p>
                                     <p>Curve Score: {road.twistiness?.toFixed(4)}</p>
+                                    {road.elevation_gain && road.elevation_loss && (
+                                        <p>Elevation: {userSettings?.measurement_units === 'imperial' ?
+                                            Math.round(road.elevation_gain * 3.28084) + ' ft ↑ ' + Math.round(road.elevation_loss * 3.28084) + ' ft ↓' :
+                                            Math.round(road.elevation_gain) + ' m ↑ ' + Math.round(road.elevation_loss) + ' m ↓'}</p>
+                                    )}
                                     <p>Average Rating: {road.average_rating ? road.average_rating.toFixed(1) : 'No ratings'} ⭐</p>
                                 </div>
                                 </div>
@@ -181,7 +190,7 @@ export default function Community({ auth }) {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
-                            <NavigationAppSelector 
+                            <NavigationAppSelector
                     isOpen={showNavigationSelector}
                     onClose={() => setShowNavigationSelector(false)}
                     coordinates={selectedRoad.road_coordinates}
@@ -189,5 +198,4 @@ export default function Community({ auth }) {
             )}
         </div>
     );
-} 
-} 
+}

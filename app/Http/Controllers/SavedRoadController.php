@@ -6,11 +6,29 @@ use Illuminate\Http\Request;
 use App\Models\SavedRoad;
 use App\Models\Review;
 use App\Models\Comment;
+use App\Services\ElevationService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SavedRoadController extends Controller
 {
+    /**
+     * The elevation service instance.
+     */
+    protected $elevationService;
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param  \App\Services\ElevationService  $elevationService
+     * @return void
+     */
+    public function __construct(ElevationService $elevationService)
+    {
+        $this->elevationService = $elevationService;
+    }
+
     public function index()
     {
         return response()->json(auth()->user()->savedRoads);
@@ -29,6 +47,42 @@ class SavedRoadController extends Controller
         // Serialize coordinates to JSON
         $data['road_coordinates'] = json_encode($data['coordinates']);
         unset($data['coordinates']); // Remove the original 'coordinates' key
+
+        // Get elevation data and calculate statistics
+        try {
+            $coordinates = json_decode($data['road_coordinates'], true);
+            Log::info('Fetching elevation data for road', [
+                'road_name' => $data['road_name'],
+                'coordinates_count' => count($coordinates),
+                'sample_coordinates' => array_slice($coordinates, 0, 3)
+            ]);
+
+            $elevations = $this->elevationService->getElevations($coordinates);
+
+            if ($elevations) {
+                Log::info('Elevation data received', [
+                    'elevations_count' => count($elevations),
+                    'sample_elevations' => array_slice($elevations, 0, 5)
+                ]);
+
+                $elevationStats = $this->elevationService->calculateElevationStats($elevations);
+                Log::info('Elevation statistics calculated', [
+                    'stats' => $elevationStats
+                ]);
+
+                $data = array_merge($data, $elevationStats);
+            } else {
+                Log::warning('No elevation data received for road', [
+                    'road_name' => $data['road_name']
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('Error getting elevation data: ' . $e->getMessage(), [
+                'road_name' => $data['road_name'],
+                'trace' => $e->getTraceAsString()
+            ]);
+            // Continue without elevation data if there's an error
+        }
 
         $road = auth()->user()->savedRoads()->create($data);
         return response()->json($road, 201);
@@ -176,6 +230,10 @@ class SavedRoadController extends Controller
                     'twistiness' => $road->twistiness,
                     'corner_count' => $road->corner_count,
                     'length' => $road->length,
+                    'elevation_gain' => $road->elevation_gain,
+                    'elevation_loss' => $road->elevation_loss,
+                    'max_elevation' => $road->max_elevation,
+                    'min_elevation' => $road->min_elevation,
                     'is_public' => $road->is_public,
                     'created_at' => $road->created_at,
                     'distance' => round($road->distance_to_search, 1),

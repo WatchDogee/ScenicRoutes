@@ -25,6 +25,11 @@ Route::get('/map', function () {
     ]);
 })->name('map');
 
+// Debug route for elevation data
+Route::get('/elevation-debug', function () {
+    return Inertia::render('ElevationDebug');
+})->name('elevation.debug');
+
 // Direct email verification route outside of any middleware groups
 Route::get('/direct-verify/{id}', function ($id) {
     $user = \App\Models\User::findOrFail($id);
@@ -90,14 +95,16 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->name('register');
 });
 
+// Make settings page accessible without middleware
+Route::get('/settings', function () {
+    return Inertia::render('Settings', [
+        'auth' => [
+            'user' => auth()->user()
+        ]
+    ]);
+})->name('settings');
+
 Route::middleware('auth')->group(function () {
-    Route::get('/settings', function () {
-        return Inertia::render('Settings', [
-            'auth' => [
-                'user' => auth()->user()
-            ]
-        ]);
-    })->name('settings');
 
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
