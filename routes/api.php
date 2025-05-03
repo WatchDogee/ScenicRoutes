@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\GetRoadsController;
 use App\Http\Controllers\SavedRoadController;
+use App\Http\Controllers\PointOfInterestController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
@@ -52,3 +53,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public routes
 Route::get('/public-roads', [SavedRoadController::class, 'publicRoads']);
+
+// Points of Interest routes
+Route::get('/pois', [PointOfInterestController::class, 'index']);
+Route::get('/pois/{id}', [PointOfInterestController::class, 'show']);
+
+// Fetch POIs from Overpass API
+Route::get('/fetch-tourism', [PointOfInterestController::class, 'fetchTourism']);
+Route::get('/fetch-fuel-stations', [PointOfInterestController::class, 'fetchFuelStations']);
+Route::get('/fetch-charging-stations', [PointOfInterestController::class, 'fetchChargingStations']);
+
+// Proxy route for Overpass API to avoid CORS issues
+Route::get('/overpass-proxy', [PointOfInterestController::class, 'overpassProxy']);
+
+// Protected POI routes
+Route::middleware('auth:sanctum')->group(function () {
+    // CRUD operations
+    Route::post('/pois', [PointOfInterestController::class, 'store']);
+    Route::put('/pois/{id}', [PointOfInterestController::class, 'update']);
+    Route::delete('/pois/{id}', [PointOfInterestController::class, 'destroy']);
+
+    // Photos and reviews
+    Route::post('/pois/{id}/photos', [PointOfInterestController::class, 'addPhoto']);
+    Route::post('/pois/{id}/reviews', [PointOfInterestController::class, 'addReview']);
+
+    // Import POIs to database
+    Route::post('/import-pois', [PointOfInterestController::class, 'importPois']);
+});

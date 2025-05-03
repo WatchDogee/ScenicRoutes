@@ -12,33 +12,18 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:users,username', // Name will be used as username
             'email' => 'required|email|max:255|unique:users',
-            'username' => 'nullable|string|max:255|unique:users,username',
             'password' => 'required|min:8|confirmed',
         ]);
 
-        // Generate a username if not provided
-        if (empty($data['username'])) {
-            $emailParts = explode('@', $data['email']);
-            $baseUsername = $emailParts[0];
-
-            // Check if username already exists and append a number if needed
-            $username = $baseUsername;
-            $counter = 1;
-
-            while (User::where('username', $username)->exists()) {
-                $username = $baseUsername . $counter;
-                $counter++;
-            }
-
-            $data['username'] = $username;
-        }
+        // Use the name field as the username
+        $username = $data['name'];
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'username' => $data['username'],
+            'username' => $username,
             'password' => Hash::make($data['password']),
         ]);
 
@@ -57,30 +42,43 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'login' => 'required|string',
-            'password' => 'required',
-        ]);
+        // Check if we're receiving email directly or through the login field
+        if ($request->has('email')) {
+            $credentials = $request->validate([
+                'email' => 'required|string',
+                'password' => 'required',
+            ]);
 
-        // Determine if the login input is an email or username
-        $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+            // Direct email login
+            if (!Auth::attempt($credentials)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
+            }
+        } else {
+            $credentials = $request->validate([
+                'login' => 'required|string',
+                'password' => 'required',
+            ]);
 
-        // Attempt to authenticate with the appropriate field
-        $authData = [
-            $loginField => $credentials['login'],
-            'password' => $credentials['password']
-        ];
+            // Determine if the login input is an email or username
+            $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        if (!Auth::attempt($authData)) {
-            // If authentication fails, try the other field as a fallback
-            $alternativeField = $loginField === 'email' ? 'username' : 'email';
-            $alternativeAuthData = [
-                $alternativeField => $credentials['login'],
+            // Attempt to authenticate with the appropriate field
+            $authData = [
+                $loginField => $credentials['login'],
                 'password' => $credentials['password']
             ];
 
-            if (!Auth::attempt($alternativeAuthData)) {
-                return response()->json(['message' => 'Invalid credentials'], 401);
+            if (!Auth::attempt($authData)) {
+                // If authentication fails, try the other field as a fallback
+                $alternativeField = $loginField === 'email' ? 'username' : 'email';
+                $alternativeAuthData = [
+                    $alternativeField => $credentials['login'],
+                    'password' => $credentials['password']
+                ];
+
+                if (!Auth::attempt($alternativeAuthData)) {
+                    return response()->json(['message' => 'Invalid credentials'], 401);
+                }
             }
         }
 
