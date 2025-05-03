@@ -1,9 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import ProfilePicture from './ProfilePicture';
 import StarRating from './StarRating';
 import PhotoGallery from './PhotoGallery';
 
 export default function ReviewCard({ review }) {
+    const [hasValidPhotos, setHasValidPhotos] = useState(false);
+
+    // Debug the review photos
+    console.log('Review photos in ReviewCard:', review.photos);
+
+    // Check if the review has valid photos
+    useEffect(() => {
+        if (review.photos && Array.isArray(review.photos)) {
+            const validPhotos = review.photos.filter(photo => photo && photo.photo_url);
+            setHasValidPhotos(validPhotos.length > 0);
+            console.log(`Review ${review.id} has ${validPhotos.length} valid photos`);
+        } else {
+            setHasValidPhotos(false);
+        }
+    }, [review.photos, review.id]);
+
     return (
         <div className="rating-modal-review-card">
             <div className="rating-modal-review-header">
@@ -23,8 +39,9 @@ export default function ReviewCard({ review }) {
             )}
 
             {/* Display review photos if available */}
-            {review.photos && Array.isArray(review.photos) && review.photos.length > 0 && (
+            {hasValidPhotos && (
                 <div className="mt-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Review Photos</h4>
                     <PhotoGallery photos={review.photos} />
                 </div>
             )}

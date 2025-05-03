@@ -18,15 +18,24 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                 // Set road photos
                 setRoadPhotos(road.photos || []);
 
+                // Debug road reviews and photos
+                console.log('Road reviews in RatingModal:', road.reviews);
+
                 // Initialize review photos map
                 const reviewPhotosMap = {};
                 if (road.reviews) {
                     road.reviews.forEach(review => {
+                        console.log(`Review ${review.id} photos:`, review.photos);
                         if (review.photos && review.photos.length > 0) {
-                            reviewPhotosMap[review.id] = review.photos;
+                            // Make sure all photos have photo_url property
+                            const validPhotos = review.photos.filter(photo => photo && photo.photo_url);
+                            if (validPhotos.length > 0) {
+                                reviewPhotosMap[review.id] = validPhotos;
+                            }
                         }
                     });
                 }
+                console.log('Review photos map:', reviewPhotosMap);
                 setReviewPhotos(reviewPhotosMap);
 
                 // Set user's existing review data
@@ -210,9 +219,15 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                     <h3 className="rating-modal-section-title">Community Reviews</h3>
                     <div className="rating-modal-reviews-list">
                         {road.reviews && road.reviews.length > 0 ? (
-                            road.reviews.map((review) => (
-                                <ReviewCard key={review.id} review={review} />
-                            ))
+                            road.reviews.map((review) => {
+                                // Ensure review photos are properly passed
+                                const reviewWithPhotos = {
+                                    ...review,
+                                    photos: reviewPhotos[review.id] || review.photos || []
+                                };
+                                console.log(`Rendering review ${review.id} with photos:`, reviewWithPhotos.photos);
+                                return <ReviewCard key={review.id} review={reviewWithPhotos} />;
+                            })
                         ) : (
                             <p className="rating-modal-no-reviews">
                                 No reviews yet. Be the first to review this road!
