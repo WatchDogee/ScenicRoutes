@@ -18,6 +18,21 @@ const getBaseUrl = () => {
 
 window.axios.defaults.baseURL = getBaseUrl();
 
+// Add interceptor to include CSRF token in all requests
+axios.interceptors.request.use(config => {
+    // Get CSRF token from cookie
+    const token = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('XSRF-TOKEN'))
+        ?.split('=')[1];
+
+    if (token) {
+        config.headers['X-XSRF-TOKEN'] = decodeURIComponent(token);
+    }
+
+    return config;
+});
+
 // Initialize CSRF protection
 axios.get('/sanctum/csrf-cookie')
     .then(() => {

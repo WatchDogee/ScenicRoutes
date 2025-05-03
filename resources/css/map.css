@@ -6,6 +6,77 @@
   z-index: 10;
 }
 
+/* Custom marker styles to ensure it stays on top */
+.main-location-marker {
+  z-index: 2000 !important; /* Force high z-index */
+}
+
+/* Make sure the marker icon stays above other elements */
+.leaflet-marker-icon.main-location-marker {
+  z-index: 2000 !important;
+}
+
+/* Ensure marker shadow is also properly positioned */
+.leaflet-marker-shadow {
+  z-index: 1999 !important;
+}
+
+/* POI Marker Styles */
+.custom-div-icon {
+  background: none;
+  border: none;
+  position: relative; /* Ensure proper positioning */
+}
+
+.marker-pin {
+  width: 30px;
+  height: 30px;
+  border-radius: 50% 50% 50% 0;
+  background: #c30b82;
+  position: absolute;
+  transform: rotate(-45deg);
+  left: 50%;
+  top: 50%;
+  margin: -15px 0 0 -15px; /* Center the pin */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marker-pin::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  margin: 3px 0 0 3px;
+  background: #fff;
+  position: absolute;
+  border-radius: 50%;
+}
+
+.tourism-pin {
+  background: #4285F4;
+}
+
+.fuel-pin {
+  background: #EA4335;
+}
+
+.charging-pin {
+  background: #34A853;
+}
+
+.marker-pin i {
+  position: relative;
+  z-index: 10;
+  transform: rotate(45deg);
+  color: #333;
+  font-size: 14px;
+  width: 24px;
+  text-align: center;
+  left: 0; /* Ensure icon is centered */
+  top: 0;  /* Ensure icon is centered */
+}
+
 .map-toggle-button {
   position: absolute;
   top: 1rem;
@@ -62,7 +133,7 @@
   transition: background-color 0.15s;
 }
 
-.search-result-item:hover, 
+.search-result-item:hover,
 .search-result-item:focus {
   background-color: #f3f4f6;
 }
