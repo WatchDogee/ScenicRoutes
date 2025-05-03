@@ -2,7 +2,9 @@ version: '3'
 
 services:
   app:
-    image: webdevops/php-nginx:8.1-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
@@ -11,7 +13,7 @@ services:
       - APP_KEY=${APP_KEY}
       - APP_DEBUG=${APP_DEBUG:-false}
       - APP_URL=${APP_URL}
-      
+
       # Database configuration (external)
       - DB_CONNECTION=${DB_CONNECTION:-mysql}
       - DB_HOST=${DB_HOST}
@@ -19,19 +21,12 @@ services:
       - DB_DATABASE=${DB_DATABASE}
       - DB_USERNAME=${DB_USERNAME}
       - DB_PASSWORD=${DB_PASSWORD}
-      
-      # PHP and Nginx configuration
-      - WEB_DOCUMENT_ROOT=/var/www/html/public
-      - PHP_MEMORY_LIMIT=256M
-      - PHP_UPLOAD_MAX_FILESIZE=64M
-      - PHP_POST_MAX_SIZE=64M
-      - PHP_MAX_EXECUTION_TIME=300
-      
+
       # Cache and session
       - CACHE_DRIVER=${CACHE_DRIVER:-file}
       - SESSION_DRIVER=${SESSION_DRIVER:-file}
       - QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
-      
+
       # Mail
       - MAIL_MAILER=${MAIL_MAILER:-smtp}
       - MAIL_HOST=${MAIL_HOST}
@@ -40,27 +35,23 @@ services:
       - MAIL_PASSWORD=${MAIL_PASSWORD}
       - MAIL_ENCRYPTION=${MAIL_ENCRYPTION:-tls}
       - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
-      
+
       # Additional environment variables
       - LOG_CHANNEL=${LOG_CHANNEL:-stack}
       - BROADCAST_DRIVER=${BROADCAST_DRIVER:-log}
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
       - SESSION_DOMAIN=${SESSION_DOMAIN}
     volumes:
-      - .:/var/www/html
       - app_storage:/var/www/html/storage
       - app_bootstrap_cache:/var/www/html/bootstrap/cache
     networks:
       - app_network
-    command: >
-      bash -c "cd /var/www/html &&
-               composer install --optimize-autoloader --no-dev &&
-               npm ci && npm run build &&
-               php artisan config:cache &&
-               php artisan route:cache &&
-               php artisan view:cache &&
-               chown -R application:application /var/www/html/storage /var/www/html/bootstrap/cache &&
-               supervisord"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   app_storage:
