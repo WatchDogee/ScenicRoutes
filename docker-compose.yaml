@@ -2,7 +2,7 @@ version: '3'
 
 services:
   app:
-    image: webdevops/php-nginx:8.3
+    image: webdevops/php-nginx:8.1-alpine
     restart: unless-stopped
     ports:
       - "${APP_PORT:-80}:80"
@@ -47,7 +47,7 @@ services:
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
       - SESSION_DOMAIN=${SESSION_DOMAIN}
     volumes:
-      - ${COOLIFY_ROOT_DIR:-./}:/var/www/html
+      - .:/var/www/html
       - app_storage:/var/www/html/storage
       - app_bootstrap_cache:/var/www/html/bootstrap/cache
     networks:
