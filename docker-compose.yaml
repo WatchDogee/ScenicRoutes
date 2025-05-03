@@ -2,7 +2,7 @@ version: '3'
 
 services:
   app:
-    image: coolify/php-nginx:8.1
+    image: php-nginx:8.1
     restart: unless-stopped
     ports:
       - "${APP_PORT:-80}:80"
