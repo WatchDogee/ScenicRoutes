@@ -2,12 +2,7 @@ version: '3'
 
 services:
   app:
-    image: ${IMAGE_NAME:-scenic-routes-app}:${IMAGE_TAG:-latest}
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
+    image: coolify/php-nginx:8.1
     restart: unless-stopped
     ports:
       - "${APP_PORT:-80}:80"
@@ -26,9 +21,10 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       
       # Cache and session
-      - CACHE_DRIVER=${CACHE_DRIVER:-file}
-      - SESSION_DRIVER=${SESSION_DRIVER:-file}
-      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-sync}
+      - CACHE_DRIVER=${CACHE_DRIVER:-redis}
+      - SESSION_DRIVER=${SESSION_DRIVER:-redis}
+      - QUEUE_CONNECTION=${QUEUE_CONNECTION:-redis}
+      - REDIS_HOST=redis
       
       # Mail
       - MAIL_MAILER=${MAIL_MAILER:-smtp}
@@ -44,13 +40,32 @@ services:
       - BROADCAST_DRIVER=${BROADCAST_DRIVER:-log}
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
       - SESSION_DOMAIN=${SESSION_DOMAIN}
+      
+      # Coolify specific environment variables
+      - LARAVEL_SAIL=1
+      - COMPOSER_ALLOW_SUPERUSER=1
+      - PHP_OPCACHE_VALIDATE_TIMESTAMPS=1
+      - PHP_OPCACHE_MAX_ACCELERATED_FILES=10000
+      - PHP_OPCACHE_MEMORY_CONSUMPTION=128
     volumes:
+      - ${COOLIFY_ROOT_DIR:-./}:/var/www/html
       - app_storage:/var/www/html/storage
       - app_bootstrap_cache:/var/www/html/bootstrap/cache
     networks:
       - app_network
+    depends_on:
+      - redis
+    command: >
+      bash -c "composer install --optimize-autoloader --no-dev &&
+               npm ci && npm run build &&
+               php artisan config:cache &&
+               php artisan route:cache &&
+               php artisan view:cache &&
+               chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache &&
+               php-fpm -D &&
+               nginx -g 'daemon off;'"
 
-  # Redis for caching (optional)
+  # Redis for caching
   redis:
     image: redis:alpine
     restart: unless-stopped
