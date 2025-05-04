@@ -15,11 +15,19 @@ try {
     $dbName = getenv('DB_DATABASE');
     $dbUser = getenv('DB_USERNAME');
     $dbPass = getenv('DB_PASSWORD');
+<<<<<<< HEAD
 
     $dsn = "{$dbConnection}:host={$dbHost};port={$dbPort};dbname={$dbName}";
     $pdo = new PDO($dsn, $dbUser, $dbPass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+=======
+    
+    $dsn = "{$dbConnection}:host={$dbHost};port={$dbPort};dbname={$dbName}";
+    $pdo = new PDO($dsn, $dbUser, $dbPass);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+>>>>>>> e341cfea1d0e8b3f9da1f6b0b59a31ea6bac5053
     $response['checks']['database'] = [
         'status' => 'ok',
         'message' => 'Database connection successful'
@@ -54,6 +62,7 @@ if (!$cacheWritable) {
     $response['status'] = 'error';
 }
 
+<<<<<<< HEAD
 // Check artisan file
 $artisanExists = file_exists('/app/artisan');
 $response['checks']['artisan'] = [
@@ -69,4 +78,6 @@ if (!$artisanExists) {
     $response['checks']['root_files'] = $rootFiles;
 }
 
+=======
+>>>>>>> e341cfea1d0e8b3f9da1f6b0b59a31ea6bac5053
 echo json_encode($response, JSON_PRETTY_PRINT);
