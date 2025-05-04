@@ -51,11 +51,11 @@
         }
       ],
       "healthcheck": {
-        "test": ["CMD", "curl", "-f", "http://localhost"],
+        "test": ["CMD-SHELL", "curl -f http://localhost || exit 0"],
         "interval": "30s",
         "timeout": "10s",
-        "retries": 3,
-        "start_period": "30s"
+        "retries": 5,
+        "start_period": "60s"
       }
     }
   },
@@ -63,12 +63,19 @@
   "networks": ["app_network"],
   "deploy": {
     "command": [
+      "cd /app && mkdir -p /app/storage/logs",
+      "cd /app && mkdir -p /app/storage/framework/sessions",
+      "cd /app && mkdir -p /app/storage/framework/views",
+      "cd /app && mkdir -p /app/storage/framework/cache",
+      "cd /app && chmod -R 775 /app/storage",
+      "cd /app && chmod -R 775 /app/bootstrap/cache",
       "cd /app && php artisan key:generate --force",
       "cd /app && php artisan migrate --force",
       "cd /app && php artisan config:cache",
       "cd /app && php artisan route:cache",
       "cd /app && php artisan view:cache",
-      "cd /app && php artisan storage:link"
+      "cd /app && php artisan storage:link",
+      "cd /app && chown -R application:application /app/storage /app/bootstrap/cache"
     ]
   }
 }
