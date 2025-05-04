@@ -135,4 +135,20 @@ Route::get('/health', function () {
     return response('OK', 200);
 });
 
+// Debug route to check environment variables and server configuration
+Route::get('/debug', function () {
+    return response()->json([
+        'app_url' => config('app.url'),
+        'app_env' => config('app.env'),
+        'server_info' => [
+            'host' => request()->getHost(),
+            'port' => request()->getPort(),
+            'scheme' => request()->getScheme(),
+            'path' => request()->getPathInfo(),
+            'full_url' => request()->fullUrl(),
+        ],
+        'headers' => request()->headers->all(),
+    ]);
+});
+
 require __DIR__.'/auth.php';

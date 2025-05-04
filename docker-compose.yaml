@@ -6,7 +6,7 @@ services:
     image: webdevops/php-nginx:8.2
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8090}:80"
+      - "${APP_PORT:-3000}:80"
     environment:
       # Application settings
       - APP_ENV=${APP_ENV:-production}
@@ -49,6 +49,7 @@ services:
       - PHP_UPLOAD_MAX_FILESIZE=64M
       - WEB_DOCUMENT_ROOT=/app/public
       - WEB_DOCUMENT_INDEX=index.php
+      - WEB_NGINX_CONF=/app/docker/nginx/custom-nginx.conf
 
       # Composer settings
       - COMPOSER_MEMORY_LIMIT=-1
