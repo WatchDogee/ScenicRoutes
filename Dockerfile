@@ -1,54 +1,35 @@
-FROM php:8.2-fpm
+FROM unit:1.34.1-php8.3
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    nginx \
-    supervisor \
-    nodejs \
-    npm
+RUN apt update && apt install -y \
+    curl unzip git libicu-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libssl-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) pcntl opcache pdo pdo_mysql intl zip gd exif ftp bcmath \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.jit=tracing" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "opcache.jit_buffer_size=256M" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "memory_limit=512M" > /usr/local/etc/php/conf.d/custom.ini \        
+    && echo "upload_max_filesize=64M" >> /usr/local/etc/php/conf.d/custom.ini \
+    && echo "post_max_size=64M" >> /usr/local/etc/php/conf.d/custom.ini
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
 
-# Get latest Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
 
-# Set working directory
-WORKDIR /app
+RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Copy application files
-COPY . /app
+RUN chown -R unit:unit /var/www/html/storage bootstrap/cache && chmod -R 775 /var/www/html/storage
 
-# Copy nginx configuration
-COPY docker/nginx/custom-nginx.conf /etc/nginx/sites-available/default
+COPY . .
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chown -R unit:unit storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
 
-# Create necessary directories
-RUN mkdir -p /app/public /app/storage/logs /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache /app/bootstrap/cache
+RUN composer install --prefer-dist --optimize-autoloader --no-interaction
 
-# Set permissions
-RUN chmod -R 777 /app/storage /app/bootstrap/cache
+COPY unit.json /docker-entrypoint.d/unit.json
 
-# Set up supervisor
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+EXPOSE 8000
 
-# Expose port 80
-EXPOSE 80
-
-# Start services
-ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
+CMD ["unitd", "--no-daemon"]
