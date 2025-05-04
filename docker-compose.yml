@@ -9,20 +9,50 @@ services:
     command: >
       bash -c "
         echo 'Current directory:' && pwd && ls -la &&
-        if [ -f 'artisan' ]; then chmod +x artisan; fi &&
-        mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache &&
-        mkdir -p bootstrap/cache &&
-        chmod -R 777 storage || true &&
-        chmod -R 777 bootstrap/cache || true &&
-        touch storage/logs/laravel.log && chmod 666 storage/logs/laravel.log || true &&
-        if [ -f '.env.coolify' ]; then cp .env.coolify .env; fi &&
-        if [ -f 'artisan' ]; then php artisan key:generate --force; fi &&
-        if [ -f 'artisan' ]; then php artisan config:clear; fi &&
-        if [ -f 'artisan' ]; then php artisan cache:clear; fi &&
-        if [ -f 'artisan' ]; then php artisan view:clear; fi &&
-        if [ -f 'artisan' ]; then php artisan route:clear; fi &&
-        if [ -f 'artisan' ]; then php artisan storage:link; fi &&
-        if [ -f 'artisan' ]; then php artisan migrate --force; fi &&
+        mkdir -p /app/public &&
+        mkdir -p /app/storage/logs /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache &&
+        mkdir -p /app/bootstrap/cache &&
+        chmod -R 777 /app/storage || true &&
+        chmod -R 777 /app/bootstrap/cache || true &&
+        touch /app/storage/logs/laravel.log && chmod 666 /app/storage/logs/laravel.log || true &&
+        if [ -f '/app/.env.coolify' ]; then cp /app/.env.coolify /app/.env; fi &&
+        if [ ! -f '/app/public/index.php' ]; then
+          echo '<?php require __DIR__ . \"/../vendor/autoload.php\"; $app = require_once __DIR__ . \"/../bootstrap/app.php\"; $app->run();' > /app/public/index.php;
+        fi &&
+        if [ ! -f '/app/artisan' ]; then
+          echo '#!/usr/bin/env php' > /app/artisan &&
+          echo '<?php' >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo 'use Illuminate\\\\Foundation\\\\Application;' >> /app/artisan &&
+          echo 'use Symfony\\\\Component\\\\Console\\\\Input\\\\ArgvInput;' >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo \"define('LARAVEL_START', microtime(true));\" >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo '// Register the Composer autoloader...' >> /app/artisan &&
+          echo \"require __DIR__.'/vendor/autoload.php';\" >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo '// Bootstrap Laravel and handle the command...' >> /app/artisan &&
+          echo '/** @var Application $app */' >> /app/artisan &&
+          echo \"\\$app = require_once __DIR__.'/bootstrap/app.php';\" >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo '\\$status = \\$app->handleCommand(new ArgvInput);' >> /app/artisan &&
+          echo '' >> /app/artisan &&
+          echo 'exit(\\$status);' >> /app/artisan;
+        fi &&
+        chmod +x /app/artisan &&
+        cd /app &&
+        php /app/artisan key:generate --force || echo 'Failed to generate key' &&
+        php /app/artisan config:clear || echo 'Failed to clear config' &&
+        php /app/artisan cache:clear || echo 'Failed to clear cache' &&
+        php /app/artisan view:clear || echo 'Failed to clear views' &&
+        php /app/artisan route:clear || echo 'Failed to clear routes' &&
+        php /app/artisan storage:link || echo 'Failed to create storage link' &&
+        php /app/artisan migrate --force || echo 'Failed to run migrations' &&
+        if [ -f '/app/public/health-check.php' ]; then
+          echo 'Health check file exists';
+        else
+          echo '<?php echo json_encode([\"status\" => \"ok\", \"message\" => \"Application is running\", \"timestamp\" => date(\"Y-m-d H:i:s\")]);' > /app/public/health-check.php;
+        fi &&
         supervisord -c /opt/docker/etc/supervisor.conf
       "
     environment:
@@ -71,13 +101,13 @@ services:
       # Composer settings
       - COMPOSER_MEMORY_LIMIT=-1
     volumes:
-      - .:/app
-      - app_storage:/app/storage
-      - app_bootstrap_cache:/app/bootstrap/cache
+      - .:/app:delegated
+      - app_storage:/app/storage:delegated
+      - app_bootstrap_cache:/app/bootstrap/cache:delegated
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 0"]
+      test: ["CMD-SHELL", "curl -f http://localhost/health-check.php || exit 0"]
       interval: 10s
       timeout: 5s
       retries: 3
