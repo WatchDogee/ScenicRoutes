@@ -1,4 +1,4 @@
-FROM php:8.3-fpm
+FROM php:8.2-fpm
 
 # Install system dependencies
 RUN apt-get update && apt-get upgrade -y && apt-get install -y \
@@ -20,12 +20,15 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     ca-certificates \
     lsb-release
 
-# Install Node.js 20.x (LTS)
-RUN mkdir -p /etc/apt/keyrings && \
+# Install Node.js directly from NodeSource
+RUN apt-get update && apt-get install -y ca-certificates curl gnupg && \
+    mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x $(lsb_release -s -c) main" | tee /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && apt-get install -y nodejs && \
-    npm install -g npm@latest
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x $(lsb_release -s -c) main" > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install -y nodejs && \
+    node -v && \
+    npm -v
 
 # Clear apt cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -70,7 +73,7 @@ COPY . .
 RUN composer install --prefer-dist --no-dev --no-interaction --optimize-autoloader
 
 # Install Node.js dependencies and build assets
-RUN npm ci && npm run build
+RUN npm install && npm run build
 
 # Create necessary storage and cache directories with proper permissions
 RUN mkdir -p \
@@ -87,6 +90,35 @@ RUN mkdir -p \
 
 # Expose HTTP port
 EXPOSE 80
+
+# Fix the artisan file to ensure compatibility
+RUN echo '#!/usr/bin/env php' > /app/artisan \
+    && echo '<?php' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Define the application start time' >> /app/artisan \
+    && echo 'define('"'"'LARAVEL_START'"'"', microtime(true));' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Register the Composer autoloader' >> /app/artisan \
+    && echo 'require __DIR__.'"'"'/vendor/autoload.php'"'"';' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Bootstrap the application' >> /app/artisan \
+    && echo '$app = require_once __DIR__.'"'"'/bootstrap/app.php'"'"';' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Get the kernel' >> /app/artisan \
+    && echo '$kernel = $app->make('"'"'Illuminate\Contracts\Console\Kernel'"'"');' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Handle the command' >> /app/artisan \
+    && echo '$status = $kernel->handle(' >> /app/artisan \
+    && echo '    $input = new Symfony\Component\Console\Input\ArgvInput,' >> /app/artisan \
+    && echo '    new Symfony\Component\Console\Output\ConsoleOutput' >> /app/artisan \
+    && echo ');' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Terminate the kernel' >> /app/artisan \
+    && echo '$kernel->terminate($input, $status);' >> /app/artisan \
+    && echo '' >> /app/artisan \
+    && echo '// Exit with the status code' >> /app/artisan \
+    && echo 'exit($status);' >> /app/artisan \
+    && chmod +x /app/artisan
 
 # Copy Nginx and Supervisor configuration
 COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
