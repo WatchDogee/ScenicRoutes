@@ -13,29 +13,7 @@
         "DB_PORT=${DB_PORT}",
         "DB_DATABASE=${DB_DATABASE}",
         "DB_USERNAME=${DB_USERNAME}",
-        "DB_PASSWORD=${DB_PASSWORD}",
-        "CACHE_DRIVER=file",
-        "SESSION_DRIVER=cookie",
-        "QUEUE_CONNECTION=database",
-        "MAIL_MAILER=${MAIL_MAILER}",
-        "MAIL_HOST=${MAIL_HOST}",
-        "MAIL_PORT=${MAIL_PORT}",
-        "MAIL_USERNAME=${MAIL_USERNAME}",
-        "MAIL_PASSWORD=${MAIL_PASSWORD}",
-        "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}",
-        "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}",
-        "LOG_CHANNEL=stack",
-        "BROADCAST_DRIVER=log",
-        "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}",
-        "SESSION_DOMAIN=${SESSION_DOMAIN}",
-        "PHP_MEMORY_LIMIT=2G",
-        "PHP_MAX_EXECUTION_TIME=600",
-        "PHP_POST_MAX_SIZE=64M",
-        "PHP_UPLOAD_MAX_FILESIZE=64M",
-        "WEB_DOCUMENT_ROOT=/app/public",
-        "WEB_DOCUMENT_INDEX=index.php",
-        "WEB_NGINX_CONF=/app/docker/nginx/custom-nginx.conf",
-        "COMPOSER_MEMORY_LIMIT=-1"
+        "DB_PASSWORD=${DB_PASSWORD}"
       ],
       "volumes": [
         {
@@ -64,25 +42,28 @@
   "networks": ["app_network"],
   "deploy": {
     "command": [
-      "cd /app && mkdir -p /app/storage/logs",
-      "cd /app && mkdir -p /app/storage/framework/sessions",
-      "cd /app && mkdir -p /app/storage/framework/views",
-      "cd /app && mkdir -p /app/storage/framework/cache",
-      "cd /app && chmod -R 777 /app/storage",
-      "cd /app && chmod -R 777 /app/bootstrap/cache",
-      "cd /app && touch /app/storage/logs/laravel.log",
-      "cd /app && chmod 666 /app/storage/logs/laravel.log",
-      "cd /app && cp .env.coolify .env",
-      "cd /app && php artisan key:generate --force",
-      "cd /app && php artisan config:clear",
-      "cd /app && php artisan cache:clear",
-      "cd /app && php artisan view:clear",
-      "cd /app && php artisan route:clear",
-      "cd /app && php artisan storage:link",
-      "cd /app && php artisan migrate --force",
+      "ls -la /app",
+      "mkdir -p /app/storage/logs",
+      "mkdir -p /app/storage/framework/sessions",
+      "mkdir -p /app/storage/framework/views",
+      "mkdir -p /app/storage/framework/cache",
+      "chmod -R 777 /app/storage",
+      "chmod -R 777 /app/bootstrap/cache",
+      "touch /app/storage/logs/laravel.log",
+      "chmod 666 /app/storage/logs/laravel.log",
+      "cp /app/.env.coolify /app/.env",
+      "cd /app && php /app/artisan key:generate --force",
+      "cd /app && php /app/artisan config:clear",
+      "cd /app && php /app/artisan cache:clear",
+      "cd /app && php /app/artisan view:clear",
+      "cd /app && php /app/artisan route:clear",
+      "cd /app && php /app/artisan storage:link",
+      "cd /app && php /app/artisan migrate --force",
       "cd /app && npm install",
       "cd /app && npm run build",
-      "cd /app && chown -R www-data:www-data /app/storage /app/bootstrap/cache"
+      "chown -R www-data:www-data /app/storage /app/bootstrap/cache"
     ]
   }
 }
+
+

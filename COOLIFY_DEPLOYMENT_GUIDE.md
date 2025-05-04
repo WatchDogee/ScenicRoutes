@@ -178,3 +178,4 @@ Monitor your application using:
 1. Coolify's built-in monitoring
 2. The `/health` endpoint
 3. The `/debug.php` endpoint for detailed diagnostics
+
