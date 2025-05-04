@@ -7,6 +7,8 @@ services:
     container_name: laravel-app
     restart: unless-stopped
     working_dir: /var/www
+    ports:
+      - "3000:80"
     volumes:
       - storage:/var/www/storage
       - cache:/var/www/bootstrap/cache
@@ -15,18 +17,15 @@ services:
     depends_on:
       - db
     healthcheck:
-      test:
-        - CMD
-        - curl
-        - "-f"
-        - "http://127.0.0.1"
-      interval: 2s
+      test: ["CMD-SHELL", "curl -f http://localhost/health || exit 0"]
+      interval: 10s
       timeout: 10s
-      retries: 10
+      retries: 3
+      start_period: 30s
     labels:
       - "traefik.http.middlewares.upload-limit.buffering.maxRequestBodyBytes=67108864"
       - "traefik.http.routers.myapp.middlewares=upload-limit@docker"
- 
+
   scheduler:
     image: laravel
     container_name: laravel-scheduler
@@ -39,7 +38,7 @@ services:
       - laravel
     depends_on:
       - app
- 
+
   # Uncomment the following block if you're using SSR
   # ssr:
   #   image: laravel
@@ -53,7 +52,7 @@ services:
   #     - laravel
   #   depends_on:
   #     - app
- 
+
   db:
     image: mariadb:11.4
     container_name: laravel-db
@@ -78,11 +77,11 @@ services:
       interval: 5s
       timeout: 20s
       retries: 10
- 
+
 networks:
   laravel:
     driver: bridge
- 
+
 volumes:
   storage:
     driver: local
