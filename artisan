@@ -1,21 +1,27 @@
 #!/usr/bin/env php
 <?php
 
+// This is a PHP 5.3 compatible artisan file
+
+// Define the application start time
 define('LARAVEL_START', microtime(true));
 
 // Register the Composer autoloader
-require __DIR__.'/vendor/autoload.php';
+require dirname(__FILE__).'/vendor/autoload.php';
 
 // Bootstrap the application
-$app = require_once __DIR__.'/bootstrap/app.php';
+$app = require_once dirname(__FILE__).'/bootstrap/app.php';
 
-// Run the command
+// Get the kernel
 $kernel = $app->make('Illuminate\Contracts\Console\Kernel');
-$status = $kernel->handle(
-    $input = new Symfony\Component\Console\Input\ArgvInput,
-    new Symfony\Component\Console\Output\ConsoleOutput
-);
 
+// Handle the command
+$input = new Symfony\Component\Console\Input\ArgvInput();
+$output = new Symfony\Component\Console\Output\ConsoleOutput();
+$status = $kernel->handle($input, $output);
+
+// Terminate the kernel
 $kernel->terminate($input, $status);
 
+// Exit with the status code
 exit($status);

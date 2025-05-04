@@ -50,7 +50,7 @@ cat > /app/bootstrap/app.php << 'EOL'
 */
 
 $app = new Illuminate\Foundation\Application(
-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
+    isset($_ENV['APP_BASE_PATH']) ? $_ENV['APP_BASE_PATH'] : dirname(__FILE__).'/..'
 );
 
 /*
@@ -65,18 +65,18 @@ $app = new Illuminate\Foundation\Application(
 */
 
 $app->singleton(
-    Illuminate\Contracts\Http\Kernel::class,
-    App\Http\Kernel::class
+    'Illuminate\Contracts\Http\Kernel',
+    'App\Http\Kernel'
 );
 
 $app->singleton(
-    Illuminate\Contracts\Console\Kernel::class,
-    App\Console\Kernel::class
+    'Illuminate\Contracts\Console\Kernel',
+    'App\Console\Kernel'
 );
 
 $app->singleton(
-    Illuminate\Contracts\Debug\ExceptionHandler::class,
-    App\Exceptions\Handler::class
+    'Illuminate\Contracts\Debug\ExceptionHandler',
+    'App\Exceptions\Handler'
 );
 
 /*
@@ -98,23 +98,29 @@ cat > /app/artisan << 'EOL'
 #!/usr/bin/env php
 <?php
 
+// This is a PHP 5.3 compatible artisan file
+
+// Define the application start time
 define('LARAVEL_START', microtime(true));
 
 // Register the Composer autoloader
-require __DIR__.'/vendor/autoload.php';
+require dirname(__FILE__).'/vendor/autoload.php';
 
 // Bootstrap the application
-$app = require_once __DIR__.'/bootstrap/app.php';
+$app = require_once dirname(__FILE__).'/bootstrap/app.php';
 
-// Run the command
+// Get the kernel
 $kernel = $app->make('Illuminate\Contracts\Console\Kernel');
-$status = $kernel->handle(
-    $input = new Symfony\Component\Console\Input\ArgvInput,
-    new Symfony\Component\Console\Output\ConsoleOutput
-);
 
+// Handle the command
+$input = new Symfony\Component\Console\Input\ArgvInput();
+$output = new Symfony\Component\Console\Output\ConsoleOutput();
+$status = $kernel->handle($input, $output);
+
+// Terminate the kernel
 $kernel->terminate($input, $status);
 
+// Exit with the status code
 exit($status);
 EOL
 
@@ -125,26 +131,27 @@ chmod +x /app/artisan
 cat > /app/public/index.php << 'EOL'
 <?php
 
+// This is a PHP 5.3 compatible index.php file
+
 // Define the application start time
 define('LARAVEL_START', microtime(true));
 
 // Check for maintenance mode
-if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
+if (file_exists($maintenance = dirname(__FILE__).'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
 // Register the Composer autoloader
-require __DIR__.'/../vendor/autoload.php';
+require dirname(__FILE__).'/../vendor/autoload.php';
 
 // Bootstrap the application
-$app = require_once __DIR__.'/../bootstrap/app.php';
+$app = require_once dirname(__FILE__).'/../bootstrap/app.php';
 
 // Run the application
-$kernel = $app->make(\Illuminate\Contracts\Http\Kernel::class);
+$kernel = $app->make('Illuminate\Contracts\Http\Kernel');
 
-$response = $kernel->handle(
-    $request = \Illuminate\Http\Request::capture()
-);
+$request = Illuminate\Http\Request::capture();
+$response = $kernel->handle($request);
 
 $response->send();
 
@@ -154,110 +161,8 @@ EOL
 # Create health check file
 cat > /app/public/health-check.php << 'EOL'
 <?php
-// Health check script for Coolify
-header('Content-Type: application/json');
-$response = [
-    'status' => 'ok',
-    'timestamp' => date('Y-m-d H:i:s'),
-    'message' => 'Application is running',
-    'checks' => []
-];
-
-// Check if we're in a Docker container
-$inDocker = file_exists('/.dockerenv');
-$response['checks']['docker'] = [
-    'status' => 'ok',
-    'message' => 'Running in Docker: ' . ($inDocker ? 'Yes' : 'No')
-];
-
-// Check current directory
-$currentDir = getcwd();
-$response['checks']['directory'] = [
-    'status' => 'ok',
-    'message' => 'Current directory: ' . $currentDir
-];
-
-// Check document root
-$documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? 'unknown';
-$response['checks']['document_root'] = [
-    'status' => 'ok',
-    'message' => 'Document root: ' . $documentRoot
-];
-
-// Check database connection
-try {
-    $dbConnection = getenv('DB_CONNECTION');
-    $dbHost = getenv('DB_HOST');
-    $dbPort = getenv('DB_PORT');
-    $dbName = getenv('DB_DATABASE');
-    $dbUser = getenv('DB_USERNAME');
-    $dbPass = getenv('DB_PASSWORD');
-
-    $dsn = "{$dbConnection}:host={$dbHost};port={$dbPort};dbname={$dbName}";
-    $pdo = new PDO($dsn, $dbUser, $dbPass);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $response['checks']['database'] = [
-        'status' => 'ok',
-        'message' => 'Database connection successful'
-    ];
-} catch (PDOException $e) {
-    $response['status'] = 'error';
-    $response['checks']['database'] = [
-        'status' => 'error',
-        'message' => 'Database connection failed: ' . $e->getMessage()
-    ];
-}
-
-// Check storage directory permissions
-$storageWritable = is_writable('/app/storage');
-$response['checks']['storage'] = [
-    'status' => $storageWritable ? 'ok' : 'error',
-    'message' => $storageWritable ? 'Storage directory is writable' : 'Storage directory is not writable'
-];
-
-if (!$storageWritable) {
-    $response['status'] = 'error';
-}
-
-// Check bootstrap/cache directory permissions
-$cacheWritable = is_writable('/app/bootstrap/cache');
-$response['checks']['cache'] = [
-    'status' => $cacheWritable ? 'ok' : 'error',
-    'message' => $cacheWritable ? 'Cache directory is writable' : 'Cache directory is not writable'
-];
-
-if (!$cacheWritable) {
-    $response['status'] = 'error';
-}
-
-// Check artisan file
-$artisanExists = file_exists('/app/artisan');
-$response['checks']['artisan'] = [
-    'status' => $artisanExists ? 'ok' : 'error',
-    'message' => $artisanExists ? 'Artisan file exists' : 'Artisan file not found'
-];
-
-if (!$artisanExists) {
-    $response['status'] = 'error';
-
-    // List files in the root directory
-    $rootFiles = scandir('/app');
-    $response['checks']['root_files'] = $rootFiles;
-}
-
-// Check public directory
-$publicExists = is_dir('/app/public');
-$response['checks']['public'] = [
-    'status' => $publicExists ? 'ok' : 'error',
-    'message' => $publicExists ? 'Public directory exists' : 'Public directory not found'
-];
-
-if (!$publicExists) {
-    $response['status'] = 'error';
-}
-
-echo json_encode($response, JSON_PRETTY_PRINT);
+// Simple health check file
+echo "OK";
 EOL
 
 # Create .gitignore files
