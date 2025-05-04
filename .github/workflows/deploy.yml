@@ -10,13 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-      
       - name: Install CapRover CLI
         run: npm install -g caprover
       
       - name: Deploy to CapRover
-        run: caprover deploy --appName ${{ secrets.CAPROVER_APP }} --appToken ${{ secrets.CAPROVER_APP_TOKEN }} --captainURL ${{ secrets.CAPROVER_URL }}
+        run: caprover deploy --appName scenic-routes --appToken ${{ secrets.CAPROVER_APP_TOKEN }} --captainURL https://captain.scenic-routes.live

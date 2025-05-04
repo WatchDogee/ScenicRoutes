@@ -2,97 +2,37 @@ version: '3'
 
 services:
   app:
-    image: webdevops/php-nginx:8.2
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-80}:80"
-    command: >
-      bash -c "
-        echo 'Current directory:' && pwd && ls -la &&
-        mkdir -p /app/public &&
-        mkdir -p /app/storage/logs /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache &&
-        mkdir -p /app/bootstrap/cache &&
-        chmod -R 777 /app/storage || true &&
-        chmod -R 777 /app/bootstrap/cache || true &&
-        touch /app/storage/logs/laravel.log && chmod 666 /app/storage/logs/laravel.log || true &&
-        if [ -f '/app/.env.coolify' ]; then cp /app/.env.coolify /app/.env; fi &&
-        if [ -f '/app/fix-artisan.sh' ]; then cd /app && bash fix-artisan.sh; fi &&
-        if [ -f '/app/create-files.sh' ]; then cd /app && bash create-files.sh; fi &&
-        chmod +x /app/artisan &&
-        cd /app &&
-        php /app/artisan key:generate --force || echo 'Failed to generate key' &&
-        php /app/artisan config:clear || echo 'Failed to clear config' &&
-        php /app/artisan cache:clear || echo 'Failed to clear cache' &&
-        php /app/artisan view:clear || echo 'Failed to clear views' &&
-        php /app/artisan route:clear || echo 'Failed to clear routes' &&
-        php /app/artisan storage:link || echo 'Failed to create storage link' &&
-        php /app/artisan migrate --force || echo 'Failed to run migrations' &&
-        supervisord -c /opt/docker/etc/supervisor.conf
-      "
+    build:
+      context: .
+      dockerfile: Dockerfile
     environment:
-      # Application settings
       - APP_ENV=production
-      - APP_DEBUG=true
-      - APP_URL=${APP_URL}
-
-      # Database configuration (external)
+      - APP_DEBUG=false
+      - APP_URL=http://www.scenic-routes.live
       - DB_CONNECTION=mysql
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_DATABASE=${DB_DATABASE}
-      - DB_USERNAME=${DB_USERNAME}
-      - DB_PASSWORD=${DB_PASSWORD}
-
-      # Cache and session
-      - CACHE_DRIVER=file
-      - SESSION_DRIVER=cookie
-      - QUEUE_CONNECTION=database
-
-      # Mail
-      - MAIL_MAILER=${MAIL_MAILER}
-      - MAIL_HOST=${MAIL_HOST}
-      - MAIL_PORT=${MAIL_PORT}
-      - MAIL_USERNAME=${MAIL_USERNAME}
-      - MAIL_PASSWORD=${MAIL_PASSWORD}
-      - MAIL_ENCRYPTION=${MAIL_ENCRYPTION}
-      - MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}
-
-      # Additional environment variables
-      - LOG_CHANNEL=stack
-      - BROADCAST_DRIVER=log
-      - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
-      - SESSION_DOMAIN=${SESSION_DOMAIN}
-
-      # PHP and Nginx configuration
-      - PHP_MEMORY_LIMIT=2G
-      - PHP_MAX_EXECUTION_TIME=600
-      - PHP_POST_MAX_SIZE=64M
-      - PHP_UPLOAD_MAX_FILESIZE=64M
-      - WEB_DOCUMENT_ROOT=/app/public
-      - WEB_DOCUMENT_INDEX=index.php
-      - PHP_DISPLAY_ERRORS=1
-      - PHP_DATE_TIMEZONE=UTC
-
-      # Composer settings
-      - COMPOSER_MEMORY_LIMIT=-1
-    volumes:
-      - .:/app:delegated
-      - app_storage:/app/storage:delegated
-      - app_bootstrap_cache:/app/bootstrap/cache:delegated
-      - ./docker/nginx/custom-nginx.conf:/opt/docker/etc/nginx/vhost.conf
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=scenic-routes-db
+      - DB_USERNAME=root
+      - DB_PASSWORD=gdfh5464n4235gsd
+    depends_on:
+      - db
     networks:
-      - app_network
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost/health-check.php || exit 0"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
+      - app-network
 
-volumes:
-  app_storage:
-  app_bootstrap_cache:
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_DATABASE=scenic-routes-db
+      - MYSQL_ROOT_PASSWORD=gdfh5464n4235gsd
+    volumes:
+      - db-data:/var/lib/mysql
+    networks:
+      - app-network
 
 networks:
-  app_network:
+  app-network:
     driver: bridge
+
+volumes:
+  db-data:
