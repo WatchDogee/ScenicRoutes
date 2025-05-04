@@ -42,6 +42,7 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+<<<<<<< HEAD
 # Fix the artisan file
 RUN echo '#!/usr/bin/env php' > /app/artisan \
     && echo '<?php' >> /app/artisan \
@@ -71,6 +72,8 @@ RUN echo '#!/usr/bin/env php' > /app/artisan \
     && echo 'exit($status);' >> /app/artisan \
     && chmod +x /app/artisan
 
+=======
+>>>>>>> d26d5cb991e86db8d0091b1591a626e295923b3b
 # Generate optimized Composer autoload files
 RUN composer dump-autoload --optimize
 
@@ -91,6 +94,7 @@ COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
 
 # Copy Supervisor configuration
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+<<<<<<< HEAD
 
 # Create entrypoint script
 RUN echo '#!/bin/bash' > /entrypoint.sh \
@@ -127,12 +131,11 @@ RUN echo '#!/bin/bash' > /entrypoint.sh \
     && echo '# Start PHP-FPM and Nginx' >> /entrypoint.sh \
     && echo 'exec "$@"' >> /entrypoint.sh \
     && chmod +x /entrypoint.sh
+=======
+>>>>>>> d26d5cb991e86db8d0091b1591a626e295923b3b
 
 # Expose port
 EXPOSE 80
-
-# Set entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
 
 # Start services
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
