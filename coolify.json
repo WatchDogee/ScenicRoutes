@@ -52,11 +52,11 @@
         }
       ],
       "healthcheck": {
-        "test": ["CMD-SHELL", "curl -f http://localhost/health.php || exit 0"],
-        "interval": "30s",
-        "timeout": "10s",
-        "retries": 5,
-        "start_period": "60s"
+        "test": ["CMD-SHELL", "curl -f http://localhost/health || exit 0"],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 3,
+        "start_period": "30s"
       }
     }
   },
@@ -64,15 +64,23 @@
   "networks": ["app_network"],
   "deploy": {
     "command": [
-      "cd /app && mkdir -p /app/storage/logs /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache",
-      "cd /app && chmod -R 777 /app/storage /app/bootstrap/cache",
-      "cd /app && touch /app/storage/logs/laravel.log && chmod 666 /app/storage/logs/laravel.log",
+      "cd /app && mkdir -p /app/storage/logs",
+      "cd /app && mkdir -p /app/storage/framework/sessions",
+      "cd /app && mkdir -p /app/storage/framework/views",
+      "cd /app && mkdir -p /app/storage/framework/cache",
+      "cd /app && chmod -R 777 /app/storage",
+      "cd /app && chmod -R 777 /app/bootstrap/cache",
+      "cd /app && touch /app/storage/logs/laravel.log",
+      "cd /app && chmod 666 /app/storage/logs/laravel.log",
       "cd /app && cp .env.coolify .env",
       "cd /app && php artisan key:generate --force",
-      "cd /app && php artisan config:clear && php artisan cache:clear && php artisan view:clear && php artisan route:clear",
+      "cd /app && php artisan config:clear",
+      "cd /app && php artisan cache:clear",
+      "cd /app && php artisan view:clear",
+      "cd /app && php artisan route:clear",
       "cd /app && php artisan storage:link",
-      "cd /app && php artisan migrate --force --no-interaction",
-      "cd /app && npm ci --no-audit --no-fund",
+      "cd /app && php artisan migrate --force",
+      "cd /app && npm install",
       "cd /app && npm run build",
       "cd /app && chown -R www-data:www-data /app/storage /app/bootstrap/cache"
     ]
