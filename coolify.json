@@ -42,26 +42,22 @@
   "networks": ["app_network"],
   "deploy": {
     "command": [
-      "ls -la /app",
-      "mkdir -p /app/storage/logs",
-      "mkdir -p /app/storage/framework/sessions",
-      "mkdir -p /app/storage/framework/views",
-      "mkdir -p /app/storage/framework/cache",
-      "chmod -R 777 /app/storage",
-      "chmod -R 777 /app/bootstrap/cache",
-      "touch /app/storage/logs/laravel.log",
-      "chmod 666 /app/storage/logs/laravel.log",
-      "cp /app/.env.coolify /app/.env",
-      "cd /app && php /app/artisan key:generate --force",
-      "cd /app && php /app/artisan config:clear",
-      "cd /app && php /app/artisan cache:clear",
-      "cd /app && php /app/artisan view:clear",
-      "cd /app && php /app/artisan route:clear",
-      "cd /app && php /app/artisan storage:link",
-      "cd /app && php /app/artisan migrate --force",
-      "cd /app && npm install",
-      "cd /app && npm run build",
-      "chown -R www-data:www-data /app/storage /app/bootstrap/cache"
+      "echo 'Current directory:' && pwd && echo 'Directory contents:' && ls -la",
+      "if [ -f 'artisan' ]; then echo 'Artisan found in current directory'; chmod +x artisan; else echo 'Artisan NOT found in current directory'; fi",
+      "mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache",
+      "chmod -R 777 storage bootstrap/cache",
+      "touch storage/logs/laravel.log && chmod 666 storage/logs/laravel.log",
+      "if [ -f '.env.coolify' ]; then cp .env.coolify .env; echo 'Copied .env.coolify to .env'; else echo '.env.coolify not found'; fi",
+      "if [ -f 'artisan' ]; then php artisan key:generate --force; else echo 'Cannot run artisan commands: artisan not found'; fi",
+      "if [ -f 'artisan' ]; then php artisan config:clear; fi",
+      "if [ -f 'artisan' ]; then php artisan cache:clear; fi",
+      "if [ -f 'artisan' ]; then php artisan view:clear; fi",
+      "if [ -f 'artisan' ]; then php artisan route:clear; fi",
+      "if [ -f 'artisan' ]; then php artisan storage:link; fi",
+      "if [ -f 'artisan' ]; then php artisan migrate --force; fi",
+      "if [ -f 'package.json' ]; then npm install && npm run build; else echo 'package.json not found'; fi",
+      "find . -name 'artisan' -type f",
+      "chown -R www-data:www-data storage bootstrap/cache || true"
     ]
   }
 }

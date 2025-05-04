@@ -6,6 +6,23 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
+    command: >
+      bash -c "
+        echo 'Current directory:' && pwd && ls -la &&
+        if [ -f 'artisan' ]; then chmod +x artisan; fi &&
+        mkdir -p storage/logs storage/framework/sessions storage/framework/views storage/framework/cache &&
+        chmod -R 777 storage bootstrap/cache &&
+        touch storage/logs/laravel.log && chmod 666 storage/logs/laravel.log &&
+        if [ -f '.env.coolify' ]; then cp .env.coolify .env; fi &&
+        if [ -f 'artisan' ]; then php artisan key:generate --force; fi &&
+        if [ -f 'artisan' ]; then php artisan config:clear; fi &&
+        if [ -f 'artisan' ]; then php artisan cache:clear; fi &&
+        if [ -f 'artisan' ]; then php artisan view:clear; fi &&
+        if [ -f 'artisan' ]; then php artisan route:clear; fi &&
+        if [ -f 'artisan' ]; then php artisan storage:link; fi &&
+        if [ -f 'artisan' ]; then php artisan migrate --force; fi &&
+        supervisord -c /opt/docker/etc/supervisor.conf
+      "
     environment:
       # Application settings
       - APP_ENV=production
