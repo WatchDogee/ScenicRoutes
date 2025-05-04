@@ -1,7 +1,5 @@
 FROM php:8.2-fpm
 
-# This application uses MySQL as the database and does not require SQLite
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -10,33 +8,18 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    libicu-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
     zip \
     unzip \
-    default-mysql-client \
     nginx \
-    supervisor
+    supervisor \
+    nodejs \
+    npm
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-    pdo_mysql \
-    mbstring \
-    exif \
-    pcntl \
-    bcmath \
-    gd \
-    intl \
-    zip \
-    opcache
-
-# Configure PHP
-COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -44,8 +27,26 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /app
 
-# Copy application files
-COPY . /app
+# Copy composer.json and composer.lock
+COPY composer.json composer.lock ./
+
+# Install PHP dependencies
+RUN composer install --no-scripts --no-autoloader --no-dev
+
+# Copy package.json and package-lock.json
+COPY package.json package-lock.json ./
+
+# Install Node.js dependencies
+RUN npm install
+
+# Copy the rest of the application code
+COPY . .
+
+# Generate optimized Composer autoload files
+RUN composer dump-autoload --optimize
+
+# Build React assets
+RUN npm run build
 
 # Create necessary directories and set permissions
 RUN mkdir -p /app/storage/logs \
@@ -56,22 +57,14 @@ RUN mkdir -p /app/storage/logs \
     && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
-# Install dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
-
-# Copy configuration files
+# Copy Nginx configuration
 COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-COPY docker/entrypoint.sh /entrypoint.sh
 
-# Make entrypoint executable
-RUN chmod +x /entrypoint.sh
+# Copy Supervisor configuration
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Expose port
 EXPOSE 80
-
-# Set entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
 
 # Start services
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

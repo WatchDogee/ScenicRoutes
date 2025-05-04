@@ -16,6 +16,7 @@ services:
         chmod -R 777 /app/bootstrap/cache || true &&
         touch /app/storage/logs/laravel.log && chmod 666 /app/storage/logs/laravel.log || true &&
         if [ -f '/app/.env.coolify' ]; then cp /app/.env.coolify /app/.env; fi &&
+        if [ -f '/app/fix-artisan.sh' ]; then cd /app && bash fix-artisan.sh; fi &&
         if [ -f '/app/create-files.sh' ]; then cd /app && bash create-files.sh; fi &&
         chmod +x /app/artisan &&
         cd /app &&

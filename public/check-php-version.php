@@ -23,7 +23,7 @@ echo "Namespace support: ";
 try {
     eval('namespace Test {}');
     echo "Yes\n";
-} catch (Throwable $e) {
+} catch (Exception $e) {
     echo "No (" . $e->getMessage() . ")\n";
 }
 
@@ -32,7 +32,7 @@ echo "Use statement support: ";
 try {
     eval('use stdClass;');
     echo "Yes\n";
-} catch (Throwable $e) {
+} catch (Exception $e) {
     echo "No (" . $e->getMessage() . ")\n";
 }
 
@@ -41,7 +41,7 @@ echo "Fully qualified namespace support: ";
 try {
     eval('use \stdClass;');
     echo "Yes\n";
-} catch (Throwable $e) {
+} catch (Exception $e) {
     echo "No (" . $e->getMessage() . ")\n";
 }
 
@@ -50,15 +50,39 @@ echo "Class support: ";
 try {
     eval('class TestClass {}');
     echo "Yes\n";
-} catch (Throwable $e) {
+} catch (Exception $e) {
     echo "No (" . $e->getMessage() . ")\n";
 }
 
 // Execute PHP version command
 echo "\nPHP version command output:\n";
-$output = [];
+$output = array();
 $returnVar = 0;
 exec("php -v 2>&1", $output, $returnVar);
 echo implode("\n", $output) . "\n\n";
+
+// Check artisan file
+echo "Checking artisan file:\n";
+$artisanPath = '/app/artisan';
+if (file_exists($artisanPath)) {
+    echo "Artisan file exists at: $artisanPath\n";
+
+    // Check artisan content
+    $artisanContent = file_get_contents($artisanPath);
+    echo "Artisan content:\n";
+    echo $artisanContent . "\n\n";
+
+    // Check for syntax errors
+    echo "Checking for syntax errors...\n";
+    $output = array();
+    $returnVar = 0;
+    exec("php -l $artisanPath 2>&1", $output, $returnVar);
+
+    echo "Return code: $returnVar\n";
+    echo "Output:\n";
+    echo implode("\n", $output) . "\n\n";
+} else {
+    echo "Artisan file does not exist at: $artisanPath\n\n";
+}
 
 echo "Check completed at " . date('Y-m-d H:i:s') . "\n";
