@@ -63,7 +63,8 @@
       "if [ -f '/app/package.json' ]; then cd /app && npm install && npm run build; else echo 'package.json not found'; fi",
       "chown -R www-data:www-data /app/storage /app/bootstrap/cache || true"
     ]
-  }
+  },
+  "postDeployCommand": "bash post-deploy.sh"
 }
 
 

@@ -36,6 +36,12 @@ COPY docker/nginx/custom-nginx.conf /etc/nginx/sites-available/default
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
+# Create necessary directories
+RUN mkdir -p /app/public /app/storage/logs /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache /app/bootstrap/cache
+
+# Set permissions
+RUN chmod -R 777 /app/storage /app/bootstrap/cache
+
 # Set up supervisor
 COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
