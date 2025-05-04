@@ -72,9 +72,6 @@
       "cd /app && php artisan config:clear",
       "cd /app && php artisan cache:clear",
       "cd /app && php artisan view:clear",
-      "cd /app && php artisan config:cache",
-      "cd /app && php artisan route:cache",
-      "cd /app && php artisan view:cache",
       "cd /app && php artisan storage:link",
       "cd /app && chown -R application:application /app/storage /app/bootstrap/cache"
     ]

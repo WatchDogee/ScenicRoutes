@@ -14,7 +14,7 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 
 // Password reset routes
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
-Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset');
+Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset.api');
 
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {

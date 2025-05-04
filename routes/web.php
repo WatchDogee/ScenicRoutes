@@ -128,7 +128,7 @@ Route::get('/reset-password/{token}', function (Request $request, $token) {
         'token' => $token,
         'email' => $request->email,
     ]);
-})->name('password.reset');
+})->name('password.reset.custom');
 
 // Health check route for Docker/Coolify
 Route::get('/health', function () {
