@@ -1,33 +1,33 @@
 <?php
 // Health check script for Coolify
 header('Content-Type: application/json');
-$response = [
+$response = array(
     'status' => 'ok',
     'timestamp' => date('Y-m-d H:i:s'),
     'message' => 'Application is running',
-    'checks' => []
-];
+    'checks' => array()
+);
 
 // Check if we're in a Docker container
 $inDocker = file_exists('/.dockerenv');
-$response['checks']['docker'] = [
+$response['checks']['docker'] = array(
     'status' => 'ok',
     'message' => 'Running in Docker: ' . ($inDocker ? 'Yes' : 'No')
-];
+);
 
 // Check current directory
 $currentDir = getcwd();
-$response['checks']['directory'] = [
+$response['checks']['directory'] = array(
     'status' => 'ok',
     'message' => 'Current directory: ' . $currentDir
-];
+);
 
 // Check document root
-$documentRoot = $_SERVER['DOCUMENT_ROOT'] ?? 'unknown';
-$response['checks']['document_root'] = [
+$documentRoot = isset($_SERVER['DOCUMENT_ROOT']) ? $_SERVER['DOCUMENT_ROOT'] : 'unknown';
+$response['checks']['document_root'] = array(
     'status' => 'ok',
     'message' => 'Document root: ' . $documentRoot
-];
+);
 
 // Check database connection
 try {
@@ -37,29 +37,29 @@ try {
     $dbName = getenv('DB_DATABASE');
     $dbUser = getenv('DB_USERNAME');
     $dbPass = getenv('DB_PASSWORD');
-    
+
     $dsn = "{$dbConnection}:host={$dbHost};port={$dbPort};dbname={$dbName}";
     $pdo = new PDO($dsn, $dbUser, $dbPass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    $response['checks']['database'] = [
+
+    $response['checks']['database'] = array(
         'status' => 'ok',
         'message' => 'Database connection successful'
-    ];
+    );
 } catch (PDOException $e) {
     $response['status'] = 'error';
-    $response['checks']['database'] = [
+    $response['checks']['database'] = array(
         'status' => 'error',
         'message' => 'Database connection failed: ' . $e->getMessage()
-    ];
+    );
 }
 
 // Check storage directory permissions
 $storageWritable = is_writable('/app/storage');
-$response['checks']['storage'] = [
+$response['checks']['storage'] = array(
     'status' => $storageWritable ? 'ok' : 'error',
     'message' => $storageWritable ? 'Storage directory is writable' : 'Storage directory is not writable'
-];
+);
 
 if (!$storageWritable) {
     $response['status'] = 'error';
@@ -67,10 +67,10 @@ if (!$storageWritable) {
 
 // Check bootstrap/cache directory permissions
 $cacheWritable = is_writable('/app/bootstrap/cache');
-$response['checks']['cache'] = [
+$response['checks']['cache'] = array(
     'status' => $cacheWritable ? 'ok' : 'error',
     'message' => $cacheWritable ? 'Cache directory is writable' : 'Cache directory is not writable'
-];
+);
 
 if (!$cacheWritable) {
     $response['status'] = 'error';
@@ -78,14 +78,14 @@ if (!$cacheWritable) {
 
 // Check artisan file
 $artisanExists = file_exists('/app/artisan');
-$response['checks']['artisan'] = [
+$response['checks']['artisan'] = array(
     'status' => $artisanExists ? 'ok' : 'error',
     'message' => $artisanExists ? 'Artisan file exists' : 'Artisan file not found'
-];
+);
 
 if (!$artisanExists) {
     $response['status'] = 'error';
-    
+
     // List files in the root directory
     $rootFiles = scandir('/app');
     $response['checks']['root_files'] = $rootFiles;
@@ -93,10 +93,10 @@ if (!$artisanExists) {
 
 // Check public directory
 $publicExists = is_dir('/app/public');
-$response['checks']['public'] = [
+$response['checks']['public'] = array(
     'status' => $publicExists ? 'ok' : 'error',
     'message' => $publicExists ? 'Public directory exists' : 'Public directory not found'
-];
+);
 
 if (!$publicExists) {
     $response['status'] = 'error';

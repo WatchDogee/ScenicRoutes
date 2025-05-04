@@ -1,35 +1,77 @@
-FROM unit:1.34.1-php8.3
+FROM php:8.2-fpm
 
-RUN apt update && apt install -y \
-    curl unzip git libicu-dev libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libssl-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) pcntl opcache pdo pdo_mysql intl zip gd exif ftp bcmath \
-    && pecl install redis \
-    && docker-php-ext-enable redis
+# This application uses MySQL as the database and does not require SQLite
 
-RUN echo "opcache.enable=1" > /usr/local/etc/php/conf.d/custom.ini \
-    && echo "opcache.jit=tracing" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "opcache.jit_buffer_size=256M" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "memory_limit=512M" > /usr/local/etc/php/conf.d/custom.ini \        
-    && echo "upload_max_filesize=64M" >> /usr/local/etc/php/conf.d/custom.ini \
-    && echo "post_max_size=64M" >> /usr/local/etc/php/conf.d/custom.ini
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
+    libicu-dev \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    zip \
+    unzip \
+    default-mysql-client \
+    nginx \
+    supervisor
 
-COPY --from=composer:latest /usr/bin/composer /usr/local/bin/composer
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /var/www/html
+# Install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
+    pdo_mysql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    intl \
+    zip \
+    opcache
 
-RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache
+# Configure PHP
+COPY docker/php/custom.ini /usr/local/etc/php/conf.d/custom.ini
 
-RUN chown -R unit:unit /var/www/html/storage bootstrap/cache && chmod -R 775 /var/www/html/storage
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY . .
+# Set working directory
+WORKDIR /app
 
-RUN chown -R unit:unit storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
+# Copy application files
+COPY . /app
 
-RUN composer install --prefer-dist --optimize-autoloader --no-interaction
+# Create necessary directories and set permissions
+RUN mkdir -p /app/storage/logs \
+    /app/storage/framework/cache \
+    /app/storage/framework/sessions \
+    /app/storage/framework/views \
+    /app/bootstrap/cache \
+    && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
 
-COPY unit.json /docker-entrypoint.d/unit.json
+# Install dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-EXPOSE 8000
+# Copy configuration files
+COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
+COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/entrypoint.sh /entrypoint.sh
 
-CMD ["unitd", "--no-daemon"]
+# Make entrypoint executable
+RUN chmod +x /entrypoint.sh
+
+# Expose port
+EXPOSE 80
+
+# Set entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Start services
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
