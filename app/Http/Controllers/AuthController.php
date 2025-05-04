@@ -12,18 +12,33 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $data = $request->validate([
-            'name' => 'required|string|max:255|unique:users,username', // Name will be used as username
+            'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
+            'username' => 'nullable|string|max:255|unique:users,username',
             'password' => 'required|min:8|confirmed',
         ]);
 
-        // Use the name field as the username
-        $username = $data['name'];
+        // Generate a username if not provided
+        if (empty($data['username'])) {
+            $emailParts = explode('@', $data['email']);
+            $baseUsername = $emailParts[0];
+
+            // Check if username already exists and append a number if needed
+            $username = $baseUsername;
+            $counter = 1;
+
+            while (User::where('username', $username)->exists()) {
+                $username = $baseUsername . $counter;
+                $counter++;
+            }
+
+            $data['username'] = $username;
+        }
 
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'username' => $username,
+            'username' => $data['username'],
             'password' => Hash::make($data['password']),
         ]);
 
@@ -42,43 +57,30 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        // Check if we're receiving email directly or through the login field
-        if ($request->has('email')) {
-            $credentials = $request->validate([
-                'email' => 'required|string',
-                'password' => 'required',
-            ]);
+        $credentials = $request->validate([
+            'login' => 'required|string',
+            'password' => 'required',
+        ]);
 
-            // Direct email login
-            if (!Auth::attempt($credentials)) {
-                return response()->json(['message' => 'Invalid credentials'], 401);
-            }
-        } else {
-            $credentials = $request->validate([
-                'login' => 'required|string',
-                'password' => 'required',
-            ]);
+        // Determine if the login input is an email or username
+        $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-            // Determine if the login input is an email or username
-            $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        // Attempt to authenticate with the appropriate field
+        $authData = [
+            $loginField => $credentials['login'],
+            'password' => $credentials['password']
+        ];
 
-            // Attempt to authenticate with the appropriate field
-            $authData = [
-                $loginField => $credentials['login'],
+        if (!Auth::attempt($authData)) {
+            // If authentication fails, try the other field as a fallback
+            $alternativeField = $loginField === 'email' ? 'username' : 'email';
+            $alternativeAuthData = [
+                $alternativeField => $credentials['login'],
                 'password' => $credentials['password']
             ];
 
-            if (!Auth::attempt($authData)) {
-                // If authentication fails, try the other field as a fallback
-                $alternativeField = $loginField === 'email' ? 'username' : 'email';
-                $alternativeAuthData = [
-                    $alternativeField => $credentials['login'],
-                    'password' => $credentials['password']
-                ];
-
-                if (!Auth::attempt($alternativeAuthData)) {
-                    return response()->json(['message' => 'Invalid credentials'], 401);
-                }
+            if (!Auth::attempt($alternativeAuthData)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
             }
         }
 

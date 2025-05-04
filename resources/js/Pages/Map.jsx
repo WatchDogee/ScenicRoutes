@@ -9,12 +9,8 @@ import StarRating from '../Components/StarRating';
 import RoadCard from '../Components/RoadCard';
 import PhotoGallery from '../Components/PhotoGallery';
 import PhotoUploader from '../Components/PhotoUploader';
-import PoiControls from '../Components/PoiControls';
-import PoiDetails from '../Components/PoiDetails';
 import { Link } from '@inertiajs/react';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
-import { FaMapMarkerAlt, FaGasPump, FaBolt } from 'react-icons/fa';
-import usePointsOfInterest from '../Hooks/usePointsOfInterest';
 
 export default function Map() {
     const { userSettings } = useContext(UserSettingsContext);
@@ -22,29 +18,6 @@ export default function Map() {
     const markerRef = useRef(null);
     const radiusCircleRef = useRef(null);
     const roadsLayerRef = useRef(null);
-
-    // POI state and hooks
-    const [selectedPoiId, setSelectedPoiId] = useState(null);
-    const [selectedPoi, setSelectedPoi] = useState(null);
-    const [poiControlsKey, setPoiControlsKey] = useState(Date.now()); // For forcing re-render
-    const {
-        tourism,
-        fuelStations,
-        chargingStations,
-        loading: poiLoading,
-        error: poiError,
-        showTourism,
-        showFuelStations,
-        showChargingStations,
-        setShowTourism,
-        setShowFuelStations,
-        setShowChargingStations,
-        fetchTourism,
-        fetchFuelStations,
-        fetchChargingStations,
-        fetchAllPois,
-        clearAllPois
-    } = usePointsOfInterest(mapRef);
 
     // Helper function to get twistiness label
     const getTwistinessLabel = (twistiness) => {
@@ -61,7 +34,7 @@ export default function Map() {
     const [auth, setAuth] = useState({ user: null, token: null });
     const [loginForm, setLoginForm] = useState({ login: '', password: '' });
     const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
-    const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', password_confirmation: '' });
+    const [registerForm, setRegisterForm] = useState({ name: '', email: '', username: '', password: '', password_confirmation: '' });
     const [savedRoads, setSavedRoads] = useState([]); // List of saved roads
     const [selectedRoad, setSelectedRoad] = useState(null);
     const [editForm, setEditForm] = useState({ road_name: '', description: '', pictures: [] });
@@ -175,37 +148,15 @@ export default function Map() {
     };
 
     const handleMapClick = (e) => {
-        // Check if the click is on a control element
-        if (e.originalEvent.target.closest('.poi-controls') ||
-            e.originalEvent.target.closest('.leaflet-control')) {
-            console.log('Click on control element, ignoring map click');
-            return;
-        }
-
         const map = mapRef.current;
         if (!map) return;
 
         const latlng = e.latlng;
 
-        // Create a custom marker icon with higher z-index
-        const markerIcon = L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41],
-            className: 'main-location-marker' // Custom class for styling
-        });
-
         if (markerRef.current) {
             markerRef.current.setLatLng(latlng);
         } else {
-            markerRef.current = L.marker(latlng, {
-                icon: markerIcon,
-                zIndexOffset: 1000 // Ensure marker stays on top
-            }).addTo(map);
+            markerRef.current = L.marker(latlng).addTo(map);
         }
 
         if (radiusCircleRef.current) {
@@ -216,15 +167,8 @@ export default function Map() {
                 color: 'blue',
                 fillColor: 'blue',
                 fillOpacity: 0.05,
-                zIndex: 100 // Lower than marker but still high
             }).addTo(map);
         }
-
-        // Log the current location for debugging
-        console.log('Map clicked at:', latlng);
-
-        // Force a re-render of the POI controls to update the location display
-        setPoiControlsKey(Date.now());
     };
 
     const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -476,14 +420,7 @@ export default function Map() {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            // First get a CSRF token
-            await axios.get('/sanctum/csrf-cookie');
-
-            // Use the form data directly
-            const response = await axios.post('/api/login', {
-                email: loginForm.login, // Use login field as email
-                password: loginForm.password
-            }, {
+            const response = await axios.post('/api/login', loginForm, {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -505,7 +442,6 @@ export default function Map() {
                 setSavedRoads(roadsResponse.data);
 
                 // Stay on the map page, no need to redirect
-                alert("Successfully logged in!");
             }
         } catch (error) {
             console.error("Login error:", error.response?.data || error.message);
@@ -574,7 +510,7 @@ export default function Map() {
 
             alert("Registration successful! Please check your email to verify your account before logging in.");
             setAuthMode('login');
-            setRegisterForm({ name: '', email: '', password: '', password_confirmation: '' });
+            setRegisterForm({ name: '', email: '', username: '', password: '', password_confirmation: '' });
         } catch (error) {
             console.error("Registration error:", error.response?.data || error.message);
             if (error.response?.data?.errors) {
@@ -978,28 +914,16 @@ export default function Map() {
         );
     };
 
-    // Initialize map only once
     useEffect(() => {
         const mapContainer = document.getElementById('map');
-        if (!mapContainer || mapRef.current) return;
+        if (!mapContainer) return;
 
-        console.log('Initializing map...');
-
-        // Create the map with specific options to prevent errors
-        const leafletMap = L.map(mapContainer, {
-            center: [57.1, 27.1],
-            zoom: 10,
-            zoomControl: true,
-            attributionControl: true,
-            fadeAnimation: true,
-            zoomAnimation: true,
-            markerZoomAnimation: true
-        });
+        const leafletMap = L.map(mapContainer).setView([57.1, 27.1], 10);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 19,
-            updateWhenIdle: true,
+            updateWhenIdle: false,
             updateWhenZooming: false,
             updateInterval: 250,
         }).addTo(leafletMap);
@@ -1007,50 +931,13 @@ export default function Map() {
         // Force a resize event after map initialization
         setTimeout(() => {
             leafletMap.invalidateSize();
-            console.log('Map resized');
-        }, 250);
+        }, 100);
 
         leafletMap.on('click', handleMapClick);
-
-        // Add event listener for POI popup clicks
-        leafletMap.on('popupopen', (e) => {
-            const popup = e.popup;
-            const content = popup._contentNode;
-
-            // Find any POI view buttons in the popup
-            const poiButtons = content.querySelectorAll('[id^="view-poi-"]');
-            poiButtons.forEach(button => {
-                const poiId = button.id.replace('view-poi-', '');
-                button.addEventListener('click', () => {
-                    // Find the POI data from our state
-                    const allPois = [...tourism, ...fuelStations, ...chargingStations];
-                    const poi = allPois.find(p => p.osm_id?.toString() === poiId || p.id?.toString() === poiId);
-
-                    if (poi) {
-                        setSelectedPoiId(poiId);
-                        setSelectedPoi(poi);
-                        console.log('Selected POI:', poi);
-                    } else {
-                        console.warn('POI not found with ID:', poiId);
-                        console.log('Available POIs:', allPois);
-                    }
-                });
-            });
-        });
-
         mapRef.current = leafletMap;
 
         const newLayerGroup = L.layerGroup().addTo(leafletMap);
         roadsLayerRef.current = newLayerGroup;
-
-        // Add Font Awesome CSS for POI markers
-        if (!document.getElementById('font-awesome-css')) {
-            const link = document.createElement('link');
-            link.id = 'font-awesome-css';
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-            document.head.appendChild(link);
-        }
 
         return () => {
             leafletMap.off();
@@ -1060,7 +947,7 @@ export default function Map() {
             radiusCircleRef.current = null;
             roadsLayerRef.current = null;
         };
-    }, []); // Empty dependency array to ensure map is initialized only once
+    }, []);
 
     useEffect(() => {
         if (showCommunity && markerRef.current) {
@@ -1293,25 +1180,10 @@ export default function Map() {
         const lon = parseFloat(location.lon);
 
         if (mapRef.current) {
-            // Create a custom marker icon with higher z-index
-            const markerIcon = L.icon({
-                iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-                iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-                shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-                className: 'main-location-marker' // Custom class for styling
-            });
-
             if (markerRef.current) {
                 markerRef.current.setLatLng([lat, lon]);
             } else {
-                markerRef.current = L.marker([lat, lon], {
-                    icon: markerIcon,
-                    zIndexOffset: 1000 // Ensure marker stays on top
-                }).addTo(mapRef.current);
+                markerRef.current = L.marker([lat, lon]).addTo(mapRef.current);
             }
 
             if (radiusCircleRef.current) {
@@ -1322,44 +1194,12 @@ export default function Map() {
                     color: 'blue',
                     fillColor: 'blue',
                     fillOpacity: 0.05,
-                    zIndex: 100 // Lower than marker but still high
                 }).addTo(mapRef.current);
             }
 
-            // Center the map on the location
             mapRef.current.setView([lat, lon], 13);
-
-            // Log the updated location for debugging
-            console.log('Map location updated to:', [lat, lon]);
-
-            // Force a re-render of the POI controls to update the location display
-            setPoiControlsKey(Date.now());
-        }
+            }
     };
-
-    // Helper function to get current location from marker
-    const getCurrentLocation = () => {
-        if (markerRef.current) {
-            const latLng = markerRef.current.getLatLng();
-            console.log('Current location for POI search:', latLng);
-            return {
-                lat: latLng.lat,
-                lon: latLng.lng
-            };
-        } else if (mapRef.current) {
-            // If no marker, use the center of the map
-            const center = mapRef.current.getCenter();
-            console.log('Using map center for POI search:', center);
-            return { lat: center.lat, lon: center.lng };
-        }
-        console.warn('No location available for POI search');
-        return null;
-    };
-
-    // Force re-render of POI controls when marker changes
-    useEffect(() => {
-        // This empty dependency array ensures this only runs once on mount
-    }, [markerRef.current]);
 
     // Add these functions for handling ratings and comments
     const handleRateRoad = async (roadId) => {
@@ -1535,13 +1375,12 @@ export default function Map() {
                                 <form onSubmit={handleRegister} className="space-y-2">
                                     <input
                                         type="text"
-                                        placeholder="Username"
+                                        placeholder="Name"
                                         value={registerForm.name}
                                         onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                                         className="w-full p-2 border rounded"
                                         required
                                     />
-                                    <p className="text-xs text-gray-500 mt-1 mb-2">This will be your display name and login username</p>
                                     <input
                                         type="email"
                                         placeholder="Email"
@@ -1550,6 +1389,14 @@ export default function Map() {
                                         className="w-full p-2 border rounded"
                                         required
                                     />
+                                    <input
+                                        type="text"
+                                        placeholder="Username (optional)"
+                                        value={registerForm.username}
+                                        onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
+                                        className="w-full p-2 border rounded"
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1 mb-2">If not provided, a username will be generated from your email</p>
                                     <input
                                         type="password"
                                         placeholder="Password"
@@ -1685,7 +1532,7 @@ export default function Map() {
             </div>
 
             {/* Map */}
-            <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto' }}>
+            <div className="flex-1 relative" id="map" style={{ zIndex: 10 }}>
                 <button
                     onClick={() => setShowCommunity(!showCommunity)}
                     className="absolute top-4 right-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
@@ -1693,45 +1540,6 @@ export default function Map() {
                 >
                     {showCommunity ? 'Hide Community' : 'Show Community'}
                 </button>
-
-                {/* POI Controls */}
-                <div
-                    className="absolute top-20 left-4"
-                    style={{ zIndex: 1000, pointerEvents: 'auto' }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <PoiControls
-                        key={poiControlsKey} // Force re-render when marker changes
-                        showTourism={showTourism}
-                        showFuelStations={showFuelStations}
-                        showChargingStations={showChargingStations}
-                        setShowTourism={setShowTourism}
-                        setShowFuelStations={setShowFuelStations}
-                        setShowChargingStations={setShowChargingStations}
-                        fetchAllPois={fetchAllPois}
-                        clearAllPois={clearAllPois}
-                        loading={poiLoading}
-                        currentLocation={getCurrentLocation()}
-                        error={poiError}
-                    />
-                </div>
-
-                {/* POI Details */}
-                {selectedPoi && (
-                    <div
-                        className="absolute top-96 left-4 max-w-md"
-                        style={{ zIndex: 1001, pointerEvents: 'auto' }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <PoiDetails
-                            poi={selectedPoi}
-                            onClose={() => {
-                                setSelectedPoiId(null);
-                                setSelectedPoi(null);
-                            }}
-                        />
-                    </div>
-                )}
             </div>
 
             {/* Community Sidebar */}

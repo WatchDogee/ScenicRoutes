@@ -4,7 +4,6 @@ import '../css/common.css';
 import '../css/map.css';
 import '../css/community.css';
 import '../css/rating-modal.css';
-import '../css/poi.css';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';

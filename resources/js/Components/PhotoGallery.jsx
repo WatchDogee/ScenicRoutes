@@ -51,22 +51,10 @@ export default function PhotoGallery({
         }
     };
 
-    // Ensure photos is an array and log for debugging
-    console.log('Photos received in PhotoGallery:', photos);
+    // Ensure photos is an array
     const photoArray = Array.isArray(photos) ? photos : [];
 
-    // Make sure all photos have a photo_url property
-    const validPhotoArray = photoArray.filter(photo => photo && photo.photo_url);
-
-    // Add additional debugging
-    if (validPhotoArray.length === 0 && photoArray.length > 0) {
-        console.warn('No valid photos found. Photos without photo_url:',
-            photoArray.filter(photo => !photo || !photo.photo_url));
-    }
-
-    console.log('Valid photos in PhotoGallery:', validPhotoArray);
-
-    if (validPhotoArray.length === 0) {
+    if (photoArray.length === 0) {
         return (
             <div className={`text-center text-gray-500 py-4 ${className}`}>
                 No photos available
@@ -77,7 +65,7 @@ export default function PhotoGallery({
     return (
         <div className={className}>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                {validPhotoArray.map((photo) => (
+                {photoArray.map((photo) => (
                     <div
                         key={photo.id}
                         className="relative aspect-square overflow-hidden rounded-md cursor-pointer group"

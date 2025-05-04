@@ -24,6 +24,7 @@ yarn-error.log
 delete_users.md
 email_setup_instructions.md
 mailtrap_setup_guide.md
+<<<<<<< HEAD
 database/migrations/2025_05_03_000000_create_points_of_interest_table.php
 database/migrations/2025_05_03_000001_create_poi_photos_table.php
 database/migrations/2025_05_03_000003_create_review_photos_table.php
@@ -31,3 +32,5 @@ database/migrations/2025_05_03_000002_create_poi_reviews_table.php
 database/migrations/2025_05_03_000004_create_road_photos_table.php
 docker-compose.yaml
 COOLIFY_DOCKER_COMPOSE_GUIDE.md
+=======
+>>>>>>> parent of 12696f1 (0.2.0 Added POI and revised reviews)

@@ -414,14 +414,6 @@ class SavedRoadController extends Controller
                 $road->average_rating = (float) $road->reviews_avg_rating;
             }
 
-            // Log review photos for debugging
-            foreach ($road->reviews as $review) {
-                \Log::info("Review {$review->id} photos count: " . $review->photos->count());
-                foreach ($review->photos as $photo) {
-                    \Log::info("Photo {$photo->id} path: {$photo->photo_path}, URL: {$photo->photo_url}");
-                }
-            }
-
             return response()->json($road);
         } catch (\Exception $e) {
             // If there's an error with the photos relationships, try without them
