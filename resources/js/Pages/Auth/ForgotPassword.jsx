@@ -38,7 +38,7 @@ export default function ForgotPassword({ status }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('password.email'));
+        post(route('password.email')); // This is correct - using the Laravel route
     };
 
     return (

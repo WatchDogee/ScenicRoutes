@@ -13,7 +13,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/email/verification-notification', [AuthController::class, 'resendVerificationEmail']);
 
 // Password reset routes
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email.api');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset.api');
 
 // Protected routes
