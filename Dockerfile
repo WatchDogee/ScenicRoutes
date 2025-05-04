@@ -1,88 +1,91 @@
-FROM php:8.2-fpm
-
-# Install system dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    libicu-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    zip \
-    unzip \
-    nginx \
-    supervisor \
-    default-mysql-client \
-    gnupg \
-    ca-certificates \
-    lsb-release
-
-# Install Node.js using the official setup script
-RUN apt-get update && apt-get install -y ca-certificates curl && \
-    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
-    node -v && \
-    npm -v
-
-# Clear apt cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring zip && \
-    docker-php-ext-enable opcache
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Configure PHP for production
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" && \
-    echo "memory_limit=512M" >> "$PHP_INI_DIR/conf.d/memory-limit.ini" && \
-    echo "upload_max_filesize=64M" >> "$PHP_INI_DIR/conf.d/upload-limit.ini" && \
-    echo "post_max_size=64M" >> "$PHP_INI_DIR/conf.d/post-limit.ini"
+FROM webdevops/php-nginx:8.2
 
 # Set working directory
 WORKDIR /app
 
-# Copy Laravel files
-COPY . .
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && node -v \
+    && npm -v
 
-# Install PHP dependencies with optimizations
-RUN composer install --prefer-dist --no-dev --no-interaction --optimize-autoloader
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Copy application files
+COPY . /app
+
+# Set proper permissions
+RUN chown -R application:application /app
+
+# Install PHP dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
 # Install Node.js dependencies and build assets
 RUN npm install && npm run build
 
-# Create necessary storage and cache directories with proper permissions
-RUN mkdir -p \
-    /app/storage/app/public \
+# Create necessary directories and set permissions
+RUN mkdir -p /app/storage/app/public \
     /app/storage/framework/cache \
     /app/storage/framework/sessions \
     /app/storage/framework/views \
     /app/storage/logs \
     /app/bootstrap/cache \
-    && touch /app/storage/logs/laravel.log \
-    && chown -R www-data:www-data /app/storage /app/bootstrap/cache \
-    && chmod -R 775 /app/storage /app/bootstrap/cache \
-    && chmod 664 /app/storage/logs/laravel.log
+    && chown -R application:application /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
 
-# Expose HTTP port
+# Create a simple artisan file to avoid syntax issues
+RUN echo '#!/usr/bin/env php' > /app/artisan \
+    && echo '<?php' >> /app/artisan \
+    && echo 'define("LARAVEL_START", microtime(true));' >> /app/artisan \
+    && echo 'require __DIR__."/vendor/autoload.php";' >> /app/artisan \
+    && echo '$app = require_once __DIR__."/bootstrap/app.php";' >> /app/artisan \
+    && echo '$kernel = $app->make("Illuminate\Contracts\Console\Kernel");' >> /app/artisan \
+    && echo '$status = $kernel->handle($input = new Symfony\Component\Console\Input\ArgvInput, new Symfony\Component\Console\Output\ConsoleOutput);' >> /app/artisan \
+    && echo '$kernel->terminate($input, $status);' >> /app/artisan \
+    && echo 'exit($status);' >> /app/artisan \
+    && chmod +x /app/artisan
+
+# Copy Nginx configuration
+COPY docker/nginx/nginx.conf /opt/docker/etc/nginx/vhost.conf
+
+# Create entrypoint script for Laravel setup
+RUN echo '#!/bin/bash' > /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'set -e' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'echo "Setting up Laravel application..."' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/storage/app/public' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/storage/framework/cache' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/storage/framework/sessions' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/storage/framework/views' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/storage/logs' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'mkdir -p /app/bootstrap/cache' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'chown -R application:application /app/storage /app/bootstrap/cache' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'chmod -R 775 /app/storage /app/bootstrap/cache' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" ]; then' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo '    php /app/artisan key:generate --force || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'fi' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'if [ ! -z "$DB_CONNECTION" ]; then' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo '    php /app/artisan migrate --force || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'fi' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'php /app/artisan config:clear || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'php /app/artisan cache:clear || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'php /app/artisan view:clear || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'php /app/artisan route:clear || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'php /app/artisan storage:link || true' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && echo 'echo "Laravel application is ready!"' >> /opt/docker/bin/entrypoint.d/30-laravel-setup.sh \
+    && chmod +x /opt/docker/bin/entrypoint.d/30-laravel-setup.sh
+
+# Create health check file
+RUN echo '<?php echo "OK";' > /app/public/health-check.php
+
+# Expose port for CapRover
 EXPOSE 80
 
-# Create a simple artisan file
-COPY docker/artisan.php /app/artisan
-RUN chmod +x /app/artisan
-
-# Copy Nginx and Supervisor configuration
-COPY docker/nginx/nginx.conf /etc/nginx/sites-available/default
-COPY docker/supervisor/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Entry point script
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Entrypoint and CMD
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Set environment variables for webdevops/php-nginx
+ENV WEB_DOCUMENT_ROOT=/app/public
+ENV PHP_DISPLAY_ERRORS=1
+ENV PHP_MEMORY_LIMIT=512M
+ENV PHP_MAX_EXECUTION_TIME=300
+ENV PHP_POST_MAX_SIZE=64M
+ENV PHP_UPLOAD_MAX_FILESIZE=64M
+ENV PHP_DATE_TIMEZONE=UTC
