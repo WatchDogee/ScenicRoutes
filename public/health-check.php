@@ -5,6 +5,8 @@ $response = array(
     'status' => 'ok',
     'timestamp' => date('Y-m-d H:i:s'),
     'message' => 'Application is running',
+    'php_version' => phpversion(),
+    'environment' => getenv('APP_ENV'),
     'checks' => array()
 );
 
@@ -89,6 +91,28 @@ if (!$artisanExists) {
     // List files in the root directory
     $rootFiles = scandir('/app');
     $response['checks']['root_files'] = $rootFiles;
+}
+
+// Check artisan syntax
+if ($artisanExists) {
+    $output = array();
+    $returnVar = 0;
+    exec("php -l /app/artisan 2>&1", $output, $returnVar);
+
+    $response['checks']['artisan_syntax'] = array(
+        'status' => $returnVar === 0 ? 'ok' : 'error',
+        'message' => $returnVar === 0 ? 'Artisan file syntax is valid' : 'Artisan file syntax is invalid: ' . implode(' ', $output)
+    );
+
+    if ($returnVar !== 0) {
+        $response['status'] = 'error';
+
+        // Get artisan content for debugging
+        $artisanContent = file_get_contents('/app/artisan');
+        $response['checks']['artisan_content'] = array(
+            'content' => $artisanContent
+        );
+    }
 }
 
 // Check public directory
