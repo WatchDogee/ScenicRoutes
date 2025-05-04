@@ -74,7 +74,7 @@ require __DIR__.'/vendor/autoload.php';
 $app = require_once __DIR__.'/bootstrap/app.php';
 
 // Run the command
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
+$kernel = $app->make('Illuminate\Contracts\Console\Kernel');
 $status = $kernel->handle(
     $input = new Symfony\Component\Console\Input\ArgvInput,
     new Symfony\Component\Console\Output\ConsoleOutput
