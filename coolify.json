@@ -27,16 +27,27 @@
         "LOG_CHANNEL=stack",
         "BROADCAST_DRIVER=log",
         "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}",
-        "SESSION_DOMAIN=${SESSION_DOMAIN}"
+        "SESSION_DOMAIN=${SESSION_DOMAIN}",
+        "PHP_MEMORY_LIMIT=2G",
+        "PHP_MAX_EXECUTION_TIME=600",
+        "PHP_POST_MAX_SIZE=64M",
+        "PHP_UPLOAD_MAX_FILESIZE=64M",
+        "WEB_DOCUMENT_ROOT=/app/public",
+        "WEB_DOCUMENT_INDEX=index.php",
+        "COMPOSER_MEMORY_LIMIT=-1"
       ],
       "volumes": [
         {
+          "source": ".",
+          "target": "/app"
+        },
+        {
           "source": "app_storage",
-          "target": "/var/www/html/storage"
+          "target": "/app/storage"
         },
         {
           "source": "app_bootstrap_cache",
-          "target": "/var/www/html/bootstrap/cache"
+          "target": "/app/bootstrap/cache"
         }
       ],
       "healthcheck": {
@@ -52,10 +63,12 @@
   "networks": ["app_network"],
   "deploy": {
     "command": [
-      "php artisan migrate --force",
-      "php artisan config:cache",
-      "php artisan route:cache",
-      "php artisan view:cache"
+      "cd /app && php artisan key:generate --force",
+      "cd /app && php artisan migrate --force",
+      "cd /app && php artisan config:cache",
+      "cd /app && php artisan route:cache",
+      "cd /app && php artisan view:cache",
+      "cd /app && php artisan storage:link"
     ]
   }
 }

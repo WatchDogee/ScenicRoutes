@@ -1,14 +1,14 @@
 version: '3'
 
 services:
+  # PHP-FPM service for Laravel backend
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: webdevops/php-nginx:8.2
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
     environment:
+      # Application settings
       - APP_ENV=${APP_ENV:-production}
       - APP_KEY=${APP_KEY}
       - APP_DEBUG=${APP_DEBUG:-false}
@@ -41,9 +41,21 @@ services:
       - BROADCAST_DRIVER=${BROADCAST_DRIVER:-log}
       - SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}
       - SESSION_DOMAIN=${SESSION_DOMAIN}
+
+      # PHP and Nginx configuration
+      - PHP_MEMORY_LIMIT=2G
+      - PHP_MAX_EXECUTION_TIME=600
+      - PHP_POST_MAX_SIZE=64M
+      - PHP_UPLOAD_MAX_FILESIZE=64M
+      - WEB_DOCUMENT_ROOT=/app/public
+      - WEB_DOCUMENT_INDEX=index.php
+
+      # Composer settings
+      - COMPOSER_MEMORY_LIMIT=-1
     volumes:
-      - app_storage:/var/www/html/storage
-      - app_bootstrap_cache:/var/www/html/bootstrap/cache
+      - .:/app
+      - app_storage:/app/storage
+      - app_bootstrap_cache:/app/bootstrap/cache
     networks:
       - app_network
     healthcheck:
@@ -52,6 +64,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 30s
+    command: >
+      bash -c "cd /app &&
+               composer install --no-interaction --optimize-autoloader --no-dev &&
+               npm ci && npm run build &&
+               php artisan config:cache &&
+               php artisan route:cache &&
+               php artisan view:cache &&
+               chown -R application:application /app/storage /app/bootstrap/cache &&
+               supervisord"
 
 volumes:
   app_storage:
