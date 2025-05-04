@@ -13,29 +13,7 @@
         "DB_PORT=${DB_PORT}",
         "DB_DATABASE=${DB_DATABASE}",
         "DB_USERNAME=${DB_USERNAME}",
-        "DB_PASSWORD=${DB_PASSWORD}",
-        "CACHE_DRIVER=file",
-        "SESSION_DRIVER=cookie",
-        "QUEUE_CONNECTION=database",
-        "MAIL_MAILER=${MAIL_MAILER}",
-        "MAIL_HOST=${MAIL_HOST}",
-        "MAIL_PORT=${MAIL_PORT}",
-        "MAIL_USERNAME=${MAIL_USERNAME}",
-        "MAIL_PASSWORD=${MAIL_PASSWORD}",
-        "MAIL_ENCRYPTION=${MAIL_ENCRYPTION}",
-        "MAIL_FROM_ADDRESS=${MAIL_FROM_ADDRESS}",
-        "LOG_CHANNEL=stack",
-        "BROADCAST_DRIVER=log",
-        "SANCTUM_STATEFUL_DOMAINS=${SANCTUM_STATEFUL_DOMAINS}",
-        "SESSION_DOMAIN=${SESSION_DOMAIN}",
-        "PHP_MEMORY_LIMIT=2G",
-        "PHP_MAX_EXECUTION_TIME=600",
-        "PHP_POST_MAX_SIZE=64M",
-        "PHP_UPLOAD_MAX_FILESIZE=64M",
-        "WEB_DOCUMENT_ROOT=/app/public",
-        "WEB_DOCUMENT_INDEX=index.php",
-        "WEB_NGINX_CONF=/app/docker/nginx/custom-nginx.conf",
-        "COMPOSER_MEMORY_LIMIT=-1"
+        "DB_PASSWORD=${DB_PASSWORD}"
       ],
       "volumes": [
         {
@@ -86,3 +64,5 @@
     ]
   }
 }
+
+

@@ -183,3 +183,4 @@ if (file_exists($logFile)) {
     echo "Laravel log file does not exist!\n";
 }
 echo "</pre>";
+
