@@ -45,8 +45,9 @@ phpunit.xml
 *.md
 !CAPROVER_DEPLOYMENT.md
 
-# Explicitly include docker-entrypoint.sh
+# Explicitly include important files
 !docker-entrypoint.sh
+!artisan
 
 # Misc
 .DS_Store

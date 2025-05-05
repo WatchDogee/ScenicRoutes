@@ -13,8 +13,13 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy composer files first for better caching
-COPY composer.json composer.lock ./
+# Copy essential Laravel files first
+COPY composer.json composer.lock artisan ./
+COPY bootstrap/ ./bootstrap/
+COPY config/ ./config/
+COPY database/ ./database/
+COPY routes/ ./routes/
+COPY app/ ./app/
 
 # Copy docker-entrypoint.sh to ensure it's available
 COPY docker-entrypoint.sh /tmp/docker-entrypoint.sh
@@ -43,7 +48,7 @@ RUN chown -R application:application /var/www/html/storage /var/www/html/bootstr
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Create essential directories
-RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache \
+RUN mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/app/public bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # Set environment variables
@@ -56,5 +61,5 @@ ENV APP_ENV=production
 ENV APP_DEBUG=false
 
 # Create initialization script
-COPY /tmp/docker-entrypoint.sh /opt/docker/bin/entrypoint.d/30-laravel-init.sh
+COPY docker-entrypoint.sh /opt/docker/bin/entrypoint.d/30-laravel-init.sh
 RUN chmod +x /opt/docker/bin/entrypoint.d/30-laravel-init.sh

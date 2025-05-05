@@ -6,6 +6,15 @@ cd /var/www/html
 
 echo "Starting Laravel initialization for CapRover..."
 
+# Check if artisan file exists and is executable
+if [ ! -f "artisan" ]; then
+    echo "ERROR: artisan file is missing!"
+    exit 1
+fi
+
+# Ensure artisan is executable
+chmod +x artisan
+
 # Generate app key if not set
 if [ -z "$APP_KEY" ]; then
     echo "Generating application key..."
