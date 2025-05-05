@@ -32,3 +32,5 @@ database/migrations/2025_05_03_000004_create_road_photos_table.php
 docker-compose.yaml
 docker-compose.yml
 COOLIFY_DOCKER_COMPOSE_GUIDE.md
+backup.sql
+MIGRATION_INSTRUCTIONS.md
