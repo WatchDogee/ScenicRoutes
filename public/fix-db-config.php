@@ -38,11 +38,12 @@ if (file_exists($envPath) && is_writable($envPath)) {
 
     // Update APP_URL to match the actual domain
     if (preg_match('/^APP_URL=http:\/\/localhost:3000$/m', $envContent) ||
-        preg_match('/^APP_URL=http:\/\/localhost:8000$/m', $envContent)) {
+        preg_match('/^APP_URL=http:\/\/localhost:8000$/m', $envContent) ||
+        preg_match('/^APP_URL=https:\/\/scenic-routes\.caprover-root\.scenic-routes\.live$/m', $envContent)) {
         // Update APP_URL to the actual domain
-        $envContent = preg_replace('/^APP_URL=http:\/\/localhost:[0-9]+$/m', "APP_URL=https://scenic-routes.caprover-root.scenic-routes.live", $envContent, -1, $count);
+        $envContent = preg_replace('/^APP_URL=.*$/m', "APP_URL=https://scenic-routes.dev.scenic-routes.live", $envContent, -1, $count);
         if ($count > 0) {
-            echo "- Updated APP_URL to 'https://scenic-routes.caprover-root.scenic-routes.live'\n";
+            echo "- Updated APP_URL to 'https://scenic-routes.dev.scenic-routes.live'\n";
             $envUpdated = true;
         }
     }
