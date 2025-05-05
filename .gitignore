@@ -9,6 +9,8 @@
 .env
 .env.backup
 .env.production
+# Allow our specific environment files
+!.env.postgres
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -38,3 +40,5 @@ CAPROVER_DEPLOYMENT.md
 .gitignore
 DB_CONNECTION_TROUBLESHOOTING.md
 SCENIC_ROUTES_DEPLOYMENT_FIX.md
+# Allow our PostgreSQL guide
+!POSTGRES_LARAVEL_CLOUD.md
