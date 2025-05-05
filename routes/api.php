@@ -1,12 +1,12 @@
 <?php
-use App\Http\Controllers\GetRoadsController;
-use App\Http\Controllers\SavedRoadController;
-use App\Http\Controllers\PointOfInterestController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GetRoadsController;
+use App\Http\Controllers\PointOfInterestController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SavedRoadController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 
 // Health check route
 Route::get('/health', function () {

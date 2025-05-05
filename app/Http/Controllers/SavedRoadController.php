@@ -8,8 +8,6 @@ use App\Models\Review;
 use App\Models\Comment;
 use App\Services\ElevationService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 
 class SavedRoadController extends Controller
 {
@@ -149,7 +147,7 @@ class SavedRoadController extends Controller
                     foreach ($coordinates as $point) {
                         $distance = $this->calculateDistance($lat, $lon, $point[0], $point[1]);
                         $minDistance = min($minDistance, $distance);
-                        }
+                    }
 
                     // Store the minimum distance in the road object for sorting
                     $road->distance_to_search = $minDistance;
@@ -164,33 +162,28 @@ class SavedRoadController extends Controller
             // Apply length filter
             if ($lengthFilter !== 'all') {
                 $filteredRoads = $filteredRoads->filter(function ($road) use ($lengthFilter) {
-                    $lengthKm = $road->length / 1000;
-                    switch ($lengthFilter) {
-                        case 'short':
-                            return $lengthKm < 5;
-                        case 'medium':
-                            return $lengthKm >= 5 && $lengthKm <= 15;
-                        case 'long':
-                            return $lengthKm > 15;
-                        default:
-                            return true;
+                    if ($lengthFilter === 'short') {
+                        return $road->length / 1000 < 5;
+                    } elseif ($lengthFilter === 'medium') {
+                        return $road->length / 1000 >= 5 && $road->length / 1000 <= 15;
+                    } elseif ($lengthFilter === 'long') {
+                        return $road->length / 1000 > 15;
                     }
+                    return true;
                 });
             }
 
             // Apply curviness filter
             if ($curvinessFilter !== 'all') {
                 $filteredRoads = $filteredRoads->filter(function ($road) use ($curvinessFilter) {
-                    switch ($curvinessFilter) {
-                        case 'mellow':
-                            return $road->twistiness <= 0.0035;
-                        case 'moderate':
-                            return $road->twistiness > 0.0035 && $road->twistiness <= 0.007;
-                        case 'very':
-                            return $road->twistiness > 0.007;
-                        default:
-                            return true;
+                    if ($curvinessFilter === 'mellow') {
+                        return $road->twistiness <= 0.0035;
+                    } elseif ($curvinessFilter === 'moderate') {
+                        return $road->twistiness > 0.0035 && $road->twistiness <= 0.007;
+                    } elseif ($curvinessFilter === 'very') {
+                        return $road->twistiness > 0.007;
                     }
+                    return true;
                 });
             }
 
@@ -203,20 +196,19 @@ class SavedRoadController extends Controller
 
             // Sort the results
             $sortedRoads = $filteredRoads->sortBy(function ($road) use ($sortBy) {
-                switch ($sortBy) {
-                    case 'rating':
-                        return -($road->reviews_avg_rating ?? 0);
-                    case 'reviews':
-                        return -($road->reviews->count() ?? 0);
-                    case 'recent':
-                        return -strtotime($road->created_at);
-                    case 'length':
-                        return -$road->length;
-                    case 'distance':
-                        return $road->distance_to_search;
-                    default:
-                        // Default sort by distance and then rating
-                        return [$road->distance_to_search, -($road->reviews_avg_rating ?? 0)];
+                if ($sortBy === 'rating') {
+                    return -($road->reviews_avg_rating ?? 0);
+                } elseif ($sortBy === 'reviews') {
+                    return -($road->reviews->count() ?? 0);
+                } elseif ($sortBy === 'recent') {
+                    return -strtotime($road->created_at);
+                } elseif ($sortBy === 'length') {
+                    return -$road->length;
+                } elseif ($sortBy === 'distance') {
+                    return $road->distance_to_search;
+                } else {
+                    // Default sort by distance and then rating
+                    return [$road->distance_to_search, -($road->reviews_avg_rating ?? 0)];
                 }
             });
 
@@ -242,51 +234,51 @@ class SavedRoadController extends Controller
                         'name' => $road->user->name,
                         'profile_picture_url' => $road->user->profile_picture_url,
                     ],
-                    'reviews' => $road->reviews->map(function ($review) {
-                        return [
-                            'id' => $review->id,
-                            'rating' => $review->rating,
-                            'comment' => $review->comment,
-                            'created_at' => $review->created_at,
-                            'updated_at' => $review->updated_at,
-                            'user' => [
-                                'id' => $review->user->id,
-                                'name' => $review->user->name,
-                                'profile_picture_url' => $review->user->profile_picture_url,
-                            ],
-                            'photos' => $review->photos ? $review->photos->map(function ($photo) {
-                                return [
-                                    'id' => $photo->id,
-                                    'photo_url' => $photo->photo_url,
-                                    'caption' => $photo->caption,
-                                    'created_at' => $photo->created_at,
-                                ];
-                            }) : [],
-                        ];
-                    }),
-                    'comments' => $road->comments->map(function ($comment) {
-                        return [
-                            'id' => $comment->id,
-                            'comment' => $comment->comment,
-                            'created_at' => $comment->created_at,
-                            'updated_at' => $comment->updated_at,
-                            'user' => [
-                                'id' => $comment->user->id,
-                                'name' => $comment->user->name,
-                                'profile_picture_url' => $comment->user->profile_picture_url,
-                            ],
-                        ];
-                    }),
-                    'average_rating' => $road->reviews_avg_rating !== null ? (float) $road->reviews_avg_rating : null,
-                    'photos' => $road->photos ? $road->photos->map(function ($photo) {
-                        return [
-                            'id' => $photo->id,
-                            'photo_url' => $photo->photo_url,
-                            'caption' => $photo->caption,
-                            'created_at' => $photo->created_at,
-                            'user_id' => $photo->user_id,
-                        ];
-                    }) : []
+                'reviews' => $road->reviews->map(function ($review) {
+                    return [
+                        'id' => $review->id,
+                        'rating' => $review->rating,
+                        'comment' => $review->comment,
+                        'created_at' => $review->created_at,
+                        'updated_at' => $review->updated_at,
+                        'user' => [
+                            'id' => $review->user->id,
+                            'name' => $review->user->name,
+                            'profile_picture_url' => $review->user->profile_picture_url,
+                        ],
+                        'photos' => $review->photos ? $review->photos->map(function ($photo) {
+                            return [
+                                'id' => $photo->id,
+                                'photo_url' => $photo->photo_url,
+                                'caption' => $photo->caption,
+                                'created_at' => $photo->created_at,
+                            ];
+                        }) : [],
+                    ];
+                }),
+                'comments' => $road->comments->map(function ($comment) {
+                    return [
+                        'id' => $comment->id,
+                        'comment' => $comment->comment,
+                        'created_at' => $comment->created_at,
+                        'updated_at' => $comment->updated_at,
+                        'user' => [
+                            'id' => $comment->user->id,
+                            'name' => $comment->user->name,
+                            'profile_picture_url' => $comment->user->profile_picture_url,
+                        ],
+                    ];
+                }),
+                'average_rating' => $road->reviews_avg_rating !== null ? (float) $road->reviews_avg_rating : null,
+                'photos' => $road->photos ? $road->photos->map(function ($photo) {
+                    return [
+                        'id' => $photo->id,
+                        'photo_url' => $photo->photo_url,
+                        'caption' => $photo->caption,
+                        'created_at' => $photo->created_at,
+                        'user_id' => $photo->user_id,
+                    ];
+                }) : []
                 ];
             });
 
@@ -325,7 +317,7 @@ class SavedRoadController extends Controller
             ]);
 
             // Create or update the review
-            $review = Review::updateOrCreate(
+            Review::updateOrCreate(
                 [
                     'user_id' => Auth::id(),
                     'saved_road_id' => $road->id
@@ -373,7 +365,7 @@ class SavedRoadController extends Controller
             'comment' => 'required|string|max:500'
         ]);
 
-        $comment = Comment::create([
+        Comment::create([
             'user_id' => Auth::id(),
             'saved_road_id' => $road->id,
             'comment' => $request->comment
@@ -382,7 +374,7 @@ class SavedRoadController extends Controller
         return response()->json(['message' => 'Comment added successfully']);
     }
 
-    public function togglePublic(Request $request, $id)
+    public function togglePublic($id)
     {
         $road = SavedRoad::where('id', $id)
             ->where('user_id', Auth::id())

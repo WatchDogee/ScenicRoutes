@@ -13,7 +13,6 @@ class PoiReview extends Model
         'point_of_interest_id',
         'user_id',
         'rating',
-<<<<<<< HEAD
         'comment'
     ];
 
@@ -23,17 +22,6 @@ class PoiReview extends Model
 
     /**
      * Get the point of interest that owns the review.
-=======
-        'comment',
-    ];
-
-    protected $casts = [
-        'rating' => 'float',
-    ];
-
-    /**
-     * Get the POI that owns the review.
->>>>>>> 3792695 (0.2.0 Added POI and revised reviews)
      */
     public function pointOfInterest()
     {
