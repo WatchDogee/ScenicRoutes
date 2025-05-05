@@ -102,7 +102,7 @@ return new class extends Migration
         // Create poi_photos table (depends on points_of_interest and users)
         Schema::create('poi_photos', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('point_of_interest_id')->constrained()->onDelete('cascade');
+            $table->foreignId('point_of_interest_id')->constrained('points_of_interest')->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->string('photo_path');
             $table->string('caption')->nullable();
@@ -112,7 +112,7 @@ return new class extends Migration
         // Create poi_reviews table (depends on points_of_interest and users)
         Schema::create('poi_reviews', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('point_of_interest_id')->constrained()->onDelete('cascade');
+            $table->foreignId('point_of_interest_id')->constrained('points_of_interest')->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
             $table->decimal('rating', 2, 1);
             $table->text('comment')->nullable();
