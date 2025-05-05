@@ -43,6 +43,10 @@ phpunit.xml
 # Documentation
 /docs
 *.md
+!CAPROVER_DEPLOYMENT.md
+
+# Explicitly include docker-entrypoint.sh
+!docker-entrypoint.sh
 
 # Misc
 .DS_Store
