@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y \
     nodejs \
     && apt-get clean \
@@ -16,13 +16,19 @@ RUN apt-get update && apt-get install -y \
 # Copy application files
 COPY . /app
 
-# Install dependencies
+# Install PHP dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
-# Set Node environment to production and increase memory limit for npm
-ENV NODE_ENV=production
+
+# Install Node.js dependencies (including dev dependencies for build)
 ENV NODE_OPTIONS=--max_old_space_size=4096
-# Install and build frontend assets
-RUN npm ci && npm run build
+# We need to install dev dependencies for the build process
+RUN npm ci --include=dev
+# Build frontend assets
+RUN npm run build
+
+# Clean up dev dependencies after build to reduce image size
+ENV NODE_ENV=production
+RUN npm prune --production
 
 # Set permissions
 RUN chown -R application:application /app/storage /app/bootstrap/cache

@@ -12,7 +12,7 @@ This guide provides instructions for deploying the ScenicRoutes application usin
 
 The Docker image includes:
 - PHP 8.2 with Nginx
-- Node.js 18.x for frontend asset compilation
+- Node.js 20.x for frontend asset compilation
 - Composer for PHP dependencies
 - Supervisor for process management
 
@@ -132,7 +132,7 @@ If you encounter Node.js build failures:
    ENV NODE_OPTIONS=--max_old_space_size=8192
    ```
 
-2. Check if your Node.js dependencies are compatible with Node.js 18.x.
+2. Check if your Node.js dependencies are compatible with Node.js 20.x.
 
 3. Try building locally first to identify specific errors.
 
