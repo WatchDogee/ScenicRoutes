@@ -12,38 +12,23 @@ if [ -z "$APP_KEY" ]; then
     php artisan key:generate
 fi
 
-# Configure database connection
-echo "Configuring database connection..."
+# Configure PostgreSQL database connection
+echo "Configuring PostgreSQL database connection..."
 if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ]; then
     # Wait for database to be ready
-    echo "Waiting for database connection..."
+    echo "Waiting for PostgreSQL database connection..."
     max_tries=30
     counter=0
 
-    # Determine connection string based on DB_CONNECTION
-    if [ "$DB_CONNECTION" = "pgsql" ]; then
-        echo "Using PostgreSQL connection..."
-        until php -r "try { new PDO('pgsql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE', '$DB_USERNAME', '$DB_PASSWORD'); echo 'Connected to PostgreSQL database'; } catch (PDOException \$e) { echo \$e->getMessage(); exit(1); }" > /dev/null 2>&1; do
-            sleep 1
-            counter=$((counter + 1))
-            if [ $counter -gt $max_tries ]; then
-                echo "Could not connect to PostgreSQL database after $max_tries attempts. Continuing anyway..."
-                break
-            fi
-            echo "Waiting for PostgreSQL database... ($counter/$max_tries)"
-        done
-    else
-        echo "Using MySQL connection..."
-        until php -r "try { new PDO('mysql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE', '$DB_USERNAME', '$DB_PASSWORD'); echo 'Connected to MySQL database'; } catch (PDOException \$e) { echo \$e->getMessage(); exit(1); }" > /dev/null 2>&1; do
-            sleep 1
-            counter=$((counter + 1))
-            if [ $counter -gt $max_tries ]; then
-                echo "Could not connect to MySQL database after $max_tries attempts. Continuing anyway..."
-                break
-            fi
-            echo "Waiting for MySQL database... ($counter/$max_tries)"
-        done
-    fi
+    until php -r "try { new PDO('pgsql:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE', '$DB_USERNAME', '$DB_PASSWORD'); echo 'Connected to PostgreSQL database'; } catch (PDOException \$e) { echo \$e->getMessage(); exit(1); }" > /dev/null 2>&1; do
+        sleep 1
+        counter=$((counter + 1))
+        if [ $counter -gt $max_tries ]; then
+            echo "Could not connect to PostgreSQL database after $max_tries attempts. Continuing anyway..."
+            break
+        fi
+        echo "Waiting for PostgreSQL database... ($counter/$max_tries)"
+    done
 fi
 
 # Run PostgreSQL migrations

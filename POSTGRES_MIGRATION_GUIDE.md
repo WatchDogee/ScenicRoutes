@@ -4,7 +4,7 @@ This branch is configured to use PostgreSQL with Laravel Cloud. To prevent MySQL
 
 ## How We Prevent MySQL Migrations
 
-1. **Removed MySQL Migration Files**: 
+1. **Removed MySQL Migration Files**:
    - We've removed all MySQL-specific migration files from this branch.
    - Only PostgreSQL migration files remain in the `database/migrations` directory.
 
@@ -49,16 +49,26 @@ php artisan migrate --path=database/migrations/2025_05_05_000000_create_all_tabl
 
 ## Data Migration from MySQL
 
-If you need to migrate data from an existing MySQL database:
+If you need to migrate data from an existing MySQL database, you can use the ImportFromMySQLSeeder:
 
-```bash
-./scripts/migrate-to-postgres.sh
-```
+1. Configure your MySQL connection in `.env`:
+   ```
+   DB_MYSQL_HOST=your-mysql-host
+   DB_MYSQL_PORT=3306
+   DB_MYSQL_DATABASE=your-mysql-database
+   DB_MYSQL_USERNAME=your-mysql-username
+   DB_MYSQL_PASSWORD=your-mysql-password
+   ```
 
-This script will:
-1. Set up the PostgreSQL environment
-2. Run the PostgreSQL migration
-3. Optionally import data from your MySQL database
+2. Run the PostgreSQL migration:
+   ```bash
+   php artisan migrate --path=database/migrations/2025_05_05_000000_create_all_tables_postgres.php
+   ```
+
+3. Run the seeder to import data:
+   ```bash
+   php artisan db:seed --class=Database\\Seeders\\ImportFromMySQLSeeder
+   ```
 
 ## Troubleshooting
 
