@@ -2,7 +2,7 @@
 set -e
 
 # Change to application directory
-cd /app
+cd /var/www/html
 
 echo "Starting Laravel initialization..."
 
@@ -79,10 +79,11 @@ if [ -n "$APP_URL" ] && [ -f "resources/js/bootstrap.js" ]; then
     fi
 fi
 
-# Cache configuration for better performance
-echo "Caching configuration..."
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+# Clear cache for development
+echo "Clearing cache for development..."
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan cache:clear
 
 echo "Laravel initialization completed!"

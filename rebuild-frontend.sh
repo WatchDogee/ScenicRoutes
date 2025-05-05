@@ -6,14 +6,10 @@ cd "$(dirname "$0")"
 
 # Install Node.js dependencies
 echo "Installing Node.js dependencies..."
-npm ci --include=dev
+npm install
 
 # Build frontend assets
 echo "Building frontend assets..."
 npm run build
-
-# Clean up dev dependencies to reduce size
-echo "Cleaning up dev dependencies..."
-npm prune --production
 
 echo "Frontend rebuild completed successfully!"

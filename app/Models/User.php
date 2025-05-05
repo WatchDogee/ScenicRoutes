@@ -73,6 +73,30 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the points of interest added by the user.
+     */
+    public function pointsOfInterest()
+    {
+        return $this->hasMany(PointOfInterest::class);
+    }
+
+    /**
+     * Get the POI photos added by the user.
+     */
+    public function poiPhotos()
+    {
+        return $this->hasMany(PoiPhoto::class);
+    }
+
+    /**
+     * Get the POI reviews added by the user.
+     */
+    public function poiReviews()
+    {
+        return $this->hasMany(PoiReview::class);
+    }
+
+    /**
      * Get the settings for the user.
      */
     public function settings()

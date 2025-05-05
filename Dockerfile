@@ -1,7 +1,7 @@
 FROM webdevops/php-nginx:8.2
 
 # Set working directory
-WORKDIR /app
+WORKDIR /var/www/html
 
 # Install Node.js and npm
 RUN apt-get update && apt-get install -y \
@@ -14,28 +14,24 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application files
-COPY . /app
+COPY . /var/www/html
 
-# Install PHP dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# Install PHP dependencies with dev dependencies for local development
+RUN composer install --no-interaction
 
-# Install Node.js dependencies (including dev dependencies for build)
+# Install Node.js dependencies
 ENV NODE_OPTIONS=--max_old_space_size=4096
-RUN npm ci --include=dev
+RUN npm ci
 
 # Build frontend assets
 RUN npm run build
 
-# Clean up dev dependencies after build to reduce image size
-ENV NODE_ENV=production
-RUN npm prune --production
-
 # Set permissions
-RUN chown -R application:application /app/storage /app/bootstrap/cache
-RUN chmod -R 775 /app/storage /app/bootstrap/cache
+RUN chown -R application:application /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Set environment variables
-ENV WEB_DOCUMENT_ROOT=/app/public
+ENV WEB_DOCUMENT_ROOT=/var/www/html/public
 ENV PHP_MEMORY_LIMIT=512M
 ENV PHP_MAX_EXECUTION_TIME=300
 ENV PHP_POST_MAX_SIZE=64M
