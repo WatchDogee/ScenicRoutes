@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Copy application files
 COPY . /app
 
+# Make the API URL update script executable
+RUN chmod +x /app/update-api-url.sh
+
 # Install PHP dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
@@ -23,6 +26,10 @@ RUN composer install --no-interaction --optimize-autoloader --no-dev
 ENV NODE_OPTIONS=--max_old_space_size=4096
 # We need to install dev dependencies for the build process
 RUN npm ci --include=dev
+
+# Update API URL based on environment
+RUN /app/update-api-url.sh
+
 # Build frontend assets
 RUN npm run build
 
@@ -51,4 +58,9 @@ RUN echo '#!/bin/bash' > /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
     && echo 'php artisan route:cache' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
     && echo 'php artisan view:cache' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
     && echo 'php artisan storage:link || true' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
+    && echo 'echo "Adding domain to sanctum stateful domains..."' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
+    && echo 'DOMAIN=$(echo $APP_URL | sed -e "s|^[^/]*//||" -e "s|/.*$||")' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
+    && echo 'if [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ]; then' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
+    && echo '  php artisan tinker --execute "\\Illuminate\\Support\\Facades\\Config::set(\"sanctum.stateful\", array_merge(\\Illuminate\\Support\\Facades\\Config::get(\"sanctum.stateful\"), [\"$DOMAIN\"]));"' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
+    && echo 'fi' >> /opt/docker/bin/entrypoint.d/30-laravel-init.sh \
     && chmod +x /opt/docker/bin/entrypoint.d/30-laravel-init.sh

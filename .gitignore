@@ -34,3 +34,5 @@ docker-compose.yml
 COOLIFY_DOCKER_COMPOSE_GUIDE.md
 backup.sql
 MIGRATION_INSTRUCTIONS.md
+CAPROVER_DEPLOYMENT.md
+.gitignore
