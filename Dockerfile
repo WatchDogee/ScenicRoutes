@@ -3,12 +3,26 @@ FROM webdevops/php-nginx:8.2
 # Set working directory
 WORKDIR /app
 
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y \
+    nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy application files
 COPY . /app
 
 # Install dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
-RUN npm install && npm run build
+# Set Node environment to production and increase memory limit for npm
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--max_old_space_size=4096
+# Install and build frontend assets
+RUN npm ci && npm run build
 
 # Set permissions
 RUN chown -R application:application /app/storage /app/bootstrap/cache
