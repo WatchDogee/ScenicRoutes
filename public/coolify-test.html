@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScenicRoutes Coolify Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .success {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        .info {
+            background-color: #f1f9ff;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ScenicRoutes Coolify Test</h1>
+        
+        <p class="success">✅ If you can see this page, the web server is working correctly!</p>
+        
+        <div class="info">
+            <p>This is a test page to verify that the Nginx web server is correctly serving static files from the public directory.</p>
+            <p>Next steps:</p>
+            <ul>
+                <li>Check if PHP is working by visiting <a href="coolify-health-check.php">coolify-health-check.php</a></li>
+                <li>Verify Laravel is working by visiting the root URL</li>
+                <li>Check the application logs if you encounter any issues</li>
+            </ul>
+        </div>
+        
+        <p>Timestamp: <span id="timestamp"></span></p>
+    </div>
+
+    <script>
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
