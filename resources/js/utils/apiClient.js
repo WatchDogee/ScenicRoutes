@@ -1,8 +1,18 @@
 import axios from 'axios';
 
+// Dynamically determine the base URL
+const getApiBaseUrl = () => {
+    // In production, use the current origin + /api
+    if (window.location.hostname !== 'localhost') {
+        return `${window.location.origin}/api`;
+    }
+    // In development, use localhost:8000/api
+    return 'http://localhost:8000/api';
+};
+
 // Create axios instance with default config
 const apiClient = axios.create({
-    baseURL: '/api', // This is already prepended, so don't add /api in the URLs
+    baseURL: getApiBaseUrl(),
     headers: {
         'X-Requested-With': 'XMLHttpRequest',
         'Accept': 'application/json',
@@ -80,7 +90,7 @@ apiClient.interceptors.response.use(
             try {
                 // Try to refresh the CSRF token
                 await axios.get('/sanctum/csrf-cookie');
-                
+
                 // Check if we have a valid auth token
                 const authToken = localStorage.getItem('token');
                 if (!authToken) {

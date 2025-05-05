@@ -1,43 +1,59 @@
 #!/bin/bash
 
 # This script updates the API base URL in the frontend code
-# It replaces the hardcoded localhost URL with the APP_URL from environment
+# It ensures the correct domain is used in production
 
 # Get the APP_URL from environment or use a default
 APP_URL=${APP_URL:-http://localhost:8000}
 
 echo "Updating API base URL to: $APP_URL"
 
-# Update the bootstrap.js file
-if [ -f /app/resources/js/bootstrap.js ]; then
-    # Replace the hardcoded localhost URL with the APP_URL
-    sed -i "s|window.axios.defaults.baseURL = 'http://localhost:8000'|window.axios.defaults.baseURL = '$APP_URL'|g" /app/resources/js/bootstrap.js
-    echo "Updated bootstrap.js"
-fi
+# Extract domain from APP_URL
+DOMAIN=$(echo $APP_URL | sed -e 's|^[^/]*//||' -e 's|/.*$||')
+echo "Domain extracted: $DOMAIN"
 
-# Update the apiClient.js file if needed
-if [ -f /app/resources/js/utils/apiClient.js ]; then
-    # Make sure baseURL is set correctly
-    sed -i "s|baseURL: '/api'|baseURL: '$APP_URL/api'|g" /app/resources/js/utils/apiClient.js
-    echo "Updated apiClient.js"
-fi
-
-# Update the apiUtils.js file if needed
-if [ -f /app/resources/js/utils/apiUtils.js ]; then
-    # Make sure baseURL is set correctly
-    sed -i "s|baseURL: '/'|baseURL: '$APP_URL'|g" /app/resources/js/utils/apiUtils.js
-    echo "Updated apiUtils.js"
-fi
-
-# Update sanctum.php to include the domain
+# Update sanctum.php stateful domains configuration
 if [ -f /app/config/sanctum.php ]; then
-    # Extract domain from APP_URL
-    DOMAIN=$(echo $APP_URL | sed -e 's|^[^/]*//||' -e 's|/.*$||')
-    
-    # Add the domain to the stateful domains array if it's not localhost
+    # Check if domain is already in the stateful domains list
     if [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ]; then
-        sed -i "/^    'stateful' => \[/a \ \ \ \ \ \ \ \ '$DOMAIN'," /app/config/sanctum.php
-        echo "Added $DOMAIN to stateful domains in sanctum.php"
+        # Use PHP artisan to update the config
+        cd /app
+        php artisan tinker --execute "
+            \$stateful = config('sanctum.stateful');
+            if (!in_array('$DOMAIN', \$stateful)) {
+                \$stateful[] = '$DOMAIN';
+                config(['sanctum.stateful' => \$stateful]);
+                echo 'Added $DOMAIN to sanctum stateful domains.';
+            } else {
+                echo '$DOMAIN already in sanctum stateful domains.';
+            }
+        "
+        echo "Updated sanctum.php configuration"
+    fi
+fi
+
+# Update session domain in .env if needed
+if [ -f /app/.env ]; then
+    if [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ]; then
+        # Check if SESSION_DOMAIN is already set
+        if grep -q "^SESSION_DOMAIN=" /app/.env; then
+            # Update existing SESSION_DOMAIN
+            sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=.$DOMAIN|g" /app/.env
+        else
+            # Add SESSION_DOMAIN
+            echo "SESSION_DOMAIN=.$DOMAIN" >> /app/.env
+        fi
+
+        # Check if SANCTUM_STATEFUL_DOMAINS is already set
+        if grep -q "^SANCTUM_STATEFUL_DOMAINS=" /app/.env; then
+            # Update existing SANCTUM_STATEFUL_DOMAINS
+            sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$DOMAIN|g" /app/.env
+        else
+            # Add SANCTUM_STATEFUL_DOMAINS
+            echo "SANCTUM_STATEFUL_DOMAINS=$DOMAIN" >> /app/.env
+        fi
+
+        echo "Updated .env file with domain configuration"
     fi
 fi
 
