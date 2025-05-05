@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
 # Copy composer files first for better caching
 COPY composer.json composer.lock ./
 
+# Copy docker-entrypoint.sh to ensure it's available
+COPY docker-entrypoint.sh /tmp/docker-entrypoint.sh
+
 # Install PHP dependencies for production (no dev dependencies)
 RUN composer install --no-dev --no-interaction --optimize-autoloader
 
@@ -53,5 +56,5 @@ ENV APP_ENV=production
 ENV APP_DEBUG=false
 
 # Create initialization script
-COPY docker-entrypoint.sh /opt/docker/bin/entrypoint.d/30-laravel-init.sh
+COPY /tmp/docker-entrypoint.sh /opt/docker/bin/entrypoint.d/30-laravel-init.sh
 RUN chmod +x /opt/docker/bin/entrypoint.d/30-laravel-init.sh
