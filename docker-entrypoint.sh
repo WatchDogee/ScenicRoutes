@@ -4,7 +4,7 @@ set -e
 # Change to application directory
 cd /var/www/html
 
-echo "Starting Laravel initialization for Coolify..."
+echo "Starting Laravel initialization for CapRover..."
 
 # Generate app key if not set
 if [ -z "$APP_KEY" ]; then
@@ -87,4 +87,4 @@ php artisan view:clear
 php artisan cache:clear
 php artisan optimize
 
-echo "Coolify initialization completed!"
+echo "CapRover initialization completed!"

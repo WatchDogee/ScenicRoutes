@@ -30,6 +30,8 @@ database/migrations/2025_05_03_000003_create_review_photos_table.php
 database/migrations/2025_05_03_000002_create_poi_reviews_table.php
 database/migrations/2025_05_03_000004_create_road_photos_table.php
 docker-compose.yaml
+docker-compose.yml
+COOLIFY_DOCKER_COMPOSE_GUIDE.md
 backup.sql
 MIGRATION_INSTRUCTIONS.md
 .gitignore
