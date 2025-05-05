@@ -19,7 +19,7 @@ if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ]; then
     echo "Waiting for database connection..."
     max_tries=30
     counter=0
-    
+
     until php -r "try { new PDO('$DB_CONNECTION:host=$DB_HOST;port=$DB_PORT;dbname=$DB_DATABASE', '$DB_USERNAME', '$DB_PASSWORD'); echo 'Connected to database'; } catch (PDOException \$e) { echo \$e->getMessage(); exit(1); }" > /dev/null 2>&1; do
         sleep 1
         counter=$((counter + 1))
@@ -43,27 +43,28 @@ php artisan storage:link || echo "Storage link creation failed, but continuing..
 echo "Configuring Sanctum stateful domains..."
 if [ -n "$APP_URL" ]; then
     DOMAIN=$(echo $APP_URL | sed -e "s|^[^/]*//||" -e "s|/.*$||")
-    
+
     if [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ]; then
         echo "Adding domain $DOMAIN to Sanctum stateful domains..."
-        
+
         # Extract the root domain for session cookies
         ROOT_DOMAIN=$(echo $DOMAIN | grep -oP '([^.]+\.[^.]+)$' || echo $DOMAIN)
-        
+
         # Update SESSION_DOMAIN in .env if it exists
         if grep -q "^SESSION_DOMAIN=" .env; then
             sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=.$ROOT_DOMAIN|g" .env
         else
             echo "SESSION_DOMAIN=.$ROOT_DOMAIN" >> .env
         fi
-        
+
         # Update SANCTUM_STATEFUL_DOMAINS in .env if it exists
         if grep -q "^SANCTUM_STATEFUL_DOMAINS=" .env; then
-            sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$DOMAIN|g" .env
+            # Add both the full domain and the root domain with wildcard
+            sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN|g" .env
         else
-            echo "SANCTUM_STATEFUL_DOMAINS=$DOMAIN" >> .env
+            echo "SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN" >> .env
         fi
-        
+
         echo "Domain configuration updated in .env file"
     fi
 fi
