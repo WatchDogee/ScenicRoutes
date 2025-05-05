@@ -979,10 +979,8 @@ export default function Map() {
             setPublicRoads(formattedRoads);
         } catch (error) {
             console.error('Error fetching public roads:', error);
-            // Don't show error popup for background refreshes
-            if (!isSubmitting) {
-                setSearchError('Failed to fetch public roads. Please try again.');
-            }
+            // Show error popup
+            setSearchError('Failed to fetch public roads. Please try again.');
         }
     };
 

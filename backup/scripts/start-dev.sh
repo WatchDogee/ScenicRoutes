@@ -15,7 +15,7 @@ sleep 5
 
 # Run migrations
 echo "Running database migrations..."
-docker-compose exec app php artisan migrate
+./reset-db.sh
 
 # Create storage link
 echo "Creating storage link..."

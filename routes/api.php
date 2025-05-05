@@ -5,6 +5,31 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+// Health check route
+Route::get('/health', function () {
+    try {
+        // Test database connection
+        DB::connection()->getPdo();
+        return response()->json([
+            'status' => 'ok',
+            'message' => 'API is running',
+            'database' => 'connected',
+            'database_name' => DB::connection()->getDatabaseName(),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Database connection failed',
+            'error' => $e->getMessage(),
+            'php_version' => PHP_VERSION,
+            'laravel_version' => app()->version(),
+        ], 500);
+    }
+});
 
 // Auth routes
 Route::post('/register', [AuthController::class, 'register']);

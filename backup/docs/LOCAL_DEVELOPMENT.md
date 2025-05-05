@@ -52,17 +52,24 @@ Use the provided script to switch between environments:
 
 ### Database Migrations
 
+The application uses a single comprehensive migration file that creates all necessary tables. This simplifies the database setup and ensures all tables are created in the correct order with proper relationships.
+
 To run database migrations:
 
 ```bash
 docker-compose exec app php artisan migrate
 ```
 
-To refresh the database (caution: this will delete all data):
+To reset the database (caution: this will delete all data):
 
 ```bash
-docker-compose exec app php artisan migrate:fresh
+./reset-db.sh
 ```
+
+This script will:
+1. Check if Docker containers are running
+2. Start them if needed
+3. Run the migration with the `--force` flag
 
 ### Frontend Development
 
