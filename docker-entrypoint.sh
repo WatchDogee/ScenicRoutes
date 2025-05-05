@@ -53,25 +53,65 @@ if [ -n "$APP_URL" ]; then
     if [ "$DOMAIN" != "localhost" ] && [ "$DOMAIN" != "127.0.0.1" ]; then
         echo "Adding domain $DOMAIN to Sanctum stateful domains..."
 
-        # Extract the root domain for session cookies
-        ROOT_DOMAIN=$(echo $DOMAIN | grep -oP '([^.]+\.[^.]+)$' || echo $DOMAIN)
-
-        # Update SESSION_DOMAIN in .env if it exists
-        if grep -q "^SESSION_DOMAIN=" .env; then
-            sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=.$ROOT_DOMAIN|g" .env
+        # Use the provided SESSION_DOMAIN and SANCTUM_STATEFUL_DOMAINS if available
+        if [ -n "$SESSION_DOMAIN" ]; then
+            echo "Using provided SESSION_DOMAIN: $SESSION_DOMAIN"
+            # Update SESSION_DOMAIN in .env if it exists
+            if grep -q "^SESSION_DOMAIN=" .env; then
+                sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=$SESSION_DOMAIN|g" .env
+            else
+                echo "SESSION_DOMAIN=$SESSION_DOMAIN" >> .env
+            fi
         else
-            echo "SESSION_DOMAIN=.$ROOT_DOMAIN" >> .env
+            # Extract the root domain for session cookies
+            ROOT_DOMAIN=$(echo $DOMAIN | grep -oP '([^.]+\.[^.]+)$' || echo $DOMAIN)
+            echo "Setting SESSION_DOMAIN to .$ROOT_DOMAIN"
+            # Update SESSION_DOMAIN in .env if it exists
+            if grep -q "^SESSION_DOMAIN=" .env; then
+                sed -i "s|^SESSION_DOMAIN=.*|SESSION_DOMAIN=.$ROOT_DOMAIN|g" .env
+            else
+                echo "SESSION_DOMAIN=.$ROOT_DOMAIN" >> .env
+            fi
         fi
 
-        # Update SANCTUM_STATEFUL_DOMAINS in .env if it exists
-        if grep -q "^SANCTUM_STATEFUL_DOMAINS=" .env; then
-            # Add both the full domain and the root domain with wildcard
-            sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN|g" .env
+        if [ -n "$SANCTUM_STATEFUL_DOMAINS" ]; then
+            echo "Using provided SANCTUM_STATEFUL_DOMAINS: $SANCTUM_STATEFUL_DOMAINS"
+            # Update SANCTUM_STATEFUL_DOMAINS in .env if it exists
+            if grep -q "^SANCTUM_STATEFUL_DOMAINS=" .env; then
+                sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$SANCTUM_STATEFUL_DOMAINS|g" .env
+            else
+                echo "SANCTUM_STATEFUL_DOMAINS=$SANCTUM_STATEFUL_DOMAINS" >> .env
+            fi
         else
-            echo "SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN" >> .env
+            # Add both the full domain and the root domain with wildcard
+            echo "Setting SANCTUM_STATEFUL_DOMAINS to $DOMAIN,*.$ROOT_DOMAIN"
+            if grep -q "^SANCTUM_STATEFUL_DOMAINS=" .env; then
+                sed -i "s|^SANCTUM_STATEFUL_DOMAINS=.*|SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN|g" .env
+            else
+                echo "SANCTUM_STATEFUL_DOMAINS=$DOMAIN,*.$ROOT_DOMAIN" >> .env
+            fi
         fi
 
         echo "Domain configuration updated in .env file"
+    fi
+fi
+
+# Configure Nixpacks settings if provided
+if [ -n "$NIXPACKS_PHP_ROOT_DIR" ] || [ -n "$NIXPACKS_PHP_FALLBACK_PATH" ]; then
+    echo "Configuring Nixpacks settings..."
+
+    if [ -n "$NIXPACKS_PHP_ROOT_DIR" ]; then
+        echo "NIXPACKS_PHP_ROOT_DIR: $NIXPACKS_PHP_ROOT_DIR"
+        # Create symbolic link if needed
+        if [ "$NIXPACKS_PHP_ROOT_DIR" != "/var/www/html/public" ] && [ ! -L "$NIXPACKS_PHP_ROOT_DIR" ]; then
+            echo "Creating symbolic link from $NIXPACKS_PHP_ROOT_DIR to /var/www/html/public"
+            mkdir -p $(dirname "$NIXPACKS_PHP_ROOT_DIR")
+            ln -sf /var/www/html/public "$NIXPACKS_PHP_ROOT_DIR"
+        fi
+    fi
+
+    if [ -n "$NIXPACKS_PHP_FALLBACK_PATH" ]; then
+        echo "NIXPACKS_PHP_FALLBACK_PATH: $NIXPACKS_PHP_FALLBACK_PATH"
     fi
 fi
 

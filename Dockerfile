@@ -52,6 +52,12 @@ ENV PHP_UPLOAD_MAX_FILESIZE=64M
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 
+# Copy Nginx configuration
+COPY docker/nginx/coolify.conf /opt/docker/etc/nginx/vhost.conf
+
 # Create initialization script
 COPY docker-entrypoint.sh /opt/docker/bin/entrypoint.d/30-laravel-init.sh
 RUN chmod +x /opt/docker/bin/entrypoint.d/30-laravel-init.sh
+
+# Create health check file
+RUN echo "<?php echo 'OK'; ?>" > /var/www/html/public/health-check.php
