@@ -46,9 +46,9 @@ if [ -n "$DB_HOST" ] && [ -n "$DB_DATABASE" ]; then
     fi
 fi
 
-# Run migrations
-echo "Running database migrations..."
-php artisan migrate --force || echo "Migration failed, but continuing..."
+# Run PostgreSQL migrations
+echo "Running PostgreSQL migrations..."
+php artisan migrate --path=database/migrations/2025_05_05_000000_create_all_tables_postgres.php --force || echo "PostgreSQL migration failed, but continuing..."
 
 # Create storage link
 echo "Creating storage link..."
