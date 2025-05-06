@@ -46,3 +46,5 @@ SCENIC_ROUTES_DEPLOYMENT_FIX.md
 !POSTGRES_MIGRATION_GUIDE.md
 fix-storage.php
 db-management.php
+captain-definition
+.gitignore

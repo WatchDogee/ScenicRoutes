@@ -1494,24 +1494,7 @@ export default function Map() {
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
             <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
-                {/* Collapse toggle button - positioned differently based on sidebar state */}
-                <button
-                    onClick={toggleSidebar}
-                    className={`${sidebarCollapsed ? 'absolute top-4 left-1/2 transform -translate-x-1/2' : 'absolute top-4 right-0 transform translate-x-1/2'}
-                    bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition-colors z-30 flex items-center justify-center`}
-                    title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                    {sidebarCollapsed ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                        </svg>
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                    )}
-                </button>
+                {/* Sidebar toggle button removed from here */}
 
                 {/* Collapsed sidebar content - show icons only */}
                 {sidebarCollapsed && (
@@ -1844,6 +1827,16 @@ export default function Map() {
 
             {/* Map */}
             <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto' }}>
+                {/* Sidebar toggle button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="absolute top-4 left-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+                    style={{ zIndex: 1000 }}
+                >
+                    {sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}
+                </button>
+
+                {/* Community toggle button */}
                 <button
                     onClick={() => setShowCommunity(!showCommunity)}
                     className="absolute top-4 right-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
@@ -1854,7 +1847,7 @@ export default function Map() {
 
                 {/* POI Controls */}
                 <div
-                    className="absolute top-20 left-4"
+                    className="absolute top-20 left-4 max-w-[250px]"
                     style={{ zIndex: 1000, pointerEvents: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                 >
