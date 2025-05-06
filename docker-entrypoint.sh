@@ -171,8 +171,10 @@ else
     fi
 fi
 
-# Create a debug file
-echo "Creating debug file..."
+# Create debug files
+echo "Creating debug files..."
+
+# Create nginx-debug.php
 cat > /var/www/html/public/nginx-debug.php << 'EOL'
 <?php
 header('Content-Type: text/plain');
@@ -217,5 +219,21 @@ foreach ($safeServerVars as $key) {
     }
 }
 EOL
+
+# Create entrypoint-debug.txt
+echo "ScenicRoutes entrypoint script ran at $(date)" > /var/www/html/public/entrypoint-debug.txt
+echo "Environment variables (safe):" >> /var/www/html/public/entrypoint-debug.txt
+echo "APP_ENV: $APP_ENV" >> /var/www/html/public/entrypoint-debug.txt
+echo "APP_DEBUG: $APP_DEBUG" >> /var/www/html/public/entrypoint-debug.txt
+echo "APP_URL: $APP_URL" >> /var/www/html/public/entrypoint-debug.txt
+echo "DB_CONNECTION: $DB_CONNECTION" >> /var/www/html/public/entrypoint-debug.txt
+echo "DB_HOST: $DB_HOST" >> /var/www/html/public/entrypoint-debug.txt
+echo "DB_PORT: $DB_PORT" >> /var/www/html/public/entrypoint-debug.txt
+echo "DB_DATABASE: $DB_DATABASE" >> /var/www/html/public/entrypoint-debug.txt
+echo "SESSION_DOMAIN: $SESSION_DOMAIN" >> /var/www/html/public/entrypoint-debug.txt
+echo "SANCTUM_STATEFUL_DOMAINS: $SANCTUM_STATEFUL_DOMAINS" >> /var/www/html/public/entrypoint-debug.txt
+echo "NIXPACKS_PHP_ROOT_DIR: $NIXPACKS_PHP_ROOT_DIR" >> /var/www/html/public/entrypoint-debug.txt
+echo "NIXPACKS_PHP_FALLBACK_PATH: $NIXPACKS_PHP_FALLBACK_PATH" >> /var/www/html/public/entrypoint-debug.txt
+echo "WEB_DOCUMENT_ROOT: $WEB_DOCUMENT_ROOT" >> /var/www/html/public/entrypoint-debug.txt
 
 echo "Coolify initialization completed!"

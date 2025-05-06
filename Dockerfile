@@ -37,6 +37,9 @@ RUN rm -rf node_modules
 
 # Set permissions
 RUN chown -R application:application /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Create a debug file to verify the container is using our Dockerfile
+RUN echo "ScenicRoutes Dockerfile - $(date)" > /var/www/html/public/dockerfile-version.txt
 RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Create essential directories
