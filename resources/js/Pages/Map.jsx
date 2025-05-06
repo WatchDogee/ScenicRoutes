@@ -787,6 +787,12 @@ export default function Map() {
         };
 
         const handleNavigateClick = () => {
+            // Set the selected road at the Map component level
+            setSelectedRoad({
+                ...road,
+                road_coordinates: road.road_coordinates
+            });
+            // Open the navigation selector modal at the Map component level
             setShowNavigationSelector(true);
         };
 
@@ -991,27 +997,7 @@ export default function Map() {
                     </div>
                 )}
 
-                {showNavigationSelector && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                        <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-                            <div className="flex justify-between items-start mb-4">
-                                <NavigationAppSelector
-                                    coordinates={JSON.parse(road.road_coordinates)}
-                                    roadName={road.road_name}
-                                />
-                                <button
-                                    onClick={() => {
-                                        setShowNavigationSelector(false);
-                                        setSelectedRoad(null);
-                                    }}
-                                    className="text-gray-500 hover:text-gray-700"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Navigation modal is now handled at the Map component level */}
             </li>
         );
     };
@@ -1513,11 +1499,13 @@ export default function Map() {
         }
     };
 
+    // Global navigation handler used by community tab
     const handleNavigateClick = (road) => {
         if (!road.road_coordinates) {
             alert('No coordinates available for this road');
             return;
         }
+        // Set the selected road and open the navigation modal
         setSelectedRoad(road);
         setShowNavigationSelector(true);
     };
@@ -2183,11 +2171,29 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {showNavigationSelector && selectedRoad && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                        <div className="flex justify-between items-start mb-4">
                             <NavigationAppSelector
-                    isOpen={showNavigationSelector}
-                    onClose={() => setShowNavigationSelector(false)}
-                    coordinates={selectedRoad.road_coordinates}
-                />
+                                coordinates={selectedRoad.road_coordinates}
+                                roadName={selectedRoad.road_name}
+                                onClose={() => {
+                                    setShowNavigationSelector(false);
+                                    setSelectedRoad(null);
+                                }}
+                            />
+                            <button
+                                onClick={() => {
+                                    setShowNavigationSelector(false);
+                                    setSelectedRoad(null);
+                                }}
+                                className="text-gray-500 hover:text-gray-700"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
