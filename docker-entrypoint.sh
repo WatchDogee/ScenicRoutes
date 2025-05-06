@@ -102,11 +102,31 @@ if [ -n "$NIXPACKS_PHP_ROOT_DIR" ] || [ -n "$NIXPACKS_PHP_FALLBACK_PATH" ]; then
 
     if [ -n "$NIXPACKS_PHP_ROOT_DIR" ]; then
         echo "NIXPACKS_PHP_ROOT_DIR: $NIXPACKS_PHP_ROOT_DIR"
+
         # Create symbolic link if needed
-        if [ "$NIXPACKS_PHP_ROOT_DIR" != "/var/www/html/public" ] && [ ! -L "$NIXPACKS_PHP_ROOT_DIR" ]; then
+        if [ "$NIXPACKS_PHP_ROOT_DIR" != "/var/www/html/public" ]; then
             echo "Creating symbolic link from $NIXPACKS_PHP_ROOT_DIR to /var/www/html/public"
             mkdir -p $(dirname "$NIXPACKS_PHP_ROOT_DIR")
+
+            # Remove existing directory or link if it exists
+            if [ -e "$NIXPACKS_PHP_ROOT_DIR" ]; then
+                echo "Removing existing directory or link at $NIXPACKS_PHP_ROOT_DIR"
+                rm -rf "$NIXPACKS_PHP_ROOT_DIR"
+            fi
+
+            # Create the symbolic link
             ln -sf /var/www/html/public "$NIXPACKS_PHP_ROOT_DIR"
+            echo "Symbolic link created successfully"
+
+            # Verify the link
+            if [ -L "$NIXPACKS_PHP_ROOT_DIR" ]; then
+                echo "Verified: $NIXPACKS_PHP_ROOT_DIR is now a symbolic link"
+                ls -la "$NIXPACKS_PHP_ROOT_DIR"
+            else
+                echo "Warning: Failed to create symbolic link at $NIXPACKS_PHP_ROOT_DIR"
+            fi
+        else
+            echo "No symbolic link needed, NIXPACKS_PHP_ROOT_DIR already points to /var/www/html/public"
         fi
     fi
 
@@ -132,5 +152,70 @@ php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 php artisan optimize
+
+# Verify Nginx configuration
+echo "Verifying Nginx configuration..."
+NGINX_CONF_PATH="/opt/docker/etc/nginx/vhost.conf"
+if [ -f "$NGINX_CONF_PATH" ]; then
+    echo "Nginx configuration found at $NGINX_CONF_PATH"
+    grep -q "root /var/www/html/public" "$NGINX_CONF_PATH" && echo "Document root correctly set in Nginx config" || echo "WARNING: Document root may not be correctly set in Nginx config"
+else
+    echo "WARNING: Nginx configuration not found at $NGINX_CONF_PATH"
+    # Try to copy it again
+    if [ -f "/var/www/html/docker/nginx/coolify.conf" ]; then
+        echo "Copying Nginx configuration from /var/www/html/docker/nginx/coolify.conf to $NGINX_CONF_PATH"
+        cp /var/www/html/docker/nginx/coolify.conf "$NGINX_CONF_PATH"
+        echo "Nginx configuration copied successfully"
+    else
+        echo "ERROR: Could not find Nginx configuration at /var/www/html/docker/nginx/coolify.conf"
+    fi
+fi
+
+# Create a debug file
+echo "Creating debug file..."
+cat > /var/www/html/public/nginx-debug.php << 'EOL'
+<?php
+header('Content-Type: text/plain');
+echo "Nginx Configuration Debug\n";
+echo "=======================\n\n";
+
+// Check Nginx configuration files
+$nginxConfigPaths = [
+    '/etc/nginx/conf.d/default.conf',
+    '/etc/nginx/sites-enabled/default',
+    '/etc/nginx/nginx.conf',
+    '/opt/docker/etc/nginx/vhost.conf'
+];
+
+foreach ($nginxConfigPaths as $path) {
+    echo "$path: " . (file_exists($path) ? "Exists" : "Not found") . "\n";
+    if (file_exists($path)) {
+        $content = file_get_contents($path);
+        echo "Content (first 10 lines):\n";
+        $lines = explode("\n", $content);
+        for ($i = 0; $i < min(10, count($lines)); $i++) {
+            // Filter out any potential sensitive information
+            $line = $lines[$i];
+            if (preg_match('/(password|secret|key|token)/i', $line)) {
+                $line = "[SENSITIVE INFORMATION REDACTED]";
+            }
+            echo ($i+1) . ": " . $line . "\n";
+        }
+        echo "\n";
+    }
+}
+
+echo "Server Variables (Safe):\n";
+$safeServerVars = [
+    'SERVER_SOFTWARE', 'SERVER_NAME', 'SERVER_ADDR', 'SERVER_PORT',
+    'DOCUMENT_ROOT', 'SCRIPT_FILENAME', 'REQUEST_URI', 'SCRIPT_NAME',
+    'PHP_SELF', 'REQUEST_METHOD'
+];
+foreach ($safeServerVars as $key) {
+    if (isset($_SERVER[$key])) {
+        echo "$key: " . $_SERVER[$key] . "\n";
+    }
+}
+EOL
 
 echo "Coolify initialization completed!"

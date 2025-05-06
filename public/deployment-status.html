@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ScenicRoutes Deployment Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #FF9800;
+            font-weight: bold;
+        }
+        .error {
+            color: #F44336;
+            font-weight: bold;
+        }
+        .diagnostic-links {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+        .diagnostic-links a {
+            display: block;
+            margin: 10px 0;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .diagnostic-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ScenicRoutes Deployment Status</h1>
+        
+        <p>This page helps you check the status of your ScenicRoutes deployment.</p>
+        
+        <div class="diagnostic-links">
+            <h2>Diagnostic Tools</h2>
+            <p>Click on the links below to run diagnostic tests:</p>
+            
+            <a href="health-check.php">Basic Health Check</a>
+            <p>Checks if PHP is working correctly.</p>
+            
+            <a href="app-test.php">Application Test</a>
+            <p>Tests if the Laravel application is loading correctly.</p>
+            
+            <a href="nginx-debug.php">Nginx Configuration Check</a>
+            <p>Checks the Nginx server configuration.</p>
+            
+            <a href="coolify-debug.php">Environment Check</a>
+            <p>Checks the deployment environment configuration.</p>
+            
+            <a href="info.php">PHP Information</a>
+            <p>Shows detailed PHP configuration information.</p>
+        </div>
+        
+        <h2>Common Issues</h2>
+        
+        <h3 class="warning">Seeing the "Welcome to nginx" page?</h3>
+        <p>This usually means Nginx is not using your application's configuration. Check:</p>
+        <ul>
+            <li>Nginx configuration path in the container</li>
+            <li>Document root settings</li>
+            <li>PHP-FPM configuration</li>
+        </ul>
+        
+        <h3 class="warning">Application not loading correctly?</h3>
+        <p>This could be due to:</p>
+        <ul>
+            <li>Missing or incorrect .env file</li>
+            <li>Database connection issues</li>
+            <li>Laravel bootstrap errors</li>
+        </ul>
+        
+        <p>Timestamp: <script>document.write(new Date().toLocaleString());</script></p>
+    </div>
+</body>
+</html>
