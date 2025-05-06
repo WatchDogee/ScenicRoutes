@@ -66,8 +66,8 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
                 url = `https://www.google.com/maps/dir/?api=1&origin=${startPoint[0]},${startPoint[1]}&destination=${endPoint[0]},${endPoint[1]}&travelmode=driving`;
         }
 
-        // Try to open the app, fallback to browser if app not installed
-        window.location.href = url;
+        // Open in a new tab instead of redirecting
+        window.open(url, '_blank');
     };
 
     return (

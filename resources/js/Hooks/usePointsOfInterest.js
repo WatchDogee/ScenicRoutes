@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
+// Import the MarkerCluster plugin
+import 'leaflet.markercluster/dist/leaflet.markercluster';
+// Import the MarkerCluster styles
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import PointOfInterestService from '../Services/PointOfInterestService';
 
 export default function usePointsOfInterest(mapRef) {
@@ -25,17 +30,50 @@ export default function usePointsOfInterest(mapRef) {
 
         console.log('Initializing POI layer groups');
 
-        // Only create layer groups if they don't exist
+        // Only create marker cluster groups if they don't exist
         if (!tourismLayerRef.current) {
-            tourismLayerRef.current = L.layerGroup().addTo(mapRef.current);
+            tourismLayerRef.current = L.markerClusterGroup({
+                disableClusteringAtZoom: 16,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                iconCreateFunction: function(cluster) {
+                    return L.divIcon({
+                        html: `<div class="cluster-icon tourism-cluster">${cluster.getChildCount()}</div>`,
+                        className: 'custom-cluster-icon',
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            }).addTo(mapRef.current);
         }
 
         if (!fuelLayerRef.current) {
-            fuelLayerRef.current = L.layerGroup().addTo(mapRef.current);
+            fuelLayerRef.current = L.markerClusterGroup({
+                disableClusteringAtZoom: 16,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                iconCreateFunction: function(cluster) {
+                    return L.divIcon({
+                        html: `<div class="cluster-icon fuel-cluster">${cluster.getChildCount()}</div>`,
+                        className: 'custom-cluster-icon',
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            }).addTo(mapRef.current);
         }
 
         if (!chargingLayerRef.current) {
-            chargingLayerRef.current = L.layerGroup().addTo(mapRef.current);
+            chargingLayerRef.current = L.markerClusterGroup({
+                disableClusteringAtZoom: 16,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                iconCreateFunction: function(cluster) {
+                    return L.divIcon({
+                        html: `<div class="cluster-icon charging-cluster">${cluster.getChildCount()}</div>`,
+                        className: 'custom-cluster-icon',
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            }).addTo(mapRef.current);
         }
 
         // Clear layers on unmount

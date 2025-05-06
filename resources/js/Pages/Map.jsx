@@ -1045,12 +1045,15 @@ export default function Map() {
         const leafletMap = L.map(mapContainer, {
             center: [57.1, 27.1],
             zoom: 10,
-            zoomControl: true,
+            zoomControl: false, // Disable default zoom control, we'll add it manually
             attributionControl: true,
             fadeAnimation: true,
             zoomAnimation: true,
             markerZoomAnimation: true
         });
+
+        // Add zoom control to the bottom-right corner
+        L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
@@ -1851,7 +1854,7 @@ export default function Map() {
 
             {/* Map */}
             <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto' }}>
-                {/* Sidebar toggle button */}
+                {/* Sidebar toggle button - positioned at the top */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
@@ -1875,7 +1878,7 @@ export default function Map() {
                     {showCommunity ? 'Hide Community' : 'Show Community'}
                 </button>
 
-                {/* POI Controls */}
+                {/* POI Controls - positioned below the sidebar toggle button */}
                 <div
                     className="absolute top-20 left-4 max-w-[250px]"
                     style={{ zIndex: 1000, pointerEvents: 'auto' }}
