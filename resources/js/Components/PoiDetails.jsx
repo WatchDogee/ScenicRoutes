@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { FaTimes, FaMapMarkerAlt, FaGasPump, FaBolt, FaGlobe, FaPhone, FaClock, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import { FaTimes, FaMapMarkerAlt, FaGasPump, FaBolt, FaGlobe, FaPhone, FaClock } from 'react-icons/fa';
 import StarRating from './StarRating';
 
 export default function PoiDetails({ poi, onClose }) {
     const [rating, setRating] = useState(0);
     const [comment, setComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const handleSubmitReview = (e) => {
         e.preventDefault();
@@ -52,25 +51,7 @@ export default function PoiDetails({ poi, onClose }) {
                     {getPoiIcon()}
                     <span className="ml-2">{poi.name}</span>
                 </h3>
-                <div className="flex items-center space-x-2">
-                    <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="text-white bg-blue-500 hover:bg-blue-600 p-2 rounded-md transition-colors flex items-center justify-center"
-                        aria-label={isCollapsed ? "Expand POI details" : "Collapse POI details"}
-                        title={isCollapsed ? "Expand" : "Collapse"}
-                    >
-                        {isCollapsed ? (
-                            <div className="flex items-center">
-                                <FaChevronDown size={16} />
-                                <span className="ml-1 text-sm">Expand</span>
-                            </div>
-                        ) : (
-                            <div className="flex items-center">
-                                <FaChevronUp size={16} />
-                                <span className="ml-1 text-sm">Collapse</span>
-                            </div>
-                        )}
-                    </button>
+                <div className="flex items-center">
                     <button
                         onClick={onClose}
                         className="text-white bg-red-500 hover:bg-red-600 p-2 rounded-md transition-colors flex items-center justify-center"
@@ -85,7 +66,7 @@ export default function PoiDetails({ poi, onClose }) {
                 </div>
             </div>
 
-            <div className={`transition-all duration-300 ${isCollapsed ? 'h-0 opacity-0 overflow-hidden' : 'opacity-100'}`}>
+            <div className="opacity-100">
                 <div className="mb-4">
                     <p className="text-sm text-gray-600">{formatSubtype(poi.subtype)}</p>
 

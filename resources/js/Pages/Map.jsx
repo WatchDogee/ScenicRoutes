@@ -27,6 +27,7 @@ export default function Map() {
     const [selectedPoiId, setSelectedPoiId] = useState(null);
     const [selectedPoi, setSelectedPoi] = useState(null);
     const [poiControlsKey, setPoiControlsKey] = useState(Date.now()); // For forcing re-render
+    const [currentPoiLocation, setCurrentPoiLocation] = useState(null); // Track current location for POIs
     const {
         tourism,
         fuelStations,
@@ -190,7 +191,8 @@ export default function Map() {
         // Check if the click is on a control element
         if (e.originalEvent.target.closest('.poi-controls') ||
             e.originalEvent.target.closest('.leaflet-control') ||
-            e.originalEvent.target.closest('button')) { // Also check for buttons
+            e.originalEvent.target.closest('button') ||
+            e.originalEvent.target.closest('.poi-details')) { // Also check for POI details panel
             console.log('Click on control element, ignoring map click');
             return;
         }
@@ -244,11 +246,19 @@ export default function Map() {
         console.log('Map clicked at:', latlng);
         console.log('Current location for POI search:', latlng);
 
-        // Force a re-render of the POI controls to update the location display
-        setPoiControlsKey(Date.now());
+        // Update the current location for POI search
+        setCurrentPoiLocation({
+            lat: latlng.lat,
+            lon: latlng.lng
+        });
 
-        // Don't automatically open POI window when dropping a marker
-        // Clear any selected POI when placing a new marker
+        // Only update the POI controls key if there's no marker yet
+        // This prevents the POI window from expanding each time a marker is dropped
+        if (!markerRef.current) {
+            setPoiControlsKey(Date.now());
+        }
+
+        // Always close any open POI details when placing a new marker
         if (selectedPoi) {
             setSelectedPoi(null);
             setSelectedPoiId(null);
@@ -507,9 +517,9 @@ export default function Map() {
             // First get a CSRF token
             await axios.get('/sanctum/csrf-cookie');
 
-            // Use the form data directly
+            // Use the form data directly - send as login field to ensure username login works
             const response = await axios.post('/api/login', {
-                email: loginForm.login, // Use login field as email
+                login: loginForm.login, // Send as login field, not email
                 password: loginForm.password
             }, {
                 headers: {
@@ -1419,8 +1429,11 @@ export default function Map() {
             console.log('Current location for POI search:', [lat, lon]);
             console.log('Using radius:', currentRadius);
 
-            // Force a re-render of the POI controls to update the location display
-            setPoiControlsKey(Date.now());
+            // Update the current location for POI search
+            setCurrentPoiLocation({
+                lat: lat,
+                lon: lon
+            });
         }
     };
 
@@ -1428,7 +1441,7 @@ export default function Map() {
     const getCurrentLocation = () => {
         if (markerRef.current) {
             const latLng = markerRef.current.getLatLng();
-            console.log('Current location for POI search:', latLng);
+            console.log('Current location for POI search from marker:', latLng);
             return {
                 lat: latLng.lat,
                 lon: latLng.lng
@@ -1885,7 +1898,6 @@ export default function Map() {
                     onClick={(e) => e.stopPropagation()}
                 >
                     <PoiControls
-                        key={poiControlsKey} // Force re-render when marker changes
                         showTourism={showTourism}
                         showFuelStations={showFuelStations}
                         showChargingStations={showChargingStations}
@@ -1895,7 +1907,7 @@ export default function Map() {
                         fetchAllPois={fetchAllPois}
                         clearAllPois={clearAllPois}
                         loading={poiLoading}
-                        currentLocation={getCurrentLocation()}
+                        currentLocation={currentPoiLocation || getCurrentLocation()}
                         error={poiError}
                     />
                 </div>

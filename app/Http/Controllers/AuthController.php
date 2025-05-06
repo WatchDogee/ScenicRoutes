@@ -44,6 +44,12 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+        \Log::info('Login attempt', [
+            'has_email' => $request->has('email'),
+            'has_login' => $request->has('login'),
+            'input' => $request->only(['email', 'login', 'password'])
+        ]);
+
         // Check if we're receiving email directly or through the login field
         if ($request->has('email')) {
             $credentials = $request->validate([
@@ -51,8 +57,11 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
+            \Log::info('Attempting login with email', ['email' => $credentials['email']]);
+
             // Direct email login
             if (!Auth::attempt($credentials)) {
+                \Log::warning('Email login failed', ['email' => $credentials['email']]);
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
         } else {
@@ -64,6 +73,8 @@ class AuthController extends Controller
             // Determine if the login input is an email or username
             $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
+            \Log::info('Attempting login with ' . $loginField, [$loginField => $credentials['login']]);
+
             // Attempt to authenticate with the appropriate field
             $authData = [
                 $loginField => $credentials['login'],
@@ -73,21 +84,28 @@ class AuthController extends Controller
             if (!Auth::attempt($authData)) {
                 // If authentication fails, try the other field as a fallback
                 $alternativeField = $loginField === 'email' ? 'username' : 'email';
+
+                \Log::info('First attempt failed, trying with ' . $alternativeField,
+                    [$alternativeField => $credentials['login']]);
+
                 $alternativeAuthData = [
                     $alternativeField => $credentials['login'],
                     'password' => $credentials['password']
                 ];
 
                 if (!Auth::attempt($alternativeAuthData)) {
+                    \Log::warning('Both login attempts failed', ['login' => $credentials['login']]);
                     return response()->json(['message' => 'Invalid credentials'], 401);
                 }
             }
         }
 
         $user = Auth::user();
+        \Log::info('User authenticated', ['user_id' => $user->id, 'email' => $user->email]);
 
         // Check if the user has verified their email
         if (!$user->hasVerifiedEmail()) {
+            \Log::info('Email not verified', ['user_id' => $user->id, 'email' => $user->email]);
             return response()->json([
                 'message' => 'Please verify your email address before logging in.',
                 'email_verified' => false,
@@ -97,6 +115,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
+        \Log::info('Login successful, token created', ['user_id' => $user->id]);
 
         return response()->json([
             'user' => $user,

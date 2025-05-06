@@ -58,10 +58,8 @@ apiClient.interceptors.request.use(
             config.headers['Authorization'] = `Bearer ${authToken}`;
         }
 
-        // Remove any duplicate /api prefixes from the URL
-        if (config.url.startsWith('/api/')) {
-            config.url = config.url.replace('/api/', '/');
-        }
+        // Fix URL handling - don't modify URLs that already have /api prefix
+        // This was causing issues with the login endpoint
 
         // Handle FormData
         if (config.data instanceof FormData) {

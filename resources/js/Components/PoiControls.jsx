@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FaMapMarkerAlt, FaGasPump, FaBolt, FaLayerGroup, FaInfoCircle, FaExclamationTriangle, FaTimes, FaChevronDown, FaChevronUp } from 'react-icons/fa';
+import React, { useState, useEffect, useRef } from 'react';
+import { FaMapMarkerAlt, FaGasPump, FaBolt, FaLayerGroup, FaInfoCircle, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
 
 export default function PoiControls({
     showTourism,
@@ -14,8 +14,14 @@ export default function PoiControls({
     currentLocation,
     error
 }) {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    // Always show content, no collapse functionality
     const [isVisible, setIsVisible] = useState(true);
+    const prevLocationRef = useRef(null);
+
+    // Store the previous location to prevent unnecessary re-renders
+    useEffect(() => {
+        prevLocationRef.current = currentLocation;
+    }, [currentLocation]);
     const handleFetchPois = () => {
         if (!currentLocation) {
             alert('Please select a location on the map first by clicking anywhere on the map!');
@@ -64,13 +70,6 @@ export default function PoiControls({
                 </h3>
                 <div className="flex space-x-1">
                     <button
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-200 transition-colors"
-                        title={isCollapsed ? "Expand" : "Collapse"}
-                    >
-                        {isCollapsed ? <FaChevronDown size={14} /> : <FaChevronUp size={14} />}
-                    </button>
-                    <button
                         onClick={() => setIsVisible(false)}
                         className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-200 transition-colors"
                         title="Hide"
@@ -80,8 +79,8 @@ export default function PoiControls({
                 </div>
             </div>
 
-            {/* Collapsible content */}
-            <div className={`transition-all duration-300 overflow-hidden ${isCollapsed ? 'max-h-0 opacity-0' : 'max-h-[500px] opacity-100 p-3'}`}>
+            {/* Content (always visible) */}
+            <div className="p-3">
                 {/* Display location info */}
                 {getLocationInfo()}
 

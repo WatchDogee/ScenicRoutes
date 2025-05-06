@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
+import axios from 'axios';
 import EmailVerification from '@/Components/EmailVerification';
 import ForgotPassword from '@/Components/ForgotPassword';
 import apiClient from '@/utils/apiClient';
@@ -39,27 +40,80 @@ export default function Login({ status }) {
         e.preventDefault();
         setApiError('');
 
+        console.log('Login attempt with:', { login: data.login });
+
         try {
             // First try the API login to check for email verification
-            const response = await apiClient.post('/api/login', {
+            console.log('Sending API login request to:', '/login-api');
+            const response = await axios.post('/login-api', {
                 login: data.login,
                 password: data.password
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
 
+            console.log('API login response:', response.data);
+
             // If successful, proceed with Inertia login
-            // Convert login field to email field for Laravel's default authentication
-            post(route('login'), {
-                email: data.login,
-                password: data.password,
-                remember: data.remember
-            });
+            console.log('Proceeding with Inertia login');
+
+            // Create a direct form submission to bypass any potential issues
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = route('login');
+
+            // Add CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = csrfToken;
+                form.appendChild(csrfInput);
+            }
+
+            // Add email field
+            const emailInput = document.createElement('input');
+            emailInput.type = 'hidden';
+            emailInput.name = 'email';
+            emailInput.value = data.login;
+            form.appendChild(emailInput);
+
+            // Add password field
+            const passwordInput = document.createElement('input');
+            passwordInput.type = 'hidden';
+            passwordInput.name = 'password';
+            passwordInput.value = data.password;
+            form.appendChild(passwordInput);
+
+            // Add remember field
+            if (data.remember) {
+                const rememberInput = document.createElement('input');
+                rememberInput.type = 'hidden';
+                rememberInput.name = 'remember';
+                rememberInput.value = '1';
+                form.appendChild(rememberInput);
+            }
+
+            // Submit the form
+            document.body.appendChild(form);
+            form.submit();
         } catch (error) {
+            console.error('Login error:', error);
+
             // Check if this is an email verification error
             if (error.response?.status === 403 && error.response?.data?.verification_needed) {
+                console.log('Email verification needed');
                 setShowEmailVerification(true);
             } else {
                 // Handle other errors
-                setApiError(error.response?.data?.message || 'Invalid credentials');
+                const errorMessage = error.response?.data?.message || 'Invalid credentials';
+                console.error('Login failed:', errorMessage);
+                setApiError(errorMessage);
             }
         }
     };
