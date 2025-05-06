@@ -978,6 +978,34 @@ export default function Map() {
         );
     };
 
+    // Function to handle viewing a road on the map
+    const handleViewOnMap = (road) => {
+        if (!mapRef.current || !road.road_coordinates) return;
+
+        try {
+            const coordinates = JSON.parse(road.road_coordinates);
+
+            // Clear existing layers and add the new road
+            roadsLayerRef.current.clearLayers();
+            const polyline = L.polyline(coordinates, {
+                color: '#2563eb', // Blue color
+                weight: 6,
+                opacity: 0.8
+            }).addTo(roadsLayerRef.current);
+
+            // Fit map to the road bounds
+            mapRef.current.fitBounds(polyline.getBounds(), {
+                padding: [50, 50] // Add some padding around the bounds
+            });
+
+            // Set the selected road ID
+            setSelectedRoadId(road.id);
+        } catch (error) {
+            console.error("Error displaying road on map:", error);
+            alert("Failed to display road on map. Invalid coordinates format.");
+        }
+    };
+
     // Initialize map only once
     useEffect(() => {
         const mapContainer = document.getElementById('map');
@@ -1043,6 +1071,15 @@ export default function Map() {
         const newLayerGroup = L.layerGroup().addTo(leafletMap);
         roadsLayerRef.current = newLayerGroup;
 
+        // Add event listener for custom viewRoadOnMap event
+        const handleViewRoadOnMapEvent = (event) => {
+            if (event.detail && event.detail.road) {
+                handleViewOnMap(event.detail.road);
+            }
+        };
+
+        window.addEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
+
         // Add Font Awesome CSS for POI markers
         if (!document.getElementById('font-awesome-css')) {
             const link = document.createElement('link');
@@ -1059,6 +1096,9 @@ export default function Map() {
             markerRef.current = null;
             radiusCircleRef.current = null;
             roadsLayerRef.current = null;
+
+            // Remove the event listener when component unmounts
+            window.removeEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
         };
     }, []); // Empty dependency array to ensure map is initialized only once
 

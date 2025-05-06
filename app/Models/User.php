@@ -68,7 +68,13 @@ class User extends Authenticatable implements MustVerifyEmail
                 return Storage::disk('s3')->url($this->profile_picture);
             } else {
                 // For local storage
-                return asset('storage/' . $this->profile_picture);
+                // First try using Storage::url which is more reliable across environments
+                try {
+                    return Storage::disk('public')->url($this->profile_picture);
+                } catch (\Exception $e) {
+                    // Fallback to asset if Storage::url fails
+                    return asset('storage/' . $this->profile_picture);
+                }
             }
         }
 

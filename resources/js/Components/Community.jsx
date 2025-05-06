@@ -101,6 +101,22 @@ export default function Community({ auth }) {
         setShowNavigationSelector(true);
     };
 
+    // Add handleViewOnMap function to display roads on the map
+    const handleViewOnMap = (road) => {
+        if (!road.road_coordinates) {
+            alert('No coordinates available for this road');
+            return;
+        }
+
+        // Use window.dispatchEvent to communicate with the Map component
+        const event = new CustomEvent('viewRoadOnMap', {
+            detail: {
+                road: road
+            }
+        });
+        window.dispatchEvent(event);
+    };
+
     return (
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-4">Community Roads</h2>
@@ -159,17 +175,23 @@ export default function Community({ auth }) {
                                 </div>
                                 <div className="flex gap-2">
                                     <button
+                                        onClick={(e) => handleViewOnMap(road)}
+                                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        View on Map
+                                    </button>
+                                    <button
                                         onClick={(e) => handleNavigateClick(e, road)}
                                         className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                                     >
                                         Navigate
                                     </button>
-                                                <button
+                                    <button
                                         onClick={() => handleViewDetails(road)}
                                         className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                >
+                                    >
                                         View Details
-                                                </button>
+                                    </button>
                                 </div>
                             </div>
                         </div>

@@ -53,7 +53,13 @@ class RoadPhoto extends Model
             return Storage::disk('s3')->url($this->photo_path);
         } else {
             // For local storage
-            return Storage::url($this->photo_path);
+            try {
+                // First try using Storage::disk('public')->url which is more reliable
+                return Storage::disk('public')->url($this->photo_path);
+            } catch (\Exception $e) {
+                // Fallback to Storage::url if the first method fails
+                return Storage::url($this->photo_path);
+            }
         }
     }
 }

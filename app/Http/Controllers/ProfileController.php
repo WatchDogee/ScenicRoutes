@@ -171,17 +171,15 @@ class ProfileController extends Controller
             // Delete old profile picture if it exists
             if ($user->profile_picture) {
                 \Log::info('Deleting old profile picture: ' . $user->profile_picture);
-                // Determine which disk to use based on configuration
-                $disk = config('filesystems.default');
-                Storage::disk($disk === 's3' ? 's3' : 'public')->delete($user->profile_picture);
+                // Always delete from public disk for consistency
+                Storage::disk('public')->delete($user->profile_picture);
             }
 
             // Store the new profile picture with a unique name
             $fileName = 'profile-' . $user->id . '-' . time() . '.' . $file->getClientOriginalExtension();
 
-            // Determine which disk to use based on configuration
-            $disk = config('filesystems.default');
-            $path = $file->storeAs('profile-pictures', $fileName, $disk === 's3' ? 's3' : 'public');
+            // Always store profile pictures in the public disk for consistent access
+            $path = $file->storeAs('profile-pictures', $fileName, 'public');
 
             if (!$path) {
                 \Log::error('Failed to store the profile picture');
