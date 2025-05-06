@@ -208,29 +208,38 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         />
                     </div>
 
-                    {/* Only show photo uploader if the user has submitted a review */}
-                    {userReviewId && (
-                        <div className="mt-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Add Photos to Your Review</h4>
+                    {/* Show photo uploader for both new and existing reviews */}
+                    <div className="mt-4">
+                        <h4 className="text-sm font-medium text-gray-700 mb-2">Add Photos to Your Review</h4>
 
-                            {/* Display existing photos */}
-                            {reviewPhotos[userReviewId] && reviewPhotos[userReviewId].length > 0 && (
-                                <PhotoGallery
-                                    photos={reviewPhotos[userReviewId]}
-                                    onPhotoDeleted={handlePhotoDeleted}
-                                    canDelete={true}
-                                    className="mb-3"
-                                />
-                            )}
+                        {/* For existing reviews, display existing photos */}
+                        {userReviewId && reviewPhotos[userReviewId] && reviewPhotos[userReviewId].length > 0 && (
+                            <PhotoGallery
+                                photos={reviewPhotos[userReviewId]}
+                                onPhotoDeleted={handlePhotoDeleted}
+                                canDelete={true}
+                                className="mb-3"
+                            />
+                        )}
 
-                            {/* Photo uploader */}
+                        {/* For new reviews, show temporary photo uploader */}
+                        {!userReviewId && (
+                            <div className="mb-3">
+                                <p className="text-sm text-gray-500 mb-2">
+                                    You can add photos after submitting your review.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Photo uploader - only show if there's an existing review */}
+                        {userReviewId && (
                             <PhotoUploader
                                 endpoint={`/api/reviews/${userReviewId}/photos`}
                                 onPhotoUploaded={handleReviewPhotoUploaded}
                                 existingPhotos={reviewPhotos[userReviewId] || []}
                             />
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 <div className="rating-modal-reviews-section">

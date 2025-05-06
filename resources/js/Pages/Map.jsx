@@ -187,6 +187,9 @@ export default function Map() {
 
         const latlng = e.latlng;
 
+        // Store the current radius value to preserve it
+        const currentRadius = radius;
+
         // Create a custom marker icon with higher z-index
         const markerIcon = L.icon({
             iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
@@ -209,10 +212,10 @@ export default function Map() {
         }
 
         if (radiusCircleRef.current) {
-            radiusCircleRef.current.setLatLng(latlng).setRadius(radius * 1000);
+            radiusCircleRef.current.setLatLng(latlng).setRadius(currentRadius * 1000);
         } else {
             radiusCircleRef.current = L.circle(latlng, {
-                radius: radius * 1000,
+                radius: currentRadius * 1000,
                 color: 'blue',
                 fillColor: 'blue',
                 fillOpacity: 0.05,
@@ -222,6 +225,7 @@ export default function Map() {
 
         // Log the current location for debugging
         console.log('Map clicked at:', latlng);
+        console.log('Current location for POI search:', latlng);
 
         // Force a re-render of the POI controls to update the location display
         setPoiControlsKey(Date.now());
@@ -1313,22 +1317,36 @@ export default function Map() {
     const handleMainLocationSelect = (location) => {
         setSearchQuery(location.displayName);
         setSearchResults([]); // Clear results immediately
-        updateMapLocation(location);
+
+        // Store the current radius value to preserve it
+        const currentRadius = radius;
+
+        // Update the map location with the preserved radius
+        updateMapLocation(location, currentRadius);
     };
 
     const handleCommunityLocationSelect = (location) => {
         setCommunitySearchQuery(location.displayName);
         setCommunitySearchResults([]); // Clear results immediately
-        updateMapLocation(location);
+
+        // Store the current radius value to preserve it
+        const currentRadius = radius;
+
+        // Update the map location with the preserved radius
+        updateMapLocation(location, currentRadius);
+
         if (showCommunity) {
             handleSearchPublicRoads(location.lat, location.lon);
-            }
-        };
+        }
+    };
 
     // Helper function to update map location
-    const updateMapLocation = (location) => {
+    const updateMapLocation = (location, preservedRadius = null) => {
         const lat = parseFloat(location.lat);
         const lon = parseFloat(location.lon);
+
+        // Use the preserved radius if provided, otherwise use the current radius
+        const currentRadius = preservedRadius !== null ? preservedRadius : radius;
 
         if (mapRef.current) {
             // Create a custom marker icon with higher z-index
@@ -1353,10 +1371,10 @@ export default function Map() {
             }
 
             if (radiusCircleRef.current) {
-                radiusCircleRef.current.setLatLng([lat, lon]);
+                radiusCircleRef.current.setLatLng([lat, lon]).setRadius(currentRadius * 1000);
             } else {
                 radiusCircleRef.current = L.circle([lat, lon], {
-                    radius: radius * 1000,
+                    radius: currentRadius * 1000,
                     color: 'blue',
                     fillColor: 'blue',
                     fillOpacity: 0.05,
@@ -1369,6 +1387,8 @@ export default function Map() {
 
             // Log the updated location for debugging
             console.log('Map location updated to:', [lat, lon]);
+            console.log('Current location for POI search:', [lat, lon]);
+            console.log('Using radius:', currentRadius);
 
             // Force a re-render of the POI controls to update the location display
             setPoiControlsKey(Date.now());
@@ -1460,10 +1480,37 @@ export default function Map() {
         setShowNavigationSelector(true);
     };
 
+    // Add state for sidebar collapse
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+    // Toggle sidebar collapse
+    const toggleSidebar = () => {
+        setSidebarCollapsed(!sidebarCollapsed);
+    };
+
     return (
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
-            <div className="w-80 p-4 bg-white shadow-md overflow-y-auto z-20 flex flex-col">
+            <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto z-20 flex flex-col relative`}>
+                {/* Collapse toggle button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="absolute top-4 right-0 transform translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 z-30"
+                    title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    {sidebarCollapsed ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                        </svg>
+                    ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                    )}
+                </button>
+
+                {/* Sidebar content - only show when expanded */}
+                <div className={`${sidebarCollapsed ? 'hidden' : 'block'} p-4`}>
                 {/* Search bar with dropdown */}
                 <div className="mb-4 relative">
                     <input
@@ -1663,7 +1710,16 @@ export default function Map() {
                         max="50"
                         value={radius}
                         onChange={handleRadiusChange}
-                        className="w-full mb-4"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                        className="w-full mb-4 cursor-pointer"
+                        style={{
+                            appearance: 'none',
+                            height: '8px',
+                            borderRadius: '4px',
+                            background: 'linear-gradient(to right, #3b82f6, #60a5fa)',
+                            outline: 'none'
+                        }}
                     />
                     <label className="block mb-1">Road Type</label>
                     <select
@@ -1720,6 +1776,7 @@ export default function Map() {
                         )}
                     </div>
                 )}
+                </div>
             </div>
 
             {/* Map */}

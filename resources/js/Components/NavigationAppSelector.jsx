@@ -4,9 +4,35 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
     const [selectedApp, setSelectedApp] = useState('google');
 
     const openInMaps = () => {
+        // Ensure coordinates are valid and in the correct format
+        if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
+            console.error('Invalid coordinates format:', coordinates);
+            alert('Invalid route coordinates. Cannot navigate.');
+            return;
+        }
+
+        // Parse coordinates if they're in string format
+        let parsedCoordinates = coordinates;
+        if (typeof coordinates[0] === 'string') {
+            try {
+                parsedCoordinates = JSON.parse(coordinates);
+            } catch (e) {
+                console.error('Failed to parse coordinates:', e);
+                alert('Invalid route coordinates. Cannot navigate.');
+                return;
+            }
+        }
+
         // Get first and last coordinates for the route
-        const startPoint = coordinates[0];
-        const endPoint = coordinates[coordinates.length - 1];
+        const startPoint = parsedCoordinates[0];
+        const endPoint = parsedCoordinates[parsedCoordinates.length - 1];
+
+        // Ensure start and end points are valid
+        if (!startPoint || !endPoint || startPoint.length < 2 || endPoint.length < 2) {
+            console.error('Invalid start or end point:', { startPoint, endPoint });
+            alert('Invalid route coordinates. Cannot navigate.');
+            return;
+        }
 
         // Detect platform
         const iOS = /iPad|iPhone|iPod/.test(navigator.platform);

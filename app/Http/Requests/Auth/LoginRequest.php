@@ -27,7 +27,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email'],
+            'email' => ['required', 'string'],
             'password' => ['required', 'string'],
         ];
     }
@@ -41,12 +41,27 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        $loginField = filter_var($this->input('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $credentials = [
+            $loginField => $this->input('email'),
+            'password' => $this->input('password')
+        ];
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+        if (! Auth::attempt($credentials, $this->boolean('remember'))) {
+            // If authentication fails with the first field, try the other field
+            $alternativeField = $loginField === 'email' ? 'username' : 'email';
+            $alternativeCredentials = [
+                $alternativeField => $this->input('email'),
+                'password' => $this->input('password')
+            ];
+
+            if (! Auth::attempt($alternativeCredentials, $this->boolean('remember'))) {
+                RateLimiter::hit($this->throttleKey());
+
+                throw ValidationException::withMessages([
+                    'email' => trans('auth.failed'),
+                ]);
+            }
         }
 
         RateLimiter::clear($this->throttleKey());

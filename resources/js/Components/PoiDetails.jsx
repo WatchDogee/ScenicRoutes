@@ -51,8 +51,13 @@ export default function PoiDetails({ poi, onClose }) {
                     {getPoiIcon()}
                     <span className="ml-2">{poi.name}</span>
                 </h3>
-                <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                    <FaTimes />
+                <button
+                    onClick={onClose}
+                    className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Close POI details"
+                    title="Close"
+                >
+                    <FaTimes size={20} />
                 </button>
             </div>
 
