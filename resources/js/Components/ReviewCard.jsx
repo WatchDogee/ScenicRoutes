@@ -6,16 +6,30 @@ import PhotoGallery from './PhotoGallery';
 export default function ReviewCard({ review }) {
     const [hasValidPhotos, setHasValidPhotos] = useState(false);
 
-    // Debug the review photos
+    // Enhanced debugging for review photos
     console.log('Review photos in ReviewCard:', review.photos);
 
     // Check if the review has valid photos
     useEffect(() => {
         if (review.photos && Array.isArray(review.photos)) {
+            // Log each photo to inspect its properties
+            review.photos.forEach((photo, index) => {
+                console.log(`Review ${review.id} - Photo ${index}:`, photo);
+                if (photo) {
+                    console.log(`  - photo_path: ${photo.photo_path}`);
+                    console.log(`  - photo_url: ${photo.photo_url}`);
+                }
+            });
+
             const validPhotos = review.photos.filter(photo => photo && photo.photo_url);
             setHasValidPhotos(validPhotos.length > 0);
             console.log(`Review ${review.id} has ${validPhotos.length} valid photos`);
+
+            if (validPhotos.length === 0 && review.photos.length > 0) {
+                console.warn(`Review ${review.id} has photos but none have valid URLs`);
+            }
         } else {
+            console.log(`Review ${review.id} has no photos array`);
             setHasValidPhotos(false);
         }
     }, [review.photos, review.id]);

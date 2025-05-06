@@ -55,13 +55,43 @@ export default function PhotoGallery({
     console.log('Photos received in PhotoGallery:', photos);
     const photoArray = Array.isArray(photos) ? photos : [];
 
+    // Process photos to ensure they have photo_url
+    const processedPhotoArray = photoArray.map(photo => {
+        if (!photo) return null;
+
+        // If photo has no photo_url but has photo_path, try to create a URL
+        if (!photo.photo_url && photo.photo_path) {
+            console.warn('Photo missing photo_url but has photo_path:', photo.photo_path);
+            // Create a fallback URL
+            return {
+                ...photo,
+                photo_url: `/storage/${photo.photo_path}`
+            };
+        }
+
+        return photo;
+    }).filter(Boolean); // Remove null entries
+
     // Make sure all photos have a photo_url property
-    const validPhotoArray = photoArray.filter(photo => photo && photo.photo_url);
+    const validPhotoArray = processedPhotoArray.filter(photo => photo && photo.photo_url);
 
     // Add additional debugging
     if (validPhotoArray.length === 0 && photoArray.length > 0) {
         console.warn('No valid photos found. Photos without photo_url:',
             photoArray.filter(photo => !photo || !photo.photo_url));
+
+        // Log each photo for detailed debugging
+        photoArray.forEach((photo, index) => {
+            if (!photo || !photo.photo_url) {
+                console.warn(`Invalid photo at index ${index}:`, photo);
+                if (photo) {
+                    console.warn(`  - photo_path: ${photo.photo_path}`);
+                    console.warn(`  - photo_url: ${photo.photo_url}`);
+                    console.warn(`  - id: ${photo.id}`);
+                    console.warn(`  - review_id: ${photo.review_id}`);
+                }
+            }
+        });
     }
 
     console.log('Valid photos in PhotoGallery:', validPhotoArray);

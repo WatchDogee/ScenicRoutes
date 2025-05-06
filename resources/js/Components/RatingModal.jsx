@@ -75,14 +75,32 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     };
 
     const handleReviewPhotoUploaded = (data) => {
+        console.log('Review photo upload response:', data);
+
         if (data.photo && data.review) {
+            console.log('New review photo:', data.photo);
+            console.log('Photo URL:', data.photo.photo_url);
+
             // Update the review photos
             const updatedReviewPhotos = { ...reviewPhotos };
             if (!updatedReviewPhotos[data.review.id]) {
                 updatedReviewPhotos[data.review.id] = [];
             }
+
+            // Ensure the photo has a photo_url property
+            if (!data.photo.photo_url && data.photo.photo_path) {
+                console.warn('Photo missing photo_url but has photo_path:', data.photo.photo_path);
+                // Try to construct a URL (this is a fallback and might not work)
+                data.photo.photo_url = `/storage/${data.photo.photo_path}`;
+                console.log('Constructed fallback URL:', data.photo.photo_url);
+            }
+
             updatedReviewPhotos[data.review.id] = [...updatedReviewPhotos[data.review.id], data.photo];
+            console.log('Updated review photos for review', data.review.id, ':', updatedReviewPhotos[data.review.id]);
+
             setReviewPhotos(updatedReviewPhotos);
+        } else {
+            console.error('Invalid photo upload response:', data);
         }
     };
 
