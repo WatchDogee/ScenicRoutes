@@ -168,16 +168,29 @@ export default function Map() {
     }, [userSettings]); // Reload when userSettings changes
 
     const handleRadiusChange = (e) => {
-        setRadius(Number(e.target.value));
+        const newRadius = Number(e.target.value);
+        setRadius(newRadius);
+        // Also update our persistent radius reference directly
+        radiusRef.current = newRadius;
         if (radiusCircleRef.current) {
-            radiusCircleRef.current.setRadius(Number(e.target.value) * 1000);
+            radiusCircleRef.current.setRadius(newRadius * 1000);
         }
     };
+
+    // Store the marker icon and radius as refs to persist them between renders
+    const markerIconRef = useRef(null);
+    const radiusRef = useRef(radius);
+
+    // Update radiusRef whenever radius state changes
+    useEffect(() => {
+        radiusRef.current = radius;
+    }, [radius]);
 
     const handleMapClick = (e) => {
         // Check if the click is on a control element
         if (e.originalEvent.target.closest('.poi-controls') ||
-            e.originalEvent.target.closest('.leaflet-control')) {
+            e.originalEvent.target.closest('.leaflet-control') ||
+            e.originalEvent.target.closest('button')) { // Also check for buttons
             console.log('Click on control element, ignoring map click');
             return;
         }
@@ -187,20 +200,22 @@ export default function Map() {
 
         const latlng = e.latlng;
 
-        // Store the current radius value to preserve it
-        const currentRadius = radius;
+        // Use the persistent radius reference
+        const currentRadius = radiusRef.current;
 
-        // Create a custom marker icon with higher z-index
-        const markerIcon = L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-            iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-            shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowSize: [41, 41],
-            className: 'main-location-marker' // Custom class for styling
-        });
+        // Create a custom marker icon with higher z-index if not already created
+        if (!markerIconRef.current) {
+            markerIconRef.current = L.icon({
+                iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41],
+                className: 'main-location-marker' // Custom class for styling
+            });
+        }
 
         if (markerRef.current) {
             // Just update the position, don't recreate the marker
@@ -208,7 +223,7 @@ export default function Map() {
         } else {
             // Create the marker for the first time
             markerRef.current = L.marker(latlng, {
-                icon: markerIcon,
+                icon: markerIconRef.current,
                 zIndexOffset: 1000 // Ensure marker stays on top
             }).addTo(map);
         }
@@ -231,6 +246,13 @@ export default function Map() {
 
         // Force a re-render of the POI controls to update the location display
         setPoiControlsKey(Date.now());
+
+        // Don't automatically open POI window when dropping a marker
+        // Clear any selected POI when placing a new marker
+        if (selectedPoi) {
+            setSelectedPoi(null);
+            setSelectedPoiId(null);
+        }
     };
 
     const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -1347,27 +1369,29 @@ export default function Map() {
         const lat = parseFloat(location.lat);
         const lon = parseFloat(location.lon);
 
-        // Use the preserved radius if provided, otherwise use the current radius
-        const currentRadius = preservedRadius !== null ? preservedRadius : radius;
+        // Use the preserved radius if provided, otherwise use the persistent radius reference
+        const currentRadius = preservedRadius !== null ? preservedRadius : radiusRef.current;
 
         if (mapRef.current) {
-            // Create a custom marker icon with higher z-index
-            const markerIcon = L.icon({
-                iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-                iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-                shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-                className: 'main-location-marker' // Custom class for styling
-            });
+            // Create a custom marker icon with higher z-index if not already created
+            if (!markerIconRef.current) {
+                markerIconRef.current = L.icon({
+                    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+                    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+                    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41],
+                    className: 'main-location-marker' // Custom class for styling
+                });
+            }
 
             if (markerRef.current) {
                 markerRef.current.setLatLng([lat, lon]);
             } else {
                 markerRef.current = L.marker([lat, lon], {
-                    icon: markerIcon,
+                    icon: markerIconRef.current,
                     zIndexOffset: 1000 // Ensure marker stays on top
                 }).addTo(mapRef.current);
             }
@@ -1829,7 +1853,10 @@ export default function Map() {
             <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto' }}>
                 {/* Sidebar toggle button */}
                 <button
-                    onClick={toggleSidebar}
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent map click event
+                        toggleSidebar();
+                    }}
                     className="absolute top-4 left-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
                     style={{ zIndex: 1000 }}
                 >
@@ -1838,7 +1865,10 @@ export default function Map() {
 
                 {/* Community toggle button */}
                 <button
-                    onClick={() => setShowCommunity(!showCommunity)}
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent map click event
+                        setShowCommunity(!showCommunity);
+                    }}
                     className="absolute top-4 right-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
                     style={{ zIndex: 1000 }}
                 >
@@ -2002,19 +2032,12 @@ export default function Map() {
                             {/* Rating Filter */}
                         <div>
                                 <label className="block text-sm text-gray-600 mb-1">Minimum Rating</label>
-                                <div className="flex gap-2">
-                                    {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                                            key={star}
-                                            onClick={() => setMinRating(star)}
-                                            className={`text-2xl ${
-                                                star <= minRating ? 'text-yellow-400' : 'text-gray-300'
-                                            } hover:text-yellow-400 transition-colors`}
-                                        >
-                                            ★
-                                        </button>
-                                    ))}
-                                </div>
+                                <StarRating
+                                    rating={minRating}
+                                    interactive={true}
+                                    onRatingChange={setMinRating}
+                                    allowClear={true}
+                                />
                             </div>
 
                             {/* Sort Options */}
