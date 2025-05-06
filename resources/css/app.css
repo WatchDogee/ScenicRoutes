@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import 'common.css';
+@import 'map.css';
+@import 'poi.css';
+@import 'community.css';
+@import 'social.css';

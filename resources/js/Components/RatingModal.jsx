@@ -5,6 +5,7 @@ import StarRating from './StarRating';
 import ReviewCard from './ReviewCard';
 import PhotoGallery from './PhotoGallery';
 import PhotoUploader from './PhotoUploader';
+import TempPhotoUploader from './TempPhotoUploader';
 
 export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, initialRating = 0, initialComment = '' }) {
     const [rating, setRating] = useState(initialRating);
@@ -12,8 +13,7 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     const [roadPhotos, setRoadPhotos] = useState([]);
     const [reviewPhotos, setReviewPhotos] = useState({});
     const [userReviewId, setUserReviewId] = useState(null);
-    const [reviewPhoto, setReviewPhoto] = useState(null);
-    const [photoCaption, setPhotoCaption] = useState('');
+    const [tempReviewPhotos, setTempReviewPhotos] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -71,13 +71,17 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
         setIsSubmitting(true);
 
         try {
-            // If there's a photo to upload with the review
-            if (reviewPhoto) {
+            // If there are temporary photos to upload with the review
+            if (tempReviewPhotos.length > 0) {
                 const formData = new FormData();
                 formData.append('rating', rating);
                 if (comment) formData.append('comment', comment);
-                formData.append('photo', reviewPhoto);
-                if (photoCaption) formData.append('caption', photoCaption);
+
+                // Add all temporary photos to the form data
+                tempReviewPhotos.forEach((photo, index) => {
+                    formData.append(`photos[${index}]`, photo.file);
+                    if (photo.caption) formData.append(`captions[${index}]`, photo.caption);
+                });
 
                 // Submit directly to the API
                 const response = await axios.post(`/api/saved-roads/${road.id}/review`, formData, {
@@ -96,13 +100,12 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                 onSubmit(rating, comment);
             }
         } catch (error) {
-            console.error('Error submitting review with photo:', error);
+            console.error('Error submitting review with photos:', error);
             // Fall back to regular submission
             onSubmit(rating, comment);
         } finally {
             setIsSubmitting(false);
-            setReviewPhoto(null);
-            setPhotoCaption('');
+            setTempReviewPhotos([]);
         }
     };
 
@@ -268,33 +271,18 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                             />
                         ) : (
                             <div className="mb-3">
-                                <div className="flex flex-col space-y-2">
-                                    <label className="text-sm font-medium text-gray-700">
-                                        Add a photo with your review
-                                    </label>
-                                    <div className="flex items-end gap-2">
-                                        <div className="flex-1">
-                                            <input
-                                                type="text"
-                                                placeholder="Caption (optional)"
-                                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                value={photoCaption}
-                                                onChange={(e) => setPhotoCaption(e.target.value)}
-                                            />
-                                        </div>
-                                        <div>
-                                            <input
-                                                type="file"
-                                                accept="image/jpeg,image/png,image/gif"
-                                                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                                                onChange={(e) => setReviewPhoto(e.target.files[0])}
-                                            />
-                                        </div>
-                                    </div>
-                                    <p className="text-xs text-gray-500">
-                                        You can also add photos directly to the road above.
-                                    </p>
-                                </div>
+                                <TempPhotoUploader
+                                    onPhotoSelected={(photo) => {
+                                        setTempReviewPhotos(prev => [...prev, photo]);
+                                    }}
+                                    onPhotoRemoved={(photo) => {
+                                        setTempReviewPhotos(prev => prev.filter(p => p.id !== photo.id));
+                                    }}
+                                    maxPhotos={5}
+                                />
+                                <p className="text-xs text-gray-500 mt-2">
+                                    You can also add photos directly to the road above.
+                                </p>
                             </div>
                         )}
                     </div>

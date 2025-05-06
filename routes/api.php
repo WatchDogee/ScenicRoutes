@@ -1,6 +1,9 @@
 <?php
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GetRoadsController;
+use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\PointOfInterestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedRoadController;
@@ -41,11 +44,51 @@ Route::post('/email/verification-notification', [AuthController::class, 'resendV
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email.api');
 Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.reset.api');
 
+// Public routes for user profiles and collections
+Route::get('/public/users/{id}', function ($id) {
+    $user = \App\Models\User::findOrFail($id);
+    return response()->json($user);
+});
+
+// Public route for user's public roads
+Route::get('/public/users/{id}/roads', function ($id) {
+    $user = \App\Models\User::findOrFail($id);
+    $roads = \App\Models\SavedRoad::where('user_id', $user->id)
+        ->where('is_public', true)
+        ->with(['user:id,name,profile_picture'])
+        ->get();
+
+    return response()->json($roads);
+});
+
+Route::get('/public/collections/{id}', function ($id) {
+    $collection = \App\Models\Collection::with([
+        'user:id,name,profile_picture',
+        'roads' => function($query) {
+            $query->where('is_public', true);
+        },
+        'roads.user:id,name,profile_picture'
+    ])->findOrFail($id);
+
+    // Only return public collections or if the user is the owner
+    if (!$collection->is_public) {
+        return response()->json(['error' => 'Collection not found'], 404);
+    }
+
+    return response()->json($collection);
+});
+
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', function (Request $request) {
         return $request->user();
+    });
+
+    // Get user profile by ID
+    Route::get('/users/{id}', function (Request $request, $id) {
+        $user = \App\Models\User::findOrFail($id);
+        return response()->json($user);
     });
 
     // Profile routes
@@ -74,10 +117,39 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/settings', [\App\Http\Controllers\UserSettingController::class, 'index']);
     Route::post('/settings', [\App\Http\Controllers\UserSettingController::class, 'update']);
     Route::post('/settings/batch', [\App\Http\Controllers\UserSettingController::class, 'updateMultiple']);
+
+    // Collection routes
+    Route::get('/collections', [CollectionController::class, 'index']);
+    Route::post('/collections', [CollectionController::class, 'store']);
+    Route::get('/collections/{id}', [CollectionController::class, 'show']);
+    Route::put('/collections/{id}', [CollectionController::class, 'update']);
+    Route::delete('/collections/{id}', [CollectionController::class, 'destroy']);
+    Route::post('/collections/{id}/roads', [CollectionController::class, 'addRoad']);
+    Route::delete('/collections/{id}/roads/{roadId}', [CollectionController::class, 'removeRoad']);
+    Route::post('/collections/{id}/reorder', [CollectionController::class, 'reorderRoads']);
+
+    // Follow system routes
+    Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
+    Route::post('/users/{id}/unfollow', [FollowController::class, 'unfollow']);
+    Route::get('/following', [FollowController::class, 'following']);
+    Route::get('/followers', [FollowController::class, 'followers']);
+    Route::get('/users/{id}/follow-status', [FollowController::class, 'status']);
+    Route::get('/feed', [FollowController::class, 'feed']);
 });
 
 // Public routes
 Route::get('/public-roads', [SavedRoadController::class, 'publicRoads']);
+
+// Leaderboard routes
+Route::get('/leaderboard', [LeaderboardController::class, 'all']);
+Route::get('/leaderboard/top-rated', [LeaderboardController::class, 'topRatedRoads']);
+Route::get('/leaderboard/most-reviewed', [LeaderboardController::class, 'mostReviewedRoads']);
+Route::get('/leaderboard/most-popular', [LeaderboardController::class, 'mostPopularRoads']);
+Route::get('/leaderboard/most-active-users', [LeaderboardController::class, 'mostActiveUsers']);
+Route::get('/leaderboard/most-followed-users', [LeaderboardController::class, 'mostFollowedUsers']);
+
+// Public collections
+Route::get('/public-collections', [CollectionController::class, 'publicCollections']);
 
 // Points of Interest routes
 Route::get('/pois', [PointOfInterestController::class, 'index']);

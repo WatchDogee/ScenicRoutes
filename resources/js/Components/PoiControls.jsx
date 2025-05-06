@@ -16,6 +16,17 @@ export default function PoiControls({
 }) {
     // Always show content, no collapse functionality
     const [isVisible, setIsVisible] = useState(true);
+
+    // Log when component mounts
+    useEffect(() => {
+        console.log('PoiControls component mounted');
+
+        // Force visibility after a short delay
+        setTimeout(() => {
+            setIsVisible(true);
+            console.log('PoiControls visibility forced to true');
+        }, 1000);
+    }, []);
     const prevLocationRef = useRef(null);
 
     // Store the previous location to prevent unnecessary re-renders
@@ -53,25 +64,29 @@ export default function PoiControls({
         return (
             <button
                 onClick={() => setIsVisible(true)}
-                className="bg-white px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors flex items-center"
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition-colors flex items-center font-semibold"
                 title="Show POI Controls"
+                style={{
+                    border: '2px solid white',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                }}
             >
-                <FaLayerGroup className="mr-2 text-blue-500" /> Show POIs
+                <FaLayerGroup className="mr-2" /> Show POIs
             </button>
         );
     }
 
     return (
-        <div className="poi-controls bg-white rounded-lg shadow-md w-[250px]" onClick={(e) => e.stopPropagation()}>
+        <div className="poi-controls bg-white rounded-lg shadow-lg w-[250px] border border-blue-200" onClick={(e) => e.stopPropagation()}>
             {/* Header with controls */}
-            <div className="p-2 border-b flex justify-between items-center bg-gray-50">
-                <h3 className="text-sm font-semibold flex items-center text-gray-700">
-                    <FaLayerGroup className="mr-1 text-blue-500" /> Points of Interest
+            <div className="p-2 border-b flex justify-between items-center bg-blue-500 text-white">
+                <h3 className="text-sm font-semibold flex items-center">
+                    <FaLayerGroup className="mr-1" /> Points of Interest
                 </h3>
                 <div className="flex space-x-1">
                     <button
                         onClick={() => setIsVisible(false)}
-                        className="text-gray-600 hover:text-gray-800 p-1 rounded hover:bg-gray-200 transition-colors"
+                        className="text-white hover:text-gray-200 p-1 rounded hover:bg-blue-600 transition-colors"
                         title="Hide"
                     >
                         <FaTimes size={14} />

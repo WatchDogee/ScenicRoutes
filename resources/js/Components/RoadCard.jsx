@@ -2,8 +2,9 @@ import React from 'react';
 import ProfilePicture from './ProfilePicture';
 import { useContext } from 'react';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
+import { withErrorBoundary } from './ErrorBoundary';
 
-export default function RoadCard({
+function RoadCard({
     road,
     onViewMap,
     onNavigate,
@@ -35,12 +36,18 @@ export default function RoadCard({
     };
 
     const getAverageRating = () => {
-        if (road.average_rating || road.reviews_avg_rating) {
-            return (road.average_rating || road.reviews_avg_rating).toFixed(1);
+        // Check if average_rating or reviews_avg_rating exists and is a number
+        const rating = road.average_rating || road.reviews_avg_rating;
+        if (rating !== undefined && rating !== null && !isNaN(parseFloat(rating))) {
+            return parseFloat(rating).toFixed(1);
         }
 
-        if (road.reviews && road.reviews.length > 0) {
-            const sum = road.reviews.reduce((total, review) => total + review.rating, 0);
+        // Calculate from reviews if available
+        if (road.reviews && Array.isArray(road.reviews) && road.reviews.length > 0) {
+            const sum = road.reviews.reduce((total, review) => {
+                const reviewRating = parseFloat(review.rating);
+                return total + (isNaN(reviewRating) ? 0 : reviewRating);
+            }, 0);
             return (sum / road.reviews.length).toFixed(1);
         }
 
@@ -119,3 +126,22 @@ export default function RoadCard({
         </div>
     );
 }
+
+// Create a fallback UI for when the RoadCard component fails
+const RoadCardFallback = (error, errorInfo) => {
+    return (
+        <div className="border rounded-lg p-4 bg-white">
+            <h3 className="font-semibold text-lg text-red-600">Error Displaying Road</h3>
+            <p className="text-sm text-gray-600 mt-2">
+                There was a problem displaying this road's information.
+            </p>
+            <details className="mt-2 text-xs text-gray-500">
+                <summary>Technical Details</summary>
+                <p className="mt-1">{error && error.toString()}</p>
+            </details>
+        </div>
+    );
+};
+
+// Export the RoadCard component wrapped with an ErrorBoundary
+export default withErrorBoundary(RoadCard, RoadCardFallback);

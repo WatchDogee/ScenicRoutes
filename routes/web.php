@@ -30,6 +30,19 @@ Route::get('/elevation-debug', function () {
     return Inertia::render('ElevationDebug');
 })->name('elevation.debug');
 
+// Test routes for modal testing
+Route::get('/test-modal', function () {
+    return Inertia::render('TestModal');
+})->name('test.modal');
+
+Route::get('/test-collection-modal', function () {
+    return Inertia::render('TestCollectionModal');
+})->name('test.collection.modal');
+
+Route::get('/test-portal-modal', function () {
+    return Inertia::render('TestPortalModal');
+})->name('test.portal.modal');
+
 // Direct email verification route outside of any middleware groups
 Route::get('/direct-verify/{id}', function ($id) {
     $user = \App\Models\User::findOrFail($id);

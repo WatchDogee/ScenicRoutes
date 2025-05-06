@@ -1,3 +1,4 @@
+import React from 'react';
 import {
     Dialog,
     DialogPanel,
@@ -10,10 +11,23 @@ export default function Modal({
     show = false,
     maxWidth = '2xl',
     closeable = true,
+    staticBackdrop = false, // Add option to prevent closing when clicking outside
     onClose = () => {},
 }) {
-    const close = () => {
+    // Log when modal visibility changes
+    React.useEffect(() => {
+        console.log('Modal visibility changed:', show);
+    }, [show]);
+
+    const close = (e) => {
+        // If staticBackdrop is true, prevent closing when clicking outside
+        if (staticBackdrop && e?.type === 'click') {
+            e.preventDefault();
+            return;
+        }
+
         if (closeable) {
+            console.log('Modal closing');
             onClose();
         }
     };
@@ -31,7 +45,13 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-50 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
+                className="fixed inset-0 z-[9999] flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
+                style={{
+                    display: 'flex !important',
+                    visibility: 'visible !important',
+                    opacity: 1,
+                    pointerEvents: 'auto'
+                }}
                 onClose={close}
             >
                 <TransitionChild
@@ -55,6 +75,7 @@ export default function Modal({
                 >
                     <DialogPanel
                         className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
+                        onClick={(e) => staticBackdrop && e.stopPropagation()}
                     >
                         {children}
                     </DialogPanel>

@@ -13,6 +13,35 @@
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
+        <!-- Fix scrolling issues -->
+        <style>
+            html, body {
+                overflow: hidden;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            body {
+                position: relative;
+            }
+
+            /* Only allow scrolling in specific containers */
+            .scrollable-container {
+                overflow-y: auto;
+                overflow-x: hidden;
+            }
+
+            /* Make sure modals can scroll their content */
+            .modal-content,
+            .rating-modal-container,
+            .social-modal-content,
+            .collection-modal-content {
+                overflow-y: auto;
+                max-height: 90vh;
+            }
+        </style>
+
         <!-- Scripts -->
         @routes
         @viteReactRefresh
@@ -21,5 +50,8 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        <div id="collection-details-modal-root"></div>
+        <div id="user-profile-modal-root"></div>
+        <div id="error-boundary-root"></div>
     </body>
 </html>

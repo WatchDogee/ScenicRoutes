@@ -5,12 +5,14 @@ import '../css/map.css';
 import '../css/community.css';
 import '../css/rating-modal.css';
 import '../css/poi.css';
+import '../css/fix-scrolling.css';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { AuthProvider } from './Contexts/AuthContext';
 import { UserSettingsProvider } from './Contexts/UserSettingsContext';
+import { NotificationProvider } from './Contexts/NotificationContext';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -25,7 +27,9 @@ createInertiaApp({
         root.render(
             <AuthProvider>
                 <UserSettingsProvider>
-                    <App {...props} />
+                    <NotificationProvider>
+                        <App {...props} />
+                    </NotificationProvider>
                 </UserSettingsProvider>
             </AuthProvider>
         );

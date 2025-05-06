@@ -2,18 +2,15 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
-import RatingModal from '../Components/RatingModal';
 import NavigationAppSelector from '../Components/NavigationAppSelector';
-import ProfilePicture from '../Components/ProfilePicture';
-import StarRating from '../Components/StarRating';
-import RoadCard from '../Components/RoadCard';
 import PhotoGallery from '../Components/PhotoGallery';
 import PhotoUploader from '../Components/PhotoUploader';
 import PoiControls from '../Components/PoiControls';
 import PoiDetails from '../Components/PoiDetails';
-import { Link } from '@inertiajs/react';
+import RatingModal from '../Components/RatingModal';
+import SocialModal from '../Components/SocialModal';
+import StarRating from '../Components/StarRating';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
-import { FaMapMarkerAlt, FaGasPump, FaBolt } from 'react-icons/fa';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
 
 export default function Map() {
@@ -1063,7 +1060,7 @@ export default function Map() {
         setTimeout(() => {
             leafletMap.invalidateSize();
             console.log('Map resized');
-        }, 250);
+        }, 500);
 
         leafletMap.on('click', handleMapClick);
 
@@ -1513,6 +1510,14 @@ export default function Map() {
     // Add state for sidebar collapse
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+    // Add state for social modal
+    const [showSocialModal, setShowSocialModal] = useState(false);
+
+    // Log when social modal state changes
+    useEffect(() => {
+        console.log('Social modal state changed:', showSocialModal);
+    }, [showSocialModal]);
+
     // Toggle sidebar collapse
     const toggleSidebar = () => {
         setSidebarCollapsed(!sidebarCollapsed);
@@ -1525,7 +1530,15 @@ export default function Map() {
                 {/* Sidebar toggle button */}
                 <button
                     onClick={toggleSidebar}
-                    className="absolute top-4 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors z-30"
+                    className="absolute top-4 right-2 p-2 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+                    style={{
+                        zIndex: 9999,
+                        position: 'absolute !important',
+                        display: 'block !important',
+                        visibility: 'visible !important',
+                        opacity: 1,
+                        pointerEvents: 'auto'
+                    }}
                 >
                     {sidebarCollapsed ? '→' : '←'}
                 </button>
@@ -1860,15 +1873,19 @@ export default function Map() {
             </div>
 
             {/* Map */}
-            <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto' }}>
+            <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto', position: 'relative', overflow: 'visible' }}>
                 {/* Sidebar toggle button - positioned at the top */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
                         toggleSidebar();
                     }}
-                    className="absolute top-4 left-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-                    style={{ zIndex: 1000 }}
+                    className="absolute top-4 left-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors font-semibold"
+                    style={{
+                        zIndex: 2000,
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
                 >
                     {sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}
                 </button>
@@ -1879,16 +1896,37 @@ export default function Map() {
                         e.stopPropagation(); // Prevent map click event
                         setShowCommunity(!showCommunity);
                     }}
-                    className="absolute top-4 right-4 px-4 py-2 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-                    style={{ zIndex: 1000 }}
+                    className="absolute top-4 right-4 px-4 py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition-colors font-semibold"
+                    style={{
+                        zIndex: 2000,
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
                 >
                     {showCommunity ? 'Hide Community' : 'Show Community'}
+                </button>
+
+                {/* Social Hub button */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent map click event
+                        console.log('Social Hub button clicked');
+                        setShowSocialModal(true);
+                    }}
+                    className="absolute top-16 right-4 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-colors font-semibold"
+                    style={{
+                        zIndex: 2000,
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                >
+                    Social Hub
                 </button>
 
                 {/* POI Controls - positioned below the sidebar toggle button */}
                 <div
                     className="absolute top-20 left-4 max-w-[250px]"
-                    style={{ zIndex: 1000, pointerEvents: 'auto' }}
+                    style={{ zIndex: 2000, pointerEvents: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     <PoiControls
@@ -1927,22 +1965,26 @@ export default function Map() {
             {/* Community Sidebar */}
             {showCommunity && (
                 <div className="w-96 p-4 bg-white shadow-md overflow-y-auto z-20">
-                    <h2 className="text-xl font-bold mb-4">Community Roads</h2>
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Community Roads</h2>
+                    </div>
 
-                    {/* Search Controls */}
-                    <div className="mb-6 space-y-4">
-                        {/* Location Search */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Search Location
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Enter city, region, or place..."
-                                value={communitySearchQuery}
-                                onChange={handleCommunitySearchChange}
-                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                    {/* Roads Tab Content */}
+                    <div>
+                        {/* Search Controls */}
+                        <div className="mb-6 space-y-4">
+                            {/* Location Search */}
+                            <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Search Location
+                                    </label>
+                                    <input
+                                        type="text"
+                                        placeholder="Enter city, region, or place..."
+                                        value={communitySearchQuery}
+                                        onChange={handleCommunitySearchChange}
+                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
                             {communitySearchResults.length > 0 && (
                                 <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                                     {communitySearchResults.map((result, index) => (
@@ -2161,22 +2203,12 @@ export default function Map() {
                             ))
                         )}
                     </div>
+                    </div>
                 </div>
             )}
 
-            {/* Rating Modal */}
-            <RatingModal
-                isOpen={ratingModalOpen}
-                onClose={handleCloseRatingModal}
-                onSubmit={handleSubmitReview}
-                road={selectedRoadForReview}
-                auth={auth}
-                initialRating={localRating}
-                initialComment={localComment}
-            />
-
             {/* Navigation App Selector Modal */}
-            {showNavigationSelector && selectedRoad && (
+            {selectedRoad && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
                         <div className="flex justify-between items-start mb-4">
@@ -2184,13 +2216,11 @@ export default function Map() {
                                 coordinates={selectedRoad.road_coordinates}
                                 roadName={selectedRoad.road_name}
                                 onClose={() => {
-                                    setShowNavigationSelector(false);
                                     setSelectedRoad(null);
                                 }}
                             />
                             <button
                                 onClick={() => {
-                                    setShowNavigationSelector(false);
                                     setSelectedRoad(null);
                                 }}
                                 className="text-gray-500 hover:text-gray-700"
@@ -2201,6 +2231,56 @@ export default function Map() {
                     </div>
                 </div>
             )}
+
+            {/* Social Modal */}
+            {showSocialModal && (
+                <SocialModal
+                    isOpen={showSocialModal}
+                    onClose={() => {
+                        console.log('Closing social modal');
+                        setShowSocialModal(false);
+                    }}
+                onViewRoad={(road) => {
+                    if (road && road.road_coordinates) {
+                        // Display the road on the map
+                        try {
+                            const coordinates = Array.isArray(road.road_coordinates)
+                                ? road.road_coordinates.map(coord => [coord.lat, coord.lon])
+                                : JSON.parse(road.road_coordinates);
+
+                            // Clear existing layers
+                            roadsLayerRef.current.clearLayers();
+
+                            // Add the new road
+                            const polyline = L.polyline(coordinates, {
+                                color: 'blue',
+                                weight: 8
+                            }).addTo(roadsLayerRef.current);
+
+                            // Fit map to the road bounds
+                            mapRef.current.fitBounds(polyline.getBounds());
+
+                            // Close the social modal after viewing the road
+                            setShowSocialModal(false);
+                        } catch (error) {
+                            console.error("Error displaying road:", error);
+                            alert("Could not display this road on the map. Invalid coordinates format.");
+                        }
+                    }
+                }}
+            />
+            )}
+
+            {/* Rating Modal */}
+            <RatingModal
+                isOpen={ratingModalOpen}
+                onClose={() => setRatingModalOpen(false)}
+                onSubmit={handleSubmitReview}
+                road={selectedRoadForReview}
+                auth={auth}
+                initialRating={localRating}
+                initialComment={localComment}
+            />
         </div>
     );
 }

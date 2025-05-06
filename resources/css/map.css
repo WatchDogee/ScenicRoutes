@@ -870,6 +870,43 @@
   z-index: 50;
 }
 
+/* Custom Map Buttons */
+.custom-map-buttons-container {
+  position: absolute !important;
+  top: 10px !important;
+  left: 10px !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  gap: 10px !important;
+  pointer-events: auto !important;
+}
+
+.custom-map-button {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  border: 2px solid white !important;
+  cursor: pointer !important;
+  font-weight: bold !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  color: white !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.sidebar-toggle {
+  background-color: #3b82f6 !important;
+}
+
+.poi-button {
+  background-color: #10b981 !important;
+}
+
+.social-button {
+  background-color: #8b5cf6 !important;
+}
+
 .navigation-modal-content {
   background-color: white;
   padding: 1.5rem;
