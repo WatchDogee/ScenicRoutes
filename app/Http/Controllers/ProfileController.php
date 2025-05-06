@@ -35,7 +35,7 @@ class ProfileController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -106,7 +106,7 @@ class ProfileController extends Controller
     {
         try {
             \Log::info('Profile picture update request received');
-            
+
             try {
                 $validated = $request->validate([
                     'profile_picture' => [
@@ -119,11 +119,11 @@ class ProfileController extends Controller
                 ]);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 \Log::error('Validation error details: ' . json_encode($e->errors()));
-                
+
                 // Get the specific validation error message
                 $errorMessages = $e->errors()['profile_picture'] ?? ['Unknown validation error'];
                 $specificError = $errorMessages[0];
-                
+
                 return response()->json([
                     'error' => 'Validation failed',
                     'message' => $specificError,
@@ -150,7 +150,7 @@ class ProfileController extends Controller
             }
 
             $file = $request->file('profile_picture');
-            
+
             \Log::info('File details', [
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $file->getMimeType(),
@@ -171,13 +171,18 @@ class ProfileController extends Controller
             // Delete old profile picture if it exists
             if ($user->profile_picture) {
                 \Log::info('Deleting old profile picture: ' . $user->profile_picture);
-                Storage::disk('public')->delete($user->profile_picture);
+                // Determine which disk to use based on configuration
+                $disk = config('filesystems.default');
+                Storage::disk($disk === 's3' ? 's3' : 'public')->delete($user->profile_picture);
             }
 
             // Store the new profile picture with a unique name
             $fileName = 'profile-' . $user->id . '-' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('profile-pictures', $fileName, 'public');
-            
+
+            // Determine which disk to use based on configuration
+            $disk = config('filesystems.default');
+            $path = $file->storeAs('profile-pictures', $fileName, $disk === 's3' ? 's3' : 'public');
+
             if (!$path) {
                 \Log::error('Failed to store the profile picture');
                 throw new \Exception('Failed to store the profile picture.');

@@ -7,6 +7,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -60,7 +61,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getProfilePictureUrlAttribute()
     {
         if ($this->profile_picture) {
-            return asset('storage/' . $this->profile_picture);
+            // Check if we're using S3 or local storage
+            $disk = config('filesystems.default');
+            if ($disk === 's3') {
+                // For S3 storage
+                return Storage::disk('s3')->url($this->profile_picture);
+            } else {
+                // For local storage
+                return asset('storage/' . $this->profile_picture);
+            }
         }
 
         // Generate initials-based placeholder if no profile picture

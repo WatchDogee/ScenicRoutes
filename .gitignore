@@ -6,11 +6,12 @@
 /storage/*.key
 /storage/pail
 /vendor
+# Environment files with sensitive information
 .env
 .env.backup
 .env.production
-# Allow our specific environment files
-!.env.postgres
+.env.postgres
+.env.*.local
 .phpactor.json
 .phpunit.result.cache
 Homestead.json

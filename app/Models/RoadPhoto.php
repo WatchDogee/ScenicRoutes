@@ -42,6 +42,18 @@ class RoadPhoto extends Model
      */
     public function getPhotoUrlAttribute()
     {
-        return $this->photo_path ? Storage::url($this->photo_path) : null;
+        if (!$this->photo_path) {
+            return null;
+        }
+
+        // Check if we're using S3 or local storage
+        $disk = config('filesystems.default');
+        if ($disk === 's3') {
+            // For S3 storage
+            return Storage::disk('s3')->url($this->photo_path);
+        } else {
+            // For local storage
+            return Storage::url($this->photo_path);
+        }
     }
 }

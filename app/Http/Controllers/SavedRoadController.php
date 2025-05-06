@@ -8,6 +8,7 @@ use App\Models\Review;
 use App\Models\Comment;
 use App\Services\ElevationService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class SavedRoadController extends Controller
 {
