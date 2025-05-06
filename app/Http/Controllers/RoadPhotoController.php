@@ -23,8 +23,9 @@ class RoadPhotoController extends Controller
         $road = SavedRoad::findOrFail($roadId);
 
         // Check if the user is authorized to add photos to this road
-        if ($road->user_id !== Auth::id() && !$road->is_public) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        // Allow if user is the owner or if the road is public
+        if (!$road->is_public && $road->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized - you can only add photos to your own roads or public roads'], 403);
         }
 
         if ($request->hasFile('photo')) {

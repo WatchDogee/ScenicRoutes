@@ -314,11 +314,13 @@ class SavedRoadController extends Controller
 
             $validatedData = $request->validate([
                 'rating' => 'required|integer|between:1,5',
-                'comment' => 'nullable|string|max:500'
+                'comment' => 'nullable|string|max:500',
+                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Allow photo upload with review
+                'caption' => 'nullable|string|max:255' // Caption for the photo
             ]);
 
             // Create or update the review
-            Review::updateOrCreate(
+            $review = Review::updateOrCreate(
                 [
                     'user_id' => Auth::id(),
                     'saved_road_id' => $road->id
@@ -328,6 +330,19 @@ class SavedRoadController extends Controller
                     'comment' => $validatedData['comment'] ?? null
                 ]
             );
+
+            // Handle photo upload if provided
+            if ($request->hasFile('photo')) {
+                $path = $request->file('photo')->store('review-photos', 'public');
+
+                $photo = new \App\Models\ReviewPhoto([
+                    'review_id' => $review->id,
+                    'photo_path' => $path,
+                    'caption' => $validatedData['caption'] ?? null,
+                ]);
+
+                $photo->save();
+            }
 
             // Update average rating
             $avgRating = $road->reviews()->avg('rating');

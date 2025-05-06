@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import ProfilePicture from './ProfilePicture';
 import StarRating from './StarRating';
 import ReviewCard from './ReviewCard';
@@ -11,6 +12,9 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     const [roadPhotos, setRoadPhotos] = useState([]);
     const [reviewPhotos, setReviewPhotos] = useState({});
     const [userReviewId, setUserReviewId] = useState(null);
+    const [reviewPhoto, setReviewPhoto] = useState(null);
+    const [photoCaption, setPhotoCaption] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (isOpen && road) {
@@ -63,8 +67,43 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
 
     if (!isOpen || !road) return null;
 
-    const handleSubmit = () => {
-        onSubmit(rating, comment);
+    const handleSubmit = async () => {
+        setIsSubmitting(true);
+
+        try {
+            // If there's a photo to upload with the review
+            if (reviewPhoto) {
+                const formData = new FormData();
+                formData.append('rating', rating);
+                if (comment) formData.append('comment', comment);
+                formData.append('photo', reviewPhoto);
+                if (photoCaption) formData.append('caption', photoCaption);
+
+                // Submit directly to the API
+                const response = await axios.post(`/api/saved-roads/${road.id}/review`, formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+
+                // Update the road data
+                if (response.data.road) {
+                    // Call the parent component's onSubmit to update UI
+                    onClose();
+                }
+            } else {
+                // Regular review submission without photo
+                onSubmit(rating, comment);
+            }
+        } catch (error) {
+            console.error('Error submitting review with photo:', error);
+            // Fall back to regular submission
+            onSubmit(rating, comment);
+        } finally {
+            setIsSubmitting(false);
+            setReviewPhoto(null);
+            setPhotoCaption('');
+        }
     };
 
     const handleRoadPhotoUploaded = (data) => {
@@ -176,15 +215,13 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         canDelete={auth.user?.id === road.user?.id}
                     />
 
-                    {/* Only road owner can add photos to the road */}
-                    {auth.user?.id === road.user?.id && (
-                        <PhotoUploader
-                            endpoint={`/api/saved-roads/${road.id}/photos`}
-                            onPhotoUploaded={handleRoadPhotoUploaded}
-                            existingPhotos={roadPhotos}
-                            className="mt-4"
-                        />
-                    )}
+                    {/* Anyone can add photos to the road */}
+                    <PhotoUploader
+                        endpoint={`/api/saved-roads/${road.id}/photos`}
+                        onPhotoUploaded={handleRoadPhotoUploaded}
+                        existingPhotos={roadPhotos}
+                        className="mt-4"
+                    />
                 </div>
 
                 <div className="rating-modal-review-section">
@@ -222,22 +259,43 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                             />
                         )}
 
-                        {/* For new reviews, show temporary photo uploader */}
-                        {!userReviewId && (
-                            <div className="mb-3">
-                                <p className="text-sm text-gray-500 mb-2">
-                                    You can add photos after submitting your review.
-                                </p>
-                            </div>
-                        )}
-
-                        {/* Photo uploader - only show if there's an existing review */}
-                        {userReviewId && (
+                        {/* For existing reviews, show photo uploader with existing review ID */}
+                        {userReviewId ? (
                             <PhotoUploader
                                 endpoint={`/api/reviews/${userReviewId}/photos`}
                                 onPhotoUploaded={handleReviewPhotoUploaded}
                                 existingPhotos={reviewPhotos[userReviewId] || []}
                             />
+                        ) : (
+                            <div className="mb-3">
+                                <div className="flex flex-col space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                        Add a photo with your review
+                                    </label>
+                                    <div className="flex items-end gap-2">
+                                        <div className="flex-1">
+                                            <input
+                                                type="text"
+                                                placeholder="Caption (optional)"
+                                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                value={photoCaption}
+                                                onChange={(e) => setPhotoCaption(e.target.value)}
+                                            />
+                                        </div>
+                                        <div>
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/gif"
+                                                className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                                onChange={(e) => setReviewPhoto(e.target.files[0])}
+                                            />
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500">
+                                        You can also add photos directly to the road above.
+                                    </p>
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -272,12 +330,12 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                     </button>
                     <button
                         onClick={handleSubmit}
-                        disabled={rating === 0}
+                        disabled={rating === 0 || isSubmitting}
                         className={`rating-modal-submit-button ${
-                            rating === 0 ? 'rating-modal-submit-button-disabled' : 'rating-modal-submit-button-enabled'
+                            rating === 0 || isSubmitting ? 'rating-modal-submit-button-disabled' : 'rating-modal-submit-button-enabled'
                         }`}
                     >
-                        Submit Review
+                        {isSubmitting ? 'Submitting...' : 'Submit Review'}
                     </button>
                 </div>
             </div>

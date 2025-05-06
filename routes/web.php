@@ -91,7 +91,8 @@ Route::middleware('guest')->group(function () {
         ]);
     })->name('verification.verify');
 
-    Route::post('/login', [AuthController::class, 'login']);
+    // API login route for email verification check
+    Route::post('/api/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register'])->name('register');
 });
 

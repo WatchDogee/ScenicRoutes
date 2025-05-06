@@ -41,13 +41,18 @@ export default function Login({ status }) {
 
         try {
             // First try the API login to check for email verification
-            const response = await apiClient.post('/login', {
+            const response = await apiClient.post('/api/login', {
                 login: data.login,
                 password: data.password
             });
 
             // If successful, proceed with Inertia login
-            post(route('login'));
+            // Convert login field to email field for Laravel's default authentication
+            post(route('login'), {
+                email: data.login,
+                password: data.password,
+                remember: data.remember
+            });
         } catch (error) {
             // Check if this is an email verification error
             if (error.response?.status === 403 && error.response?.data?.verification_needed) {

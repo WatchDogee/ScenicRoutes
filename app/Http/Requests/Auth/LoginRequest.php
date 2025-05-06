@@ -27,9 +27,38 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string'],
+            'email' => ['required_without:login', 'string'],
+            'login' => ['required_without:email', 'string'],
             'password' => ['required', 'string'],
         ];
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+            'email' => 'email or username',
+            'login' => 'email or username',
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     *
+     * @return void
+     */
+    protected function prepareForValidation()
+    {
+        // If login field is provided but email is not, copy login to email
+        if ($this->has('login') && !$this->has('email')) {
+            $this->merge([
+                'email' => $this->input('login'),
+            ]);
+        }
     }
 
     /**
@@ -41,9 +70,15 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        $loginField = filter_var($this->input('email'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        // Get the login value (could be from 'email' or 'login' field)
+        $loginValue = $this->input('email');
+
+        // Determine if the login input is an email or username
+        $loginField = filter_var($loginValue, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        // First attempt with the detected field type
         $credentials = [
-            $loginField => $this->input('email'),
+            $loginField => $loginValue,
             'password' => $this->input('password')
         ];
 
@@ -51,15 +86,18 @@ class LoginRequest extends FormRequest
             // If authentication fails with the first field, try the other field
             $alternativeField = $loginField === 'email' ? 'username' : 'email';
             $alternativeCredentials = [
-                $alternativeField => $this->input('email'),
+                $alternativeField => $loginValue,
                 'password' => $this->input('password')
             ];
 
             if (! Auth::attempt($alternativeCredentials, $this->boolean('remember'))) {
                 RateLimiter::hit($this->throttleKey());
 
+                // Determine which field to show the error on
+                $field = $this->has('login') ? 'login' : 'email';
+
                 throw ValidationException::withMessages([
-                    'email' => trans('auth.failed'),
+                    $field => trans('auth.failed'),
                 ]);
             }
         }
@@ -82,8 +120,11 @@ class LoginRequest extends FormRequest
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
+        // Determine which field to show the error on
+        $field = $this->has('login') ? 'login' : 'email';
+
         throw ValidationException::withMessages([
-            'email' => trans('auth.throttle', [
+            $field => trans('auth.throttle', [
                 'seconds' => $seconds,
                 'minutes' => ceil($seconds / 60),
             ]),
@@ -95,6 +136,8 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        // Use login field if provided, otherwise use email
+        $loginValue = $this->input('login') ?? $this->input('email');
+        return Str::transliterate(Str::lower($loginValue).'|'.$this->ip());
     }
 }
