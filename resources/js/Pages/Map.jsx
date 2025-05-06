@@ -1493,7 +1493,7 @@ export default function Map() {
     return (
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto z-20 flex flex-col relative`}>
+            <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
                 {/* Collapse toggle button */}
                 <button
                     onClick={toggleSidebar}

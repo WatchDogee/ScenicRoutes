@@ -44,3 +44,5 @@ SCENIC_ROUTES_DEPLOYMENT_FIX.md
 # Allow our PostgreSQL guides
 !POSTGRES_LARAVEL_CLOUD.md
 !POSTGRES_MIGRATION_GUIDE.md
+fix-storage.php
+db-management.php
