@@ -9,7 +9,7 @@ import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
 
-export default function SocialModal({ isOpen, onClose, onViewRoad }) {
+export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails }) {
     // Temporary auth state until we fix the context
     const [authState, setAuthState] = useState({
         isAuthenticated: false,
@@ -574,6 +574,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad }) {
                             <Leaderboard
                                 onViewRoad={onViewRoad}
                                 onViewUser={handleViewUser}
+                                onViewRoadDetails={onViewRoadDetails}
                             />
                         )}
 

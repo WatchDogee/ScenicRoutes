@@ -12,6 +12,8 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
     const [userReviews, setUserReviews] = useState([]);
     const [followersCount, setFollowersCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
+    const [followers, setFollowers] = useState([]);
+    const [following, setFollowing] = useState([]);
     const [collections, setCollections] = useState([]);
     const [activeTab, setActiveTab] = useState('roads');
     const [loading, setLoading] = useState(true);
@@ -55,17 +57,41 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                 setCollections([]);
             }
 
-            // Fetch follow counts
+            // Fetch follow counts and lists
             try {
                 const followResponse = await axios.get(`/api/users/${auth.user.id}/follow-status`, {
                     headers: { Authorization: `Bearer ${auth.token}` }
                 });
                 setFollowersCount(followResponse.data.followers_count || 0);
                 setFollowingCount(followResponse.data.following_count || 0);
+
+                // Fetch followers list
+                try {
+                    const followersResponse = await axios.get(`/api/users/${auth.user.id}/followers`, {
+                        headers: { Authorization: `Bearer ${auth.token}` }
+                    });
+                    setFollowers(followersResponse.data || []);
+                } catch (followersError) {
+                    console.error('Error fetching followers:', followersError);
+                    setFollowers([]);
+                }
+
+                // Fetch following list
+                try {
+                    const followingResponse = await axios.get(`/api/users/${auth.user.id}/following`, {
+                        headers: { Authorization: `Bearer ${auth.token}` }
+                    });
+                    setFollowing(followingResponse.data || []);
+                } catch (followingError) {
+                    console.error('Error fetching following:', followingError);
+                    setFollowing([]);
+                }
             } catch (followError) {
                 console.log('Could not fetch follow status');
                 setFollowersCount(0);
                 setFollowingCount(0);
+                setFollowers([]);
+                setFollowing([]);
             }
 
             setError(null);
@@ -100,33 +126,39 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                         >
                             <FaTimes className="h-6 w-6" />
                         </button>
-                        
+
                         <div className="flex flex-col sm:flex-row items-center sm:items-start">
                             <div className="mb-4 sm:mb-0 sm:mr-6">
-                                <ProfilePicture user={user} size="xl" className="border-4 border-white" />
+                                <ProfilePicture user={user} size="2xl" className="border-4 border-white shadow-lg" />
                             </div>
                             <div className="text-center sm:text-left flex-1">
                                 <h1 className="text-2xl font-bold">{user?.name}</h1>
                                 <p className="text-blue-100">@{user?.username || user?.name?.toLowerCase().replace(/\s+/g, '')}</p>
-                                
+
                                 <div className="flex justify-center sm:justify-start mt-4 space-x-6">
-                                    <div className="text-center">
+                                    <div className="text-center bg-blue-600 bg-opacity-30 px-3 py-2 rounded">
                                         <div className="text-xl font-bold">{userRoads.length}</div>
                                         <div className="text-sm text-blue-100">Roads</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-center bg-blue-600 bg-opacity-30 px-3 py-2 rounded">
                                         <div className="text-xl font-bold">{collections.length}</div>
                                         <div className="text-sm text-blue-100">Collections</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-center bg-blue-600 bg-opacity-30 px-3 py-2 rounded">
                                         <div className="text-xl font-bold">{userReviews.length}</div>
                                         <div className="text-sm text-blue-100">Reviews</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div
+                                        className="text-center bg-blue-600 bg-opacity-30 px-3 py-2 rounded cursor-pointer hover:bg-opacity-40"
+                                        onClick={() => setActiveTab('followers')}
+                                    >
                                         <div className="text-xl font-bold">{followersCount}</div>
                                         <div className="text-sm text-blue-100">Followers</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div
+                                        className="text-center bg-blue-600 bg-opacity-30 px-3 py-2 rounded cursor-pointer hover:bg-opacity-40"
+                                        onClick={() => setActiveTab('following')}
+                                    >
                                         <div className="text-xl font-bold">{followingCount}</div>
                                         <div className="text-sm text-blue-100">Following</div>
                                     </div>
@@ -255,9 +287,39 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                             <p className="text-sm text-gray-600 mt-1">{collection.description}</p>
                                                         )}
                                                         <p className="text-sm text-gray-500 mt-2">
-                                                            {collection.roads?.length || 0} roads • 
+                                                            {collection.roads?.length || 0} roads •
                                                             {collection.is_public ? ' Public' : ' Private'}
                                                         </p>
+                                                        <div className="mt-3 flex gap-2">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // Use Inertia.js or a custom event to handle this without page navigation
+                                                                    const event = new CustomEvent('viewCollectionDetails', {
+                                                                        detail: { collection }
+                                                                    });
+                                                                    window.dispatchEvent(event);
+                                                                    onClose(); // Close the profile modal
+                                                                }}
+                                                                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                            >
+                                                                View Details
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    // Use Inertia.js or a custom event to handle this without page navigation
+                                                                    const event = new CustomEvent('editCollection', {
+                                                                        detail: { collection }
+                                                                    });
+                                                                    window.dispatchEvent(event);
+                                                                    onClose(); // Close the profile modal
+                                                                }}
+                                                                className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
@@ -279,9 +341,9 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                         <h3 className="font-semibold">{review.road?.road_name || 'Unnamed Road'}</h3>
                                                         <div className="flex items-center">
                                                             {[...Array(5)].map((_, i) => (
-                                                                <FaStar 
-                                                                    key={i} 
-                                                                    className={i < review.rating ? "text-yellow-400" : "text-gray-300"} 
+                                                                <FaStar
+                                                                    key={i}
+                                                                    className={i < review.rating ? "text-yellow-400" : "text-gray-300"}
                                                                 />
                                                             ))}
                                                         </div>
@@ -298,15 +360,115 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                     </div>
                                 )}
 
-                                {/* Placeholder for following/followers tabs */}
-                                {(activeTab === 'following' || activeTab === 'followers') && (
-                                    <div className="text-center py-8 bg-gray-50 rounded border">
-                                        <FaUsers className="mx-auto text-4xl text-gray-400 mb-2" />
-                                        <p className="text-gray-600">
-                                            {activeTab === 'following' 
-                                                ? 'Following list will be implemented soon' 
-                                                : 'Followers list will be implemented soon'}
-                                        </p>
+                                {activeTab === 'following' && (
+                                    <div className="space-y-4">
+                                        {followingCount === 0 ? (
+                                            <div className="text-center py-8 bg-gray-50 rounded border">
+                                                <FaUserFriends className="mx-auto text-4xl text-gray-400 mb-2" />
+                                                <p className="text-gray-600">You aren't following anyone yet</p>
+                                                <button
+                                                    onClick={() => setActiveTab('leaderboard')}
+                                                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                >
+                                                    Discover Users to Follow
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="font-medium text-gray-700">People You Follow</h3>
+                                                    <span className="text-sm text-gray-500">{followingCount} following</span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    {following.length > 0 ? (
+                                                        following.map((followedUser) => (
+                                                            <div key={followedUser.id} className="flex items-center p-3 border rounded-lg">
+                                                                <ProfilePicture user={followedUser} size="md" />
+                                                                <div className="ml-3">
+                                                                    <div className="font-medium">{followedUser.name}</div>
+                                                                    <div className="text-sm text-gray-500">
+                                                                        @{followedUser.username || followedUser.name?.toLowerCase().replace(/\s+/g, '') || 'user'}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+                                                                    onClick={() => {
+                                                                        // Handle unfollow action
+                                                                        if (confirm(`Unfollow ${followedUser.name}?`)) {
+                                                                            // TODO: Implement unfollow API call
+                                                                            alert(`Unfollowed ${followedUser.name}`);
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    Unfollow
+                                                                </button>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="col-span-2 text-center text-gray-500 py-4">
+                                                            No following data available
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'followers' && (
+                                    <div className="space-y-4">
+                                        {followersCount === 0 ? (
+                                            <div className="text-center py-8 bg-gray-50 rounded border">
+                                                <FaUsers className="mx-auto text-4xl text-gray-400 mb-2" />
+                                                <p className="text-gray-600">You don't have any followers yet</p>
+                                                <p className="text-sm text-gray-500 mt-2">
+                                                    As you share more roads and collections, people will start following you
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div>
+                                                <div className="flex justify-between items-center mb-4">
+                                                    <h3 className="font-medium text-gray-700">People Following You</h3>
+                                                    <span className="text-sm text-gray-500">{followersCount} followers</span>
+                                                </div>
+
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    {followers.length > 0 ? (
+                                                        followers.map((follower) => (
+                                                            <div key={follower.id} className="flex items-center p-3 border rounded-lg">
+                                                                <ProfilePicture user={follower} size="md" />
+                                                                <div className="ml-3">
+                                                                    <div className="font-medium">{follower.name}</div>
+                                                                    <div className="text-sm text-gray-500">
+                                                                        @{follower.username || follower.name?.toLowerCase().replace(/\s+/g, '') || 'user'}
+                                                                    </div>
+                                                                </div>
+                                                                {!following.some(f => f.id === follower.id) && (
+                                                                    <button
+                                                                        className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+                                                                        onClick={() => {
+                                                                            // Handle follow back action
+                                                                            // TODO: Implement follow API call
+                                                                            alert(`Followed ${follower.name}`);
+                                                                        }}
+                                                                    >
+                                                                        Follow Back
+                                                                    </button>
+                                                                )}
+                                                                {following.some(f => f.id === follower.id) && (
+                                                                    <span className="ml-auto text-sm text-green-500">Following</span>
+                                                                )}
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <div className="col-span-2 text-center text-gray-500 py-4">
+                                                            No followers data available
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </>

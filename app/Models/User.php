@@ -206,6 +206,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get the reviews created by the user.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
      * Get the users that this user is following.
      */
     public function following()
@@ -232,5 +240,19 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isFollowing($userId)
     {
         return $this->following()->where('followed_id', $userId)->exists();
+    }
+
+    /**
+     * Get the user's bio.
+     */
+    public function getBioAttribute()
+    {
+        // If bio column exists, return it
+        if (isset($this->attributes['bio'])) {
+            return $this->attributes['bio'];
+        }
+
+        // Otherwise, try to get it from settings
+        return $this->getSetting('bio', '');
     }
 }

@@ -146,6 +146,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/following', [FollowController::class, 'following']);
     Route::get('/followers', [FollowController::class, 'followers']);
     Route::get('/users/{id}/follow-status', [FollowController::class, 'status']);
+    Route::get('/users/{id}/followers', [FollowController::class, 'userFollowers']);
+    Route::get('/users/{id}/following', [FollowController::class, 'userFollowing']);
     Route::get('/feed', [FollowController::class, 'feed']);
 });
 

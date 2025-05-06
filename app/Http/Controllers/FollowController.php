@@ -105,6 +105,52 @@ class FollowController extends Controller
     }
 
     /**
+     * Get followers of a specific user.
+     */
+    public function userFollowers(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Check if the authenticated user is the requested user or if the profile is public
+        if (Auth::id() != $user->id) {
+            // In the future, you might want to add privacy settings
+            // For now, we'll allow viewing followers for any user
+        }
+
+        $followers = $user->followers()
+            ->select('users.id', 'name', 'username', 'profile_picture')
+            ->withCount(['savedRoads' => function($query) {
+                $query->where('is_public', true);
+            }])
+            ->get();
+
+        return response()->json($followers);
+    }
+
+    /**
+     * Get users that a specific user is following.
+     */
+    public function userFollowing(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Check if the authenticated user is the requested user or if the profile is public
+        if (Auth::id() != $user->id) {
+            // In the future, you might want to add privacy settings
+            // For now, we'll allow viewing following for any user
+        }
+
+        $following = $user->following()
+            ->select('users.id', 'name', 'username', 'profile_picture')
+            ->withCount(['savedRoads' => function($query) {
+                $query->where('is_public', true);
+            }])
+            ->get();
+
+        return response()->json($following);
+    }
+
+    /**
      * Get content from followed users (roads, collections).
      */
     public function feed(Request $request)

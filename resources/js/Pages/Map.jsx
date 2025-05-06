@@ -1103,7 +1103,28 @@ export default function Map() {
             }
         };
 
+        // Add event listeners for collection actions
+        const handleViewCollectionDetailsEvent = (event) => {
+            if (event.detail && event.detail.collection) {
+                console.log("View collection details:", event.detail.collection);
+                // For now, just show an alert
+                alert(`Collection details: ${event.detail.collection.name} (${event.detail.collection.roads?.length || 0} roads)`);
+                // TODO: Implement proper collection details view
+            }
+        };
+
+        const handleEditCollectionEvent = (event) => {
+            if (event.detail && event.detail.collection) {
+                console.log("Edit collection:", event.detail.collection);
+                // For now, just show an alert
+                alert(`Edit collection: ${event.detail.collection.name}`);
+                // TODO: Implement proper collection editing
+            }
+        };
+
         window.addEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
+        window.addEventListener('viewCollectionDetails', handleViewCollectionDetailsEvent);
+        window.addEventListener('editCollection', handleEditCollectionEvent);
 
         // Add Font Awesome CSS for POI markers
         if (!document.getElementById('font-awesome-css')) {
@@ -1122,8 +1143,10 @@ export default function Map() {
             radiusCircleRef.current = null;
             roadsLayerRef.current = null;
 
-            // Remove the event listener when component unmounts
+            // Remove the event listeners when component unmounts
             window.removeEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
+            window.removeEventListener('viewCollectionDetails', handleViewCollectionDetailsEvent);
+            window.removeEventListener('editCollection', handleEditCollectionEvent);
         };
     }, []); // Empty dependency array to ensure map is initialized only once
 
@@ -2252,34 +2275,43 @@ export default function Map() {
                         console.log('Closing social modal');
                         setShowSocialModal(false);
                     }}
-                onViewRoad={(road) => {
-                    if (road && road.road_coordinates) {
-                        // Display the road on the map
+                    onViewRoadDetails={(roadId) => {
                         try {
-                            const coordinates = Array.isArray(road.road_coordinates)
-                                ? road.road_coordinates.map(coord => [coord.lat, coord.lon])
-                                : JSON.parse(road.road_coordinates);
-
-                            // Clear existing layers
-                            roadsLayerRef.current.clearLayers();
-
-                            // Add the new road
-                            const polyline = L.polyline(coordinates, {
-                                color: 'blue',
-                                weight: 8
-                            }).addTo(roadsLayerRef.current);
-
-                            // Fit map to the road bounds
-                            mapRef.current.fitBounds(polyline.getBounds());
-
-                            // Close the social modal after viewing the road
+                            console.log("View road details from social modal:", roadId);
+                            handleRateRoad(roadId);
                             setShowSocialModal(false);
                         } catch (error) {
-                            console.error("Error displaying road:", error);
-                            alert("Could not display this road on the map. Invalid coordinates format.");
+                            console.error("Error viewing road details:", error);
                         }
-                    }
-                }}
+                    }}
+                    onViewRoad={(road) => {
+                        if (road && road.road_coordinates) {
+                            // Display the road on the map
+                            try {
+                                const coordinates = Array.isArray(road.road_coordinates)
+                                    ? road.road_coordinates.map(coord => [coord.lat, coord.lon])
+                                    : JSON.parse(road.road_coordinates);
+
+                                // Clear existing layers
+                                roadsLayerRef.current.clearLayers();
+
+                                // Add the new road
+                                const polyline = L.polyline(coordinates, {
+                                    color: 'blue',
+                                    weight: 8
+                                }).addTo(roadsLayerRef.current);
+
+                                // Fit map to the road bounds
+                                mapRef.current.fitBounds(polyline.getBounds());
+
+                                // Close the social modal after viewing the road
+                                setShowSocialModal(false);
+                            } catch (error) {
+                                console.error("Error displaying road:", error);
+                                alert("Could not display this road on the map. Invalid coordinates format.");
+                            }
+                        }
+                    }}
             />
             )}
 
