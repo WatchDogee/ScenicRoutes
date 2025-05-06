@@ -45,15 +45,15 @@ export default function PoiDetails({ poi, onClose }) {
     const properties = poi.properties || {};
 
     return (
-        <div className="poi-details bg-white p-4 rounded-lg shadow-md max-h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
+        <div className="poi-details bg-white p-4 rounded-lg shadow-lg border border-gray-200 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2 border-b">
                 <h3 className="text-xl font-semibold flex items-center">
                     {getPoiIcon()}
                     <span className="ml-2">{poi.name}</span>
                 </h3>
                 <button
                     onClick={onClose}
-                    className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
+                    className="text-white bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors flex items-center justify-center"
                     aria-label="Close POI details"
                     title="Close"
                 >

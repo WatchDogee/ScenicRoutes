@@ -178,6 +178,11 @@ class ProfileController extends Controller
             // Store the new profile picture with a unique name
             $fileName = 'profile-' . $user->id . '-' . time() . '.' . $file->getClientOriginalExtension();
 
+            // Make sure the directory exists
+            if (!Storage::disk('public')->exists('profile-pictures')) {
+                Storage::disk('public')->makeDirectory('profile-pictures');
+            }
+
             // Always store profile pictures in the public disk for consistent access
             $path = $file->storeAs('profile-pictures', $fileName, 'public');
 
@@ -187,6 +192,12 @@ class ProfileController extends Controller
             }
 
             \Log::info('New profile picture stored at: ' . $path);
+
+            // Verify the file was actually stored
+            if (!Storage::disk('public')->exists($path)) {
+                \Log::error('File was not found after storage: ' . $path);
+                throw new \Exception('File was not found after storage. Check directory permissions.');
+            }
 
             $user->update([
                 'profile_picture' => $path

@@ -11,9 +11,11 @@
   z-index: 2000 !important; /* Force high z-index */
 }
 
-/* Make sure the marker icon stays above other elements */
+/* Make sure the marker icon stays above other elements and maintains its size */
 .leaflet-marker-icon.main-location-marker {
   z-index: 2000 !important;
+  width: 25px !important;
+  height: 41px !important;
 }
 
 /* Ensure marker shadow is also properly positioned */

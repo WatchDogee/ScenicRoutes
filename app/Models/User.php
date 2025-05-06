@@ -63,16 +63,39 @@ class User extends Authenticatable implements MustVerifyEmail
         if ($this->profile_picture) {
             // Check if we're using S3 or local storage
             $disk = config('filesystems.default');
+
+            // Log the current disk and profile picture path for debugging
+            \Log::info('Getting profile picture URL', [
+                'disk' => $disk,
+                'path' => $this->profile_picture,
+                'exists_public' => Storage::disk('public')->exists($this->profile_picture),
+                'exists_local' => Storage::disk('local')->exists($this->profile_picture),
+                'app_url' => config('app.url')
+            ]);
+
             if ($disk === 's3') {
                 // For S3 storage
                 return Storage::disk('s3')->url($this->profile_picture);
             } else {
-                // For local storage
-                // First try using Storage::url which is more reliable across environments
+                // For local storage - try multiple approaches to ensure we get a valid URL
                 try {
-                    return Storage::disk('public')->url($this->profile_picture);
+                    // First check if the file exists in public disk
+                    if (Storage::disk('public')->exists($this->profile_picture)) {
+                        $url = Storage::disk('public')->url($this->profile_picture);
+                        \Log::info('Generated URL from public disk', ['url' => $url]);
+                        return $url;
+                    }
+
+                    // If not in public disk, try the asset helper
+                    $assetUrl = asset('storage/' . $this->profile_picture);
+                    \Log::info('Generated URL from asset helper', ['url' => $assetUrl]);
+                    return $assetUrl;
                 } catch (\Exception $e) {
-                    // Fallback to asset if Storage::url fails
+                    // Log the error and fallback to asset helper
+                    \Log::error('Error generating profile picture URL', [
+                        'error' => $e->getMessage(),
+                        'path' => $this->profile_picture
+                    ]);
                     return asset('storage/' . $this->profile_picture);
                 }
             }

@@ -203,8 +203,10 @@ export default function Map() {
         });
 
         if (markerRef.current) {
+            // Just update the position, don't recreate the marker
             markerRef.current.setLatLng(latlng);
         } else {
+            // Create the marker for the first time
             markerRef.current = L.marker(latlng, {
                 icon: markerIcon,
                 zIndexOffset: 1000 // Ensure marker stays on top
@@ -1495,8 +1497,9 @@ export default function Map() {
                 {/* Collapse toggle button */}
                 <button
                     onClick={toggleSidebar}
-                    className="absolute top-4 right-0 transform translate-x-1/2 bg-white rounded-full p-2 shadow-md hover:bg-gray-100 z-30"
+                    className="absolute top-4 right-0 transform translate-x-1/2 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition-colors z-30 flex items-center justify-center"
                     title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                    aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
                     {sidebarCollapsed ? (
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -1814,7 +1817,7 @@ export default function Map() {
                 {/* POI Details */}
                 {selectedPoi && (
                     <div
-                        className="absolute top-96 left-4 max-w-md"
+                        className="absolute top-20 right-4 max-w-md"
                         style={{ zIndex: 1001, pointerEvents: 'auto' }}
                         onClick={(e) => e.stopPropagation()}
                     >
