@@ -178,25 +178,31 @@ class ProfileController extends Controller
             // Store the new profile picture with a unique name
             $fileName = 'profile-' . $user->id . '-' . time() . '.' . $file->getClientOriginalExtension();
 
-            // Make sure the directory exists
-            if (!Storage::disk('public')->exists('profile-pictures')) {
+            // Determine which disk to use based on configuration
+            $disk = config('filesystems.default');
+            $storageDisk = ($disk === 's3' && config('filesystems.disks.s3.key')) ? 's3' : 'public';
+
+            \Log::info('Using storage disk: ' . $storageDisk);
+
+            // Make sure the directory exists if using local storage
+            if ($storageDisk === 'public' && !Storage::disk('public')->exists('profile-pictures')) {
                 Storage::disk('public')->makeDirectory('profile-pictures');
             }
 
-            // Always store profile pictures in the public disk for consistent access
-            $path = $file->storeAs('profile-pictures', $fileName, 'public');
+            // Store the profile picture on the determined disk
+            $path = $file->storeAs('profile-pictures', $fileName, $storageDisk);
 
             if (!$path) {
                 \Log::error('Failed to store the profile picture');
                 throw new \Exception('Failed to store the profile picture.');
             }
 
-            \Log::info('New profile picture stored at: ' . $path);
+            \Log::info('New profile picture stored at: ' . $path . ' on disk: ' . $storageDisk);
 
             // Verify the file was actually stored
-            if (!Storage::disk('public')->exists($path)) {
-                \Log::error('File was not found after storage: ' . $path);
-                throw new \Exception('File was not found after storage. Check directory permissions.');
+            if (!Storage::disk($storageDisk)->exists($path)) {
+                \Log::error('File was not found after storage: ' . $path . ' on disk: ' . $storageDisk);
+                throw new \Exception('File was not found after storage. Check storage configuration and permissions.');
             }
 
             $user->update([

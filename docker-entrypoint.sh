@@ -35,9 +35,23 @@ fi
 echo "Running PostgreSQL migrations..."
 php artisan migrate --path=database/migrations/2025_05_05_000000_create_all_tables_postgres.php --force || echo "PostgreSQL migration failed, but continuing..."
 
+# Ensure storage directories exist with proper permissions
+echo "Setting up storage directories..."
+mkdir -p /var/www/html/storage/app/public/profile-pictures
+chmod -R 775 /var/www/html/storage
+chown -R application:application /var/www/html/storage
+
 # Create storage link
 echo "Creating storage link..."
 php artisan storage:link || echo "Storage link creation failed, but continuing..."
+
+# Verify storage link
+if [ -L /var/www/html/public/storage ]; then
+    echo "Storage link verified successfully."
+else
+    echo "Storage link not found, creating manually..."
+    ln -sf /var/www/html/storage/app/public /var/www/html/public/storage
+fi
 
 # Configure domain for Sanctum
 echo "Configuring Sanctum stateful domains..."

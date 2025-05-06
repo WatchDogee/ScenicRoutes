@@ -1,4 +1,10 @@
 {
   "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "dockerfilePath": "./Dockerfile",
+  "volumes": [
+    {
+      "volumeName": "scenic-routes-storage",
+      "containerPath": "/var/www/html/storage"
+    }
+  ]
 }
