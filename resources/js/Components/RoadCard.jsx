@@ -61,9 +61,16 @@ function RoadCard({
             {showUser && road.user && (
                 <div className="flex items-center mt-2 space-x-2">
                     <ProfilePicture user={road.user} size="sm" />
-                    <span className="text-sm text-gray-600">
-                        Added by {road.user.name || 'Unknown User'}
-                    </span>
+                    <div>
+                        <span className="text-sm text-gray-600">
+                            Added by <span className="font-medium hover:text-blue-600 cursor-pointer">{road.user.name || 'Unknown User'}</span>
+                        </span>
+                        {road.created_at && (
+                            <p className="text-xs text-gray-500">
+                                {new Date(road.created_at).toLocaleDateString()}
+                            </p>
+                        )}
+                    </div>
                 </div>
             )}
 

@@ -50,6 +50,18 @@ Route::get('/public/users/{id}', function ($id) {
     return response()->json($user);
 });
 
+// Get current user's reviews
+Route::middleware('auth:sanctum')->get('/user/reviews', function (Request $request) {
+    $reviews = \App\Models\Review::with(['road' => function($query) {
+        $query->select('id', 'road_name', 'user_id');
+    }])
+    ->where('user_id', $request->user()->id)
+    ->orderBy('created_at', 'desc')
+    ->get();
+
+    return response()->json($reviews);
+});
+
 // Public route for user's public roads
 Route::get('/public/users/{id}/roads', function ($id) {
     $user = \App\Models\User::findOrFail($id);

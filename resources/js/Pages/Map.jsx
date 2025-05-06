@@ -9,6 +9,7 @@ import PoiControls from '../Components/PoiControls';
 import PoiDetails from '../Components/PoiDetails';
 import RatingModal from '../Components/RatingModal';
 import SocialModal from '../Components/SocialModal';
+import SelfProfileModal from '../Components/SelfProfileModal';
 import StarRating from '../Components/StarRating';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
@@ -1513,6 +1514,9 @@ export default function Map() {
     // Add state for social modal
     const [showSocialModal, setShowSocialModal] = useState(false);
 
+    // Add state for self profile modal
+    const [showSelfProfileModal, setShowSelfProfileModal] = useState(false);
+
     // Log when social modal state changes
     useEffect(() => {
         console.log('Social modal state changed:', showSocialModal);
@@ -1547,23 +1551,25 @@ export default function Map() {
                 {sidebarCollapsed && (
                     <div className="flex flex-col items-center pt-16 space-y-6">
                         {/* User profile icon */}
-                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                            {auth.user?.profile_picture_url ? (
-                                <img
-                                    src={auth.user.profile_picture_url}
-                                    alt={auth.user.name}
-                                    className="w-full h-full object-cover"
-                                />
-                            ) : auth.user ? (
-                                <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-sm font-medium">
-                                    {auth.user.name.charAt(0).toUpperCase()}
-                                </div>
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
-                            )}
-                        </div>
+                        <button onClick={() => setShowSelfProfileModal(true)} title="My Profile">
+                            <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center hover:ring-2 hover:ring-blue-500">
+                                {auth.user?.profile_picture_url ? (
+                                    <img
+                                        src={auth.user.profile_picture_url}
+                                        alt={auth.user.name}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : auth.user ? (
+                                    <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-sm font-medium">
+                                        {auth.user.name.charAt(0).toUpperCase()}
+                                    </div>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                )}
+                            </div>
+                        </button>
 
                         {/* Search icon */}
                         <button
@@ -1773,6 +1779,12 @@ export default function Map() {
                             <div className="flex-1">
                                 <h3 className="font-semibold">{auth.user.name}</h3>
                                 <div className="flex gap-3 mt-1 text-sm">
+                                    <button
+                                        onClick={() => setShowSelfProfileModal(true)}
+                                        className="text-blue-600 hover:text-blue-800"
+                                    >
+                                        My Profile
+                                    </button>
                                     <a
                                         href="/settings"
                                         className="text-blue-600 hover:text-blue-800"
@@ -2280,6 +2292,13 @@ export default function Map() {
                 auth={auth}
                 initialRating={localRating}
                 initialComment={localComment}
+            />
+
+            {/* Self Profile Modal */}
+            <SelfProfileModal
+                isOpen={showSelfProfileModal}
+                onClose={() => setShowSelfProfileModal(false)}
+                auth={auth}
             />
         </div>
     );

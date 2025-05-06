@@ -124,13 +124,22 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
+    // User profile page
+    Route::get('/profile', function () {
+        return Inertia::render('UserProfile', [
+            'auth' => [
+                'user' => auth()->user()
+            ]
+        ]);
+    })->name('profile');
+
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/picture', [ProfileController::class, 'updateProfilePicture'])->name('profile.picture.update');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit'); // Commented out to avoid conflict
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 

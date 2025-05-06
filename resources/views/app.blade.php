@@ -52,6 +52,7 @@
         @inertia
         <div id="collection-details-modal-root"></div>
         <div id="user-profile-modal-root"></div>
+        <div id="self-profile-modal-root"></div>
         <div id="error-boundary-root"></div>
     </body>
 </html>
