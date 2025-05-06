@@ -55,19 +55,32 @@ export default function PoiDetails({ poi, onClose }) {
                 <div className="flex items-center space-x-2">
                     <button
                         onClick={() => setIsCollapsed(!isCollapsed)}
-                        className="text-white bg-blue-500 hover:bg-blue-600 p-2 rounded-full transition-colors flex items-center justify-center"
+                        className="text-white bg-blue-500 hover:bg-blue-600 p-2 rounded-md transition-colors flex items-center justify-center"
                         aria-label={isCollapsed ? "Expand POI details" : "Collapse POI details"}
                         title={isCollapsed ? "Expand" : "Collapse"}
                     >
-                        {isCollapsed ? <FaChevronDown size={16} /> : <FaChevronUp size={16} />}
+                        {isCollapsed ? (
+                            <div className="flex items-center">
+                                <FaChevronDown size={16} />
+                                <span className="ml-1 text-sm">Expand</span>
+                            </div>
+                        ) : (
+                            <div className="flex items-center">
+                                <FaChevronUp size={16} />
+                                <span className="ml-1 text-sm">Collapse</span>
+                            </div>
+                        )}
                     </button>
                     <button
                         onClick={onClose}
-                        className="text-white bg-red-500 hover:bg-red-600 p-2 rounded-full transition-colors flex items-center justify-center"
+                        className="text-white bg-red-500 hover:bg-red-600 p-2 rounded-md transition-colors flex items-center justify-center"
                         aria-label="Close POI details"
                         title="Close"
                     >
-                        <FaTimes size={16} />
+                        <div className="flex items-center">
+                            <FaTimes size={16} />
+                            <span className="ml-1 text-sm">Close</span>
+                        </div>
                     </button>
                 </div>
             </div>

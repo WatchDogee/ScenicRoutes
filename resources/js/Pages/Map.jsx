@@ -1493,11 +1493,12 @@ export default function Map() {
     return (
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-12' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
-                {/* Collapse toggle button */}
+            <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
+                {/* Collapse toggle button - positioned differently based on sidebar state */}
                 <button
                     onClick={toggleSidebar}
-                    className="absolute top-4 right-0 transform translate-x-1/2 bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition-colors z-30 flex items-center justify-center"
+                    className={`${sidebarCollapsed ? 'absolute top-4 left-1/2 transform -translate-x-1/2' : 'absolute top-4 right-0 transform translate-x-1/2'}
+                    bg-blue-500 text-white rounded-full p-2 shadow-lg hover:bg-blue-600 transition-colors z-30 flex items-center justify-center`}
                     title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                     aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
@@ -1512,7 +1513,66 @@ export default function Map() {
                     )}
                 </button>
 
-                {/* Sidebar content - only show when expanded */}
+                {/* Collapsed sidebar content - show icons only */}
+                {sidebarCollapsed && (
+                    <div className="flex flex-col items-center pt-16 space-y-6">
+                        {/* User profile icon */}
+                        <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                            {auth.user?.profile_picture_url ? (
+                                <img
+                                    src={auth.user.profile_picture_url}
+                                    alt={auth.user.name}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : auth.user ? (
+                                <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-sm font-medium">
+                                    {auth.user.name.charAt(0).toUpperCase()}
+                                </div>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            )}
+                        </div>
+
+                        {/* Search icon */}
+                        <button
+                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            title="Search"
+                            onClick={toggleSidebar}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                        </button>
+
+                        {/* Filters icon */}
+                        <button
+                            className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                            title="Filters"
+                            onClick={toggleSidebar}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                            </svg>
+                        </button>
+
+                        {/* Saved roads icon */}
+                        {auth.user && (
+                            <button
+                                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                title="Saved Roads"
+                                onClick={toggleSidebar}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                </svg>
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Expanded sidebar content */}
                 <div className={`${sidebarCollapsed ? 'hidden' : 'block'} p-4`}>
                 {/* Search bar with dropdown */}
                 <div className="mb-4 relative">
