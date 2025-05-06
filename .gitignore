@@ -12,6 +12,8 @@
 .env.production
 .env.postgres
 .env.*.local
+# Allow our PostgreSQL local development environment
+!.env.postgres.local
 .phpactor.json
 .phpunit.result.cache
 Homestead.json
@@ -44,3 +46,4 @@ SCENIC_ROUTES_DEPLOYMENT_FIX.md
 # Allow our PostgreSQL guides
 !POSTGRES_LARAVEL_CLOUD.md
 !POSTGRES_MIGRATION_GUIDE.md
+postgres_backup.sql
