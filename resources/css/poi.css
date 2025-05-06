@@ -11,9 +11,9 @@
     background: #c30b82;
     position: absolute;
     transform: rotate(-45deg);
-    left: 50%;
-    top: 50%;
-    margin: -15px 0 0 -15px;
+    left: 15px; /* Position the pin in the center of the icon */
+    top: 0;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -30,11 +30,21 @@
 }
 
 .marker-pin i {
+    position: absolute;
+    z-index: 10;
     transform: rotate(45deg);
     color: #333;
-    position: relative;
-    z-index: 1;
     font-size: 14px;
+    width: 24px;
+    height: 24px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    left: 50%;
+    top: 50%;
+    margin-left: -12px;
+    margin-top: -12px;
 }
 
 /* Tourism marker (blue) */

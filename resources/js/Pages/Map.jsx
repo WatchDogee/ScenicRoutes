@@ -208,9 +208,9 @@ export default function Map() {
         // Create a custom marker icon with higher z-index if not already created
         if (!markerIconRef.current) {
             markerIconRef.current = L.icon({
-                iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-                iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-                shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                iconUrl: '/images/marker-icon.png',
+                iconRetinaUrl: '/images/marker-icon-2x.png',
+                shadowUrl: '/images/marker-shadow.png',
                 iconSize: [25, 41],
                 iconAnchor: [12, 41],
                 popupAnchor: [1, -34],
@@ -1375,9 +1375,9 @@ export default function Map() {
             // Create a custom marker icon with higher z-index if not already created
             if (!markerIconRef.current) {
                 markerIconRef.current = L.icon({
-                    iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-                    iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-                    shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+                    iconUrl: '/images/marker-icon.png',
+                    iconRetinaUrl: '/images/marker-icon-2x.png',
+                    shadowUrl: '/images/marker-shadow.png',
                     iconSize: [25, 41],
                     iconAnchor: [12, 41],
                     popupAnchor: [1, -34],
@@ -1522,7 +1522,13 @@ export default function Map() {
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
             <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
-                {/* Sidebar toggle button removed from here */}
+                {/* Sidebar toggle button */}
+                <button
+                    onClick={toggleSidebar}
+                    className="absolute top-4 right-2 p-1 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors z-30"
+                >
+                    {sidebarCollapsed ? '→' : '←'}
+                </button>
 
                 {/* Collapsed sidebar content - show icons only */}
                 {sidebarCollapsed && (

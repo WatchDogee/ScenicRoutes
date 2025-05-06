@@ -172,8 +172,8 @@ export default function usePointsOfInterest(mapRef) {
                              <i class="fa fa-${getTourismIcon(poi.subtype)}"></i>
                            </div>`,
                     iconSize: [30, 42],
-                    iconAnchor: [15, 30], // Adjusted to center the icon horizontally and position it properly vertically
-                    popupAnchor: [0, -30]  // Adjusted to position the popup above the icon
+                    iconAnchor: [0, 42], // Position the left edge at the exact location
+                    popupAnchor: [15, -42]  // Position the popup above the icon
                 });
 
                 const marker = L.marker([poi.latitude, poi.longitude], { icon })
@@ -230,8 +230,8 @@ export default function usePointsOfInterest(mapRef) {
                              <i class="fa fa-gas-pump"></i>
                            </div>`,
                     iconSize: [30, 42],
-                    iconAnchor: [15, 30], // Adjusted to center the icon horizontally and position it properly vertically
-                    popupAnchor: [0, -30]  // Adjusted to position the popup above the icon
+                    iconAnchor: [0, 42], // Position the left edge at the exact location
+                    popupAnchor: [15, -42]  // Position the popup above the icon
                 });
 
                 try {
@@ -291,8 +291,8 @@ export default function usePointsOfInterest(mapRef) {
                              <i class="fa fa-bolt"></i>
                            </div>`,
                     iconSize: [30, 42],
-                    iconAnchor: [15, 30], // Adjusted to center the icon horizontally and position it properly vertically
-                    popupAnchor: [0, -30]  // Adjusted to position the popup above the icon
+                    iconAnchor: [0, 42], // Position the left edge at the exact location
+                    popupAnchor: [15, -42]  // Position the popup above the icon
                 });
 
                 const marker = L.marker([poi.latitude, poi.longitude], { icon })

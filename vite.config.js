@@ -28,6 +28,7 @@ export default defineConfig({
         react(),
     ],
     server: {
+        open: false,
         proxy: {
             '/api': {
                 target: 'http://localhost:8000',

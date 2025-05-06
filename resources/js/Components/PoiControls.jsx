@@ -62,7 +62,7 @@ export default function PoiControls({
     }
 
     return (
-        <div className="poi-controls bg-white rounded-lg shadow-md" onClick={(e) => e.stopPropagation()}>
+        <div className="poi-controls bg-white rounded-lg shadow-md w-[250px]" onClick={(e) => e.stopPropagation()}>
             {/* Header with controls */}
             <div className="p-2 border-b flex justify-between items-center bg-gray-50">
                 <h3 className="text-sm font-semibold flex items-center text-gray-700">
