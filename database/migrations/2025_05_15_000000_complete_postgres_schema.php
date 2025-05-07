@@ -8,152 +8,9 @@ use Illuminate\Support\Str;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        // Create all tables in a single transaction for atomicity
-        DB::connection()->getPdo()->exec('BEGIN TRANSACTION');
-
-        try {
-            // Create migration_log table first
-            $this->createMigrationLogTable();
-            
-            // Create users table (no foreign key dependencies)
-            $this->createUsersTable();
-            
-            // Create saved_roads table (depends on users)
-            $this->createSavedRoadsTable();
-            
-            // Create reviews table (depends on users and saved_roads)
-            $this->createReviewsTable();
-            
-            // Create review_photos table (depends on reviews)
-            $this->createReviewPhotosTable();
-            
-            // Create road_photos table (depends on saved_roads and users)
-            $this->createRoadPhotosTable();
-            
-            // Create comments table (depends on users and saved_roads)
-            $this->createCommentsTable();
-            
-            // Create points_of_interest table (depends on users)
-            $this->createPointsOfInterestTable();
-            
-            // Create poi_photos table (depends on points_of_interest and users)
-            $this->createPoiPhotosTable();
-            
-            // Create poi_reviews table (depends on points_of_interest and users)
-            $this->createPoiReviewsTable();
-            
-            // Create user_settings table (depends on users)
-            $this->createUserSettingsTable();
-            
-            // Create follows table (depends on users)
-            $this->createFollowsTable();
-            
-            // Create collections table (depends on users)
-            $this->createCollectionsTable();
-            
-            // Create collection_road pivot table
-            $this->createCollectionRoadTable();
-            
-            // Create tags table
-            $this->createTagsTable();
-            
-            // Create road_tag pivot table
-            $this->createRoadTagTable();
-            
-            // Create collection_tag pivot table
-            $this->createCollectionTagTable();
-            
-            // Create password_reset_tokens table (no foreign key dependencies)
-            $this->createPasswordResetTokensTable();
-            
-            // Create personal_access_tokens table (polymorphic relationship)
-            $this->createPersonalAccessTokensTable();
-            
-            // Create cache table
-            $this->createCacheTable();
-            
-            // Create cache_locks table
-            $this->createCacheLocksTable();
-            
-            // Create sessions table
-            $this->createSessionsTable();
-            
-            // Seed predefined tags
-            $this->seedPredefinedTags();
-            
-            // Commit the transaction
-            DB::connection()->getPdo()->exec('COMMIT');
-            
-            // Log successful migration
-            $this->logMigration('All tables created successfully');
-            
-        } catch (\Exception $e) {
-            // Rollback the transaction on error
-            DB::connection()->getPdo()->exec('ROLLBACK');
-            
-            // Log the error
-            \Log::error('Migration failed: ' . $e->getMessage());
-            
-            // Rethrow the exception
-            throw $e;
-        }
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        // Drop tables in reverse order to avoid foreign key constraint issues
-        Schema::dropIfExists('sessions');
-        Schema::dropIfExists('cache_locks');
-        Schema::dropIfExists('cache');
-        Schema::dropIfExists('personal_access_tokens');
-        Schema::dropIfExists('password_reset_tokens');
-        Schema::dropIfExists('collection_tag');
-        Schema::dropIfExists('road_tag');
-        Schema::dropIfExists('tags');
-        Schema::dropIfExists('collection_road');
-        Schema::dropIfExists('collections');
-        Schema::dropIfExists('follows');
-        Schema::dropIfExists('user_settings');
-        Schema::dropIfExists('poi_reviews');
-        Schema::dropIfExists('poi_photos');
-        Schema::dropIfExists('points_of_interest');
-        Schema::dropIfExists('comments');
-        Schema::dropIfExists('road_photos');
-        Schema::dropIfExists('review_photos');
-        Schema::dropIfExists('reviews');
-        Schema::dropIfExists('saved_roads');
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('migration_log');
-    }
-
-    /**
-     * Create migration_log table
-     */
-    private function createMigrationLogTable()
-    {
-        if (!Schema::hasTable('migration_log')) {
-            Schema::create('migration_log', function (Blueprint $table) {
-                $table->id();
-                $table->text('message');
-                $table->string('migration')->nullable();
-                $table->timestamps();
-            });
-        }
-    }
-
-    /**
-     * Create users table
-     */
-    private function createUsersTable()
-    {
+        // Create users table
         if (!Schema::hasTable('users')) {
             Schema::create('users', function (Blueprint $table) {
                 $table->id();
@@ -167,13 +24,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create saved_roads table
-     */
-    private function createSavedRoadsTable()
-    {
+        // Create saved_roads table
         if (!Schema::hasTable('saved_roads')) {
             Schema::create('saved_roads', function (Blueprint $table) {
                 $table->id();
@@ -186,42 +38,34 @@ return new class extends Migration
                 $table->decimal('length', 10, 2)->nullable();
                 $table->boolean('is_public')->default(false);
                 $table->decimal('average_rating', 3, 2)->nullable();
-                $table->timestamps();
                 $table->text('description')->nullable();
-                $table->decimal('elevation_gain', 10, 2)->nullable()->comment('Total uphill elevation change in meters');
-                $table->decimal('elevation_loss', 10, 2)->nullable()->comment('Total downhill elevation change in meters');
-                $table->decimal('max_elevation', 10, 2)->nullable()->comment('Highest point on the road in meters');
-                $table->decimal('min_elevation', 10, 2)->nullable()->comment('Lowest point on the road in meters');
+                $table->decimal('elevation_gain', 10, 2)->nullable();
+                $table->decimal('elevation_loss', 10, 2)->nullable();
+                $table->decimal('max_elevation', 10, 2)->nullable();
+                $table->decimal('min_elevation', 10, 2)->nullable();
                 $table->string('country')->nullable();
                 $table->string('region')->nullable();
+                $table->timestamps();
+                
+                // Add indexes
                 $table->index('country');
                 $table->index('average_rating');
             });
         }
-    }
 
-    /**
-     * Create reviews table
-     */
-    private function createReviewsTable()
-    {
+        // Create reviews table
         if (!Schema::hasTable('reviews')) {
             Schema::create('reviews', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->onDelete('cascade');
                 $table->foreignId('saved_road_id')->constrained()->onDelete('cascade');
                 $table->integer('rating');
-                $table->timestamps();
                 $table->text('comment')->nullable();
+                $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create review_photos table
-     */
-    private function createReviewPhotosTable()
-    {
+        // Create review_photos table
         if (!Schema::hasTable('review_photos')) {
             Schema::create('review_photos', function (Blueprint $table) {
                 $table->id();
@@ -231,13 +75,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create road_photos table
-     */
-    private function createRoadPhotosTable()
-    {
+        // Create road_photos table
         if (!Schema::hasTable('road_photos')) {
             Schema::create('road_photos', function (Blueprint $table) {
                 $table->id();
@@ -248,13 +87,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create comments table
-     */
-    private function createCommentsTable()
-    {
+        // Create comments table
         if (!Schema::hasTable('comments')) {
             Schema::create('comments', function (Blueprint $table) {
                 $table->id();
@@ -264,13 +98,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create points_of_interest table
-     */
-    private function createPointsOfInterestTable()
-    {
+        // Create points_of_interest table
         if (!Schema::hasTable('points_of_interest')) {
             Schema::create('points_of_interest', function (Blueprint $table) {
                 $table->id();
@@ -287,13 +116,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create poi_photos table
-     */
-    private function createPoiPhotosTable()
-    {
+        // Create poi_photos table
         if (!Schema::hasTable('poi_photos')) {
             Schema::create('poi_photos', function (Blueprint $table) {
                 $table->id();
@@ -304,13 +128,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create poi_reviews table
-     */
-    private function createPoiReviewsTable()
-    {
+        // Create poi_reviews table
         if (!Schema::hasTable('poi_reviews')) {
             Schema::create('poi_reviews', function (Blueprint $table) {
                 $table->id();
@@ -321,48 +140,31 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create user_settings table
-     */
-    private function createUserSettingsTable()
-    {
+        // Create user_settings table
         if (!Schema::hasTable('user_settings')) {
             Schema::create('user_settings', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->onDelete('cascade');
                 $table->string('key');
                 $table->text('value');
-                $table->timestamps();
                 $table->unique(['user_id', 'key']);
+                $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create follows table
-     */
-    private function createFollowsTable()
-    {
+        // Create follows table
         if (!Schema::hasTable('follows')) {
             Schema::create('follows', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('follower_id')->constrained('users')->onDelete('cascade');
                 $table->foreignId('followed_id')->constrained('users')->onDelete('cascade');
-                $table->timestamps();
-                
-                // Prevent duplicate follows
                 $table->unique(['follower_id', 'followed_id']);
+                $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create collections table
-     */
-    private function createCollectionsTable()
-    {
+        // Create collections table
         if (!Schema::hasTable('collections')) {
             Schema::create('collections', function (Blueprint $table) {
                 $table->id();
@@ -377,32 +179,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create collection_road pivot table
-     */
-    private function createCollectionRoadTable()
-    {
-        if (!Schema::hasTable('collection_road')) {
-            Schema::create('collection_road', function (Blueprint $table) {
-                $table->id();
-                $table->foreignId('collection_id')->constrained()->onDelete('cascade');
-                $table->foreignId('saved_road_id')->constrained()->onDelete('cascade');
-                $table->integer('order')->default(0);
-                $table->timestamps();
-                
-                // Prevent duplicate roads in a collection
-                $table->unique(['collection_id', 'saved_road_id']);
-            });
-        }
-    }
-
-    /**
-     * Create tags table
-     */
-    private function createTagsTable()
-    {
+        // Create tags table
         if (!Schema::hasTable('tags')) {
             Schema::create('tags', function (Blueprint $table) {
                 $table->id();
@@ -413,49 +191,52 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create road_tag pivot table
-     */
-    private function createRoadTagTable()
-    {
+        // Create collection_road pivot table
+        if (!Schema::hasTable('collection_road')) {
+            Schema::create('collection_road', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('collection_id')->constrained()->onDelete('cascade');
+                $table->foreignId('saved_road_id')->constrained()->onDelete('cascade');
+                $table->integer('order')->default(0);
+                $table->unique(['collection_id', 'saved_road_id']);
+                $table->timestamps();
+            });
+        }
+
+        // Create road_tag pivot table
         if (!Schema::hasTable('road_tag')) {
             Schema::create('road_tag', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('road_id')->constrained('saved_roads')->onDelete('cascade');
                 $table->foreignId('tag_id')->constrained('tags')->onDelete('cascade');
-                $table->timestamps();
-                
-                // Prevent duplicate tags on a road
                 $table->unique(['road_id', 'tag_id']);
+                $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create collection_tag pivot table
-     */
-    private function createCollectionTagTable()
-    {
+        // Create collection_tag pivot table
         if (!Schema::hasTable('collection_tag')) {
             Schema::create('collection_tag', function (Blueprint $table) {
                 $table->id();
                 $table->foreignId('collection_id')->constrained()->onDelete('cascade');
                 $table->foreignId('tag_id')->constrained()->onDelete('cascade');
-                $table->timestamps();
-                
-                // Prevent duplicate tags on a collection
                 $table->unique(['collection_id', 'tag_id']);
+                $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create password_reset_tokens table
-     */
-    private function createPasswordResetTokensTable()
-    {
+        // Create migration_log table
+        if (!Schema::hasTable('migration_log')) {
+            Schema::create('migration_log', function (Blueprint $table) {
+                $table->id();
+                $table->text('message');
+                $table->string('migration')->nullable();
+                $table->timestamps();
+            });
+        }
+
+        // Create password_reset_tokens table
         if (!Schema::hasTable('password_reset_tokens')) {
             Schema::create('password_reset_tokens', function (Blueprint $table) {
                 $table->string('email')->primary();
@@ -463,13 +244,8 @@ return new class extends Migration
                 $table->timestamp('created_at')->nullable();
             });
         }
-    }
 
-    /**
-     * Create personal_access_tokens table
-     */
-    private function createPersonalAccessTokensTable()
-    {
+        // Create personal_access_tokens table
         if (!Schema::hasTable('personal_access_tokens')) {
             Schema::create('personal_access_tokens', function (Blueprint $table) {
                 $table->id();
@@ -482,41 +258,8 @@ return new class extends Migration
                 $table->timestamps();
             });
         }
-    }
 
-    /**
-     * Create cache table
-     */
-    private function createCacheTable()
-    {
-        if (!Schema::hasTable('cache')) {
-            Schema::create('cache', function (Blueprint $table) {
-                $table->string('key')->primary();
-                $table->mediumText('value');
-                $table->integer('expiration');
-            });
-        }
-    }
-
-    /**
-     * Create cache_locks table
-     */
-    private function createCacheLocksTable()
-    {
-        if (!Schema::hasTable('cache_locks')) {
-            Schema::create('cache_locks', function (Blueprint $table) {
-                $table->string('key')->primary();
-                $table->string('owner');
-                $table->integer('expiration');
-            });
-        }
-    }
-
-    /**
-     * Create sessions table
-     */
-    private function createSessionsTable()
-    {
+        // Create sessions table
         if (!Schema::hasTable('sessions')) {
             Schema::create('sessions', function (Blueprint $table) {
                 $table->string('id')->primary();
@@ -527,6 +270,54 @@ return new class extends Migration
                 $table->integer('last_activity')->index();
             });
         }
+
+        // Create cache table
+        if (!Schema::hasTable('cache')) {
+            Schema::create('cache', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->integer('expiration');
+            });
+        }
+
+        // Create cache_locks table
+        if (!Schema::hasTable('cache_locks')) {
+            Schema::create('cache_locks', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->integer('expiration');
+            });
+        }
+
+        // Seed predefined tags
+        $this->seedPredefinedTags();
+    }
+
+    public function down(): void
+    {
+        // Drop tables in reverse order to avoid foreign key constraint issues
+        Schema::dropIfExists('cache_locks');
+        Schema::dropIfExists('cache');
+        Schema::dropIfExists('sessions');
+        Schema::dropIfExists('personal_access_tokens');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('migration_log');
+        Schema::dropIfExists('collection_tag');
+        Schema::dropIfExists('road_tag');
+        Schema::dropIfExists('collection_road');
+        Schema::dropIfExists('tags');
+        Schema::dropIfExists('collections');
+        Schema::dropIfExists('follows');
+        Schema::dropIfExists('user_settings');
+        Schema::dropIfExists('poi_reviews');
+        Schema::dropIfExists('poi_photos');
+        Schema::dropIfExists('points_of_interest');
+        Schema::dropIfExists('comments');
+        Schema::dropIfExists('road_photos');
+        Schema::dropIfExists('review_photos');
+        Schema::dropIfExists('reviews');
+        Schema::dropIfExists('saved_roads');
+        Schema::dropIfExists('users');
     }
 
     /**
@@ -543,14 +334,12 @@ return new class extends Migration
                 'Hilly' => 'Roads with significant elevation changes',
                 'Flat' => 'Roads with minimal elevation changes',
             ],
-
             // Surface types
             'surface_type' => [
                 'Paved' => 'Roads with asphalt or concrete surface',
                 'Gravel' => 'Roads with gravel or crushed stone surface',
                 'Dirt' => 'Unpaved dirt roads',
             ],
-
             // Scenery types
             'scenery' => [
                 'Mountain' => 'Roads through mountainous terrain',
@@ -560,14 +349,12 @@ return new class extends Migration
                 'Urban' => 'Roads through cities or urban areas',
                 'Scenic' => 'Roads with particularly beautiful views',
             ],
-
             // Experience types
             'experience' => [
                 'Technical' => 'Roads requiring technical driving skills',
                 'Beginner-friendly' => 'Roads suitable for beginners',
                 'Advanced' => 'Roads best suited for experienced drivers',
             ],
-
             // Vehicle suitability
             'vehicle' => [
                 'Motorcycle' => 'Roads particularly good for motorcycles',
@@ -603,26 +390,6 @@ return new class extends Migration
                         ]);
                 }
             }
-        }
-    }
-
-    /**
-     * Log migration message
-     */
-    private function logMigration($message)
-    {
-        try {
-            if (Schema::hasTable('migration_log')) {
-                DB::table('migration_log')->insert([
-                    'message' => $message,
-                    'migration' => '2025_05_01_000000_create_all_tables_postgres_consolidated',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        } catch (\Exception $e) {
-            // Just log the error but don't fail the migration
-            \Log::warning('Could not log to migration_log table: ' . $e->getMessage());
         }
     }
 };
