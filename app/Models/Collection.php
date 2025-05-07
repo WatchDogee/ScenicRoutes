@@ -35,4 +35,12 @@ class Collection extends Model
             ->orderBy('order')
             ->withTimestamps();
     }
+
+    /**
+     * Get the tags for the collection.
+     */
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'collection_tag', 'collection_id', 'tag_id');
+    }
 }

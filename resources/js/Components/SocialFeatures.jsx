@@ -112,7 +112,8 @@ export default function SocialFeatures({ onViewRoad }) {
         if (!isAuthenticated || !user) {
             return (
                 <div className="text-center py-8 text-gray-500">
-                    Please log in to create and view collections
+                    <p>You can view collections, but you need to log in to create your own collections.</p>
+                    <p className="mt-2">Public collections will be displayed here.</p>
                 </div>
             );
         }
@@ -211,7 +212,8 @@ export default function SocialFeatures({ onViewRoad }) {
         if (!isAuthenticated || !user) {
             return (
                 <div className="text-center py-8 text-gray-500">
-                    Please log in to follow other users
+                    <p>You can view users, but you need to log in to follow them.</p>
+                    <p className="mt-2">Popular users will be displayed here.</p>
                 </div>
             );
         }
@@ -279,7 +281,8 @@ export default function SocialFeatures({ onViewRoad }) {
         if (!isAuthenticated || !user) {
             return (
                 <div className="text-center py-8 text-gray-500">
-                    Please log in to see your feed
+                    <p>You can view popular content, but you need to log in to see a personalized feed.</p>
+                    <p className="mt-2">Recent popular roads and collections will be displayed here.</p>
                 </div>
             );
         }

@@ -1,13 +1,8 @@
 import axios from 'axios';
 
-// Dynamically determine the base URL
+// Always use the current origin + /api as the base URL
 const getApiBaseUrl = () => {
-    // In production, use the current origin + /api
-    if (window.location.hostname !== 'localhost') {
-        return `${window.location.origin}/api`;
-    }
-    // In development, use localhost:8000/api
-    return 'http://localhost:8000/api';
+    return `${window.location.origin}/api`;
 };
 
 // Create axios instance with default config

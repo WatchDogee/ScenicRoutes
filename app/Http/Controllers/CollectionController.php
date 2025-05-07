@@ -18,7 +18,7 @@ class CollectionController extends Controller
     {
         $user = Auth::user();
         $collections = $user->collections()
-            ->with(['user:id,name,profile_picture', 'roads' => function($query) {
+            ->with(['user:id,name,profile_picture', 'tags', 'roads' => function($query) {
                 $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating')
                     ->limit(3); // Just get a few roads for preview
             }])
@@ -93,7 +93,9 @@ class CollectionController extends Controller
     {
         $collection = Collection::with([
             'user:id,name,profile_picture',
+            'tags',
             'roads.user:id,name,profile_picture',
+            'roads.tags',
             'roads.reviews' => function($query) {
                 $query->latest()->limit(3);
             },
@@ -133,7 +135,7 @@ class CollectionController extends Controller
             if ($collection->cover_image) {
                 Storage::disk('public')->delete($collection->cover_image);
             }
-            
+
             $path = $request->file('cover_image')->store('collection-covers', 'public');
             $collection->cover_image = $path;
         }
@@ -203,6 +205,95 @@ class CollectionController extends Controller
     }
 
     /**
+     * Add multiple roads to a collection.
+     */
+    public function addRoads(Request $request, $id)
+    {
+        try {
+            Log::info('Adding roads to collection', [
+                'collection_id' => $id,
+                'request_data' => $request->all(),
+                'user_id' => Auth::id()
+            ]);
+
+            $collection = Collection::findOrFail($id);
+
+            Log::info('Collection found', [
+                'collection' => $collection->toArray()
+            ]);
+
+            // Check if user owns this collection
+            if ($collection->user_id !== Auth::id()) {
+                Log::warning('Unauthorized attempt to add roads to collection', [
+                    'collection_user_id' => $collection->user_id,
+                    'auth_user_id' => Auth::id()
+                ]);
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $validatedData = $request->validate([
+                'road_ids' => 'required|array',
+                'road_ids.*' => 'exists:saved_roads,id',
+            ]);
+
+            Log::info('Validated data', [
+                'road_ids' => $validatedData['road_ids']
+            ]);
+
+            // Get the highest existing order
+            $maxOrder = $collection->roads()->max('order') ?? -1;
+            $order = $maxOrder + 1;
+
+            Log::info('Starting order', [
+                'max_order' => $maxOrder,
+                'new_order' => $order
+            ]);
+
+            // Add each road to the collection
+            foreach ($validatedData['road_ids'] as $roadId) {
+                // Skip if road is already in collection
+                if ($collection->roads()->where('saved_road_id', $roadId)->exists()) {
+                    Log::info('Road already in collection, skipping', [
+                        'road_id' => $roadId
+                    ]);
+                    continue;
+                }
+
+                Log::info('Attaching road to collection', [
+                    'road_id' => $roadId,
+                    'order' => $order
+                ]);
+
+                $collection->roads()->attach($roadId, ['order' => $order++]);
+            }
+
+            // Reload the collection with roads
+            $collection = Collection::with(['user:id,name,profile_picture', 'roads'])->find($id);
+
+            Log::info('Roads added successfully', [
+                'collection_id' => $id,
+                'road_count' => $collection->roads->count()
+            ]);
+
+            return response()->json([
+                'message' => 'Roads added to collection successfully',
+                'collection' => $collection
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error adding roads to collection', [
+                'collection_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to add roads to collection',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove a road from a collection.
      */
     public function removeRoad(Request $request, $id, $roadId)
@@ -252,5 +343,173 @@ class CollectionController extends Controller
             'message' => 'Roads reordered successfully',
             'collection' => $collection->load(['user:id,name,profile_picture', 'roads'])
         ]);
+    }
+
+    /**
+     * Upload a cover image for a collection.
+     */
+    public function uploadCoverImage(Request $request, $id)
+    {
+        try {
+            Log::info('Uploading cover image for collection', [
+                'collection_id' => $id,
+                'user_id' => Auth::id(),
+                'has_file' => $request->hasFile('cover_image'),
+                'content_type' => $request->header('Content-Type'),
+                'all_headers' => $request->headers->all(),
+                'all_files' => $request->allFiles(),
+                'all_inputs' => $request->all()
+            ]);
+
+            $collection = Collection::findOrFail($id);
+
+            // Check if user owns this collection
+            if ($collection->user_id !== Auth::id()) {
+                Log::warning('Unauthorized attempt to upload cover image', [
+                    'collection_user_id' => $collection->user_id,
+                    'auth_user_id' => Auth::id()
+                ]);
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            // Check if file exists in request
+            if (!$request->hasFile('cover_image')) {
+                Log::error('No cover image file in request', [
+                    'collection_id' => $id,
+                    'request_files' => $request->allFiles(),
+                    'request_all' => $request->all()
+                ]);
+                return response()->json([
+                    'error' => 'No cover image file found in request',
+                    'message' => 'Please select an image file to upload'
+                ], 400);
+            }
+
+            // Validate the file
+            $validatedData = $request->validate([
+                'cover_image' => 'required|image|max:5120', // 5MB max
+            ]);
+
+            // Get the file
+            $file = $request->file('cover_image');
+
+            // Log file details
+            Log::info('Cover image file details', [
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'error' => $file->getError()
+            ]);
+
+            // Delete old image if exists
+            if ($collection->cover_image) {
+                Log::info('Deleting old cover image', [
+                    'old_path' => $collection->cover_image
+                ]);
+                Storage::disk('public')->delete($collection->cover_image);
+            }
+
+            // Upload new image
+            $path = $file->store('collection-covers', 'public');
+
+            if (!$path) {
+                Log::error('Failed to store cover image', [
+                    'collection_id' => $id
+                ]);
+                return response()->json([
+                    'error' => 'Failed to store cover image',
+                    'message' => 'The server could not store the uploaded image'
+                ], 500);
+            }
+
+            $collection->cover_image = $path;
+            $collection->save();
+
+            Log::info('Cover image uploaded successfully', [
+                'collection_id' => $id,
+                'image_path' => $path
+            ]);
+
+            return response()->json([
+                'message' => 'Cover image uploaded successfully',
+                'collection' => $collection->load(['user:id,name,profile_picture', 'roads'])
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation error uploading cover image', [
+                'collection_id' => $id,
+                'errors' => $e->errors(),
+            ]);
+
+            return response()->json([
+                'error' => 'Invalid image file',
+                'message' => $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error uploading cover image', [
+                'collection_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to upload cover image',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save another user's road to a collection (curator functionality).
+     */
+    public function savePublicRoad(Request $request, $id)
+    {
+        try {
+            $collection = Collection::findOrFail($id);
+
+            // Check if user owns this collection
+            if ($collection->user_id !== Auth::id()) {
+                return response()->json(['error' => 'Unauthorized'], 403);
+            }
+
+            $validatedData = $request->validate([
+                'road_id' => 'required|exists:saved_roads,id',
+            ]);
+
+            $roadId = $validatedData['road_id'];
+            $road = \App\Models\SavedRoad::findOrFail($roadId);
+
+            // Check if the road is public
+            if (!$road->is_public) {
+                return response()->json(['error' => 'This road is not public'], 403);
+            }
+
+            // Check if the road is already in the collection
+            if ($collection->roads()->where('saved_road_id', $roadId)->exists()) {
+                return response()->json(['error' => 'This road is already in the collection'], 422);
+            }
+
+            // Get the highest order in the collection
+            $maxOrder = $collection->roads()->max('order') ?? 0;
+
+            // Add the road to the collection
+            $collection->roads()->attach($roadId, ['order' => $maxOrder + 1]);
+
+            return response()->json([
+                'message' => 'Public road saved to collection successfully',
+                'collection' => $collection->load(['user:id,name,profile_picture', 'roads'])
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saving public road to collection', [
+                'collection_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to save public road to collection',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 }

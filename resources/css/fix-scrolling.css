@@ -50,3 +50,32 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
 }
+
+/* Fix for modal pointer events */
+.fixed, .absolute, [class*="z-"], [style*="z-index"] {
+    pointer-events: auto !important;
+}
+
+/* Ensure modals are interactive */
+[role="dialog"],
+.modal,
+.modal-overlay,
+.rating-modal-overlay,
+.social-modal,
+.navigation-modal,
+.collection-modal,
+.fixed {
+    pointer-events: auto !important;
+}
+
+/* Ensure modal content is interactive */
+.modal-content,
+.rating-modal-container,
+.social-modal-content,
+.navigation-modal-content,
+.collection-modal-content,
+.modal-container,
+.dialog-panel,
+.dialog-content {
+    pointer-events: auto !important;
+}

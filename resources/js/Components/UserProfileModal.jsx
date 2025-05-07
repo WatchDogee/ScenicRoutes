@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaTimes, FaRoad, FaUsers, FaUserFriends } from 'react-icons/fa';
+import { FaTimes, FaRoad, FaUsers, FaUserFriends, FaFolder, FaMapMarkedAlt, FaInfoCircle, FaDirections } from 'react-icons/fa';
 import ProfilePicture from './ProfilePicture';
 import FollowButton from './FollowButton';
 import RoadCard from './RoadCard';
@@ -9,6 +9,7 @@ import Portal from './Portal';
 export default function UserProfileModal({ isOpen, onClose, userId, currentUserId }) {
     const [user, setUser] = useState(null);
     const [userRoads, setUserRoads] = useState([]);
+    const [userCollections, setUserCollections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('roads');
@@ -32,6 +33,15 @@ export default function UserProfileModal({ isOpen, onClose, userId, currentUserI
             // Fetch user's public roads from the new public endpoint
             const roadsResponse = await axios.get(`/api/public/users/${userId}/roads`);
             setUserRoads(roadsResponse.data || []);
+
+            // Fetch user's public collections
+            try {
+                const collectionsResponse = await axios.get(`/api/public/users/${userId}/collections`);
+                setUserCollections(collectionsResponse.data || []);
+            } catch (collectionsError) {
+                console.log('Could not fetch user collections:', collectionsError);
+                setUserCollections([]);
+            }
 
             // Try to fetch follow counts if authenticated
             try {
@@ -65,6 +75,36 @@ export default function UserProfileModal({ isOpen, onClose, userId, currentUserI
         });
         window.dispatchEvent(event);
         onClose();
+    };
+
+    const handleNavigate = (road) => {
+        // Dispatch event to navigate to road
+        const event = new CustomEvent('navigateToRoad', {
+            detail: { road }
+        });
+        window.dispatchEvent(event);
+        onClose();
+    };
+
+    const handleViewDetails = (roadId, e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Dispatch event to view road details
+        const event = new CustomEvent('viewRoadDetails', {
+            detail: { roadId }
+        });
+        window.dispatchEvent(event);
+    };
+
+    const handleViewCollection = (collection) => {
+        // Dispatch event to view collection details
+        const event = new CustomEvent('viewCollectionDetails', {
+            detail: { collection }
+        });
+        window.dispatchEvent(event);
     };
 
     if (!isOpen) return null;
@@ -133,7 +173,13 @@ export default function UserProfileModal({ isOpen, onClose, userId, currentUserI
                                     className={`px-4 py-2 ${activeTab === 'roads' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
                                     onClick={() => setActiveTab('roads')}
                                 >
-                                    Roads
+                                    <FaRoad className="inline mr-1" /> Roads
+                                </button>
+                                <button
+                                    className={`px-4 py-2 ${activeTab === 'collections' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
+                                    onClick={() => setActiveTab('collections')}
+                                >
+                                    <FaFolder className="inline mr-1" /> Collections
                                 </button>
                             </div>
 
@@ -153,6 +199,8 @@ export default function UserProfileModal({ isOpen, onClose, userId, currentUserI
                                                         road={road}
                                                         showUser={false}
                                                         onViewMap={handleViewRoad}
+                                                        onNavigate={() => handleNavigate(road)}
+                                                        onViewDetails={(roadId, e) => handleViewDetails(roadId, e)}
                                                     />
                                                 );
                                             } catch (error) {
@@ -165,6 +213,64 @@ export default function UserProfileModal({ isOpen, onClose, userId, currentUserI
                                                 );
                                             }
                                         })
+                                    )}
+                                </div>
+                            )}
+
+                            {activeTab === 'collections' && (
+                                <div className="space-y-4">
+                                    {userCollections.length === 0 ? (
+                                        <p className="text-center text-gray-500 py-4">
+                                            This user hasn't shared any public collections yet.
+                                        </p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {userCollections.map(collection => (
+                                                <div
+                                                    key={collection.id}
+                                                    className="border rounded-lg p-4 bg-white hover:bg-gray-50 cursor-pointer"
+                                                    onClick={() => handleViewCollection(collection)}
+                                                >
+                                                    <div className="flex items-center mb-2">
+                                                        {collection.cover_image ? (
+                                                            <img
+                                                                src={`/storage/${collection.cover_image}`}
+                                                                alt={collection.name}
+                                                                className="w-12 h-12 object-cover rounded"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                                                <FaFolder className="text-gray-400" />
+                                                            </div>
+                                                        )}
+                                                        <div className="ml-3">
+                                                            <h4 className="font-medium">{collection.name}</h4>
+                                                            <p className="text-sm text-gray-600">
+                                                                {collection.roads?.length || 0} roads
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    {collection.description && (
+                                                        <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                                                            {collection.description}
+                                                        </p>
+                                                    )}
+
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleViewCollection(collection);
+                                                            }}
+                                                            className="text-sm text-blue-500 hover:text-blue-700"
+                                                        >
+                                                            View Details
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     )}
                                 </div>
                             )}

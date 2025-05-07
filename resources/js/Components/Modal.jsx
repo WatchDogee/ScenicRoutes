@@ -52,6 +52,10 @@ export default function Modal({
                     opacity: 1,
                     pointerEvents: 'auto'
                 }}
+                onClick={(e) => {
+                    // Prevent clicks on the dialog from propagating
+                    e.stopPropagation();
+                }}
                 onClose={close}
             >
                 <TransitionChild
@@ -75,7 +79,15 @@ export default function Modal({
                 >
                     <DialogPanel
                         className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
-                        onClick={(e) => staticBackdrop && e.stopPropagation()}
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={(e) => {
+                            // Always stop propagation to prevent closing
+                            e.stopPropagation();
+                            // Additional handling for staticBackdrop
+                            if (staticBackdrop) {
+                                e.preventDefault();
+                            }
+                        }}
                     >
                         {children}
                     </DialogPanel>

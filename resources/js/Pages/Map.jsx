@@ -13,6 +13,7 @@ import SelfProfileModal from '../Components/SelfProfileModal';
 import StarRating from '../Components/StarRating';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
+import { FaTag } from 'react-icons/fa';
 
 export default function Map() {
     const { userSettings } = useContext(UserSettingsContext);
@@ -88,6 +89,8 @@ export default function Map() {
     const [curvinessFilter, setCurvinessFilter] = useState('all');
     const [minRating, setMinRating] = useState(0);
     const [sortBy, setSortBy] = useState('rating');
+    const [availableTags, setAvailableTags] = useState([]);
+    const [selectedTagIds, setSelectedTagIds] = useState([]);
     // Local state for settings that need to be tracked in this component
     const [localSettings, setLocalSettings] = useState({
         default_search_radius: 10,
@@ -95,8 +98,20 @@ export default function Map() {
         show_community_by_default: false,
     });
 
-    // Initialize auth state from localStorage
+    // Initialize auth state from localStorage and check for login_required parameter
     useEffect(() => {
+        // Check for login_required parameter in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const loginRequired = urlParams.get('login_required');
+
+        if (loginRequired === 'true') {
+            // Show login message
+            alert('You need to log in to access this feature. Please log in to continue.');
+            // Remove the parameter from URL without refreshing the page
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, newUrl);
+        }
+
         const token = localStorage.getItem('token');
         if (token) {
             // Set axios default authorization header
@@ -123,19 +138,33 @@ export default function Map() {
         const loadSavedRoads = async () => {
             if (auth.token) {
                 try {
+                    console.log("Loading saved roads with token:", auth.token);
                     const response = await axios.get('/api/saved-roads', {
                         headers: { Authorization: `Bearer ${auth.token}` }
                     });
-                    setSavedRoads(response.data);
+                    console.log("Saved roads response:", response.data);
+
+                    if (Array.isArray(response.data)) {
+                        setSavedRoads(response.data);
+                        console.log("Saved roads set to:", response.data.length, "roads");
+                    } else {
+                        console.error("Saved roads response is not an array:", response.data);
+                        setSavedRoads([]);
+                    }
                 } catch (error) {
                     console.error('Error loading saved roads:', error);
+                    console.error('Error details:', error.response?.data);
+
                     if (error.response?.status === 401) {
                         // If unauthorized, clear auth state
+                        console.log("Unauthorized, clearing auth state");
                         localStorage.removeItem('token');
                         delete axios.defaults.headers.common['Authorization'];
                         setAuth({ user: null, token: null });
                     }
                 }
+            } else {
+                console.log("No auth token available, skipping saved roads fetch");
             }
         };
 
@@ -165,6 +194,20 @@ export default function Map() {
             }
         }
     }, [userSettings]); // Reload when userSettings changes
+
+    // Fetch available tags
+    useEffect(() => {
+        const fetchTags = async () => {
+            try {
+                const response = await axios.get('/api/tags');
+                setAvailableTags(response.data);
+            } catch (error) {
+                console.error('Error fetching tags:', error);
+            }
+        };
+
+        fetchTags();
+    }, []);
 
     const handleRadiusChange = (e) => {
         const newRadius = Number(e.target.value);
@@ -512,6 +555,8 @@ export default function Map() {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
+            console.log("Attempting login with:", loginForm);
+
             // First get a CSRF token
             await axios.get('/sanctum/csrf-cookie');
 
@@ -527,6 +572,8 @@ export default function Map() {
                 withCredentials: true
             });
 
+            console.log("Login response:", response.data);
+
             if (response.data && response.data.user && response.data.token) {
                 const { user, token } = response.data;
                 localStorage.setItem('token', token);
@@ -535,16 +582,23 @@ export default function Map() {
                 setLoginForm({ login: '', password: '' });
 
                 // Load saved roads immediately after login
-                const roadsResponse = await axios.get('/api/saved-roads', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setSavedRoads(roadsResponse.data);
+                try {
+                    console.log("Fetching saved roads after login...");
+                    const roadsResponse = await axios.get('/api/saved-roads', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    console.log("Fetched saved roads:", roadsResponse.data);
+                    setSavedRoads(roadsResponse.data);
+                } catch (roadsError) {
+                    console.error("Error fetching saved roads after login:", roadsError);
+                }
 
                 // Stay on the map page, no need to redirect
                 alert("Successfully logged in!");
             }
         } catch (error) {
-            console.error("Login error:", error.response?.data || error.message);
+            console.error("Login error:", error);
+            console.error("Login error details:", error.response?.data || error.message);
 
             // Check if this is an email verification error
             if (error.response?.data?.verification_needed) {
@@ -1204,7 +1258,8 @@ export default function Map() {
                     length_filter: lengthFilter,
                     curviness_filter: curvinessFilter,
                     min_rating: minRating,
-                    sort_by: sortBy
+                    sort_by: sortBy,
+                    tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null
                 }
             });
 
@@ -1469,7 +1524,13 @@ export default function Map() {
     }, [markerRef.current]);
 
     // Add these functions for handling ratings and comments
-    const handleRateRoad = async (roadId) => {
+    const handleRateRoad = async (roadId, e = null) => {
+        // If an event was passed, prevent propagation and default behavior
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         if (!auth.user) {
             alert('Please log in to rate roads');
             return;
@@ -1477,17 +1538,22 @@ export default function Map() {
         try {
             const response = await axios.get(`/api/saved-roads/${roadId}`);
             const road = response.data;
-        // Check if user has already reviewed this road
-        const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
-        if (existingReview) {
-            setLocalRating(existingReview.rating);
-            setLocalComment(existingReview.comment || '');
-        } else {
-            setLocalRating(0);
-            setLocalComment('');
-        }
-        setSelectedRoadForReview(road);
-        setRatingModalOpen(true);
+            // Check if user has already reviewed this road
+            const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
+            if (existingReview) {
+                setLocalRating(existingReview.rating);
+                setLocalComment(existingReview.comment || '');
+            } else {
+                setLocalRating(0);
+                setLocalComment('');
+            }
+            setSelectedRoadForReview(road);
+
+            // Open the rating modal without closing the social modal
+            setRatingModalOpen(true);
+
+            // Important: Do not close the social modal
+            console.log('Rating modal opened, social modal should remain open');
         } catch (error) {
             console.error('Error fetching road details:', error);
             alert('Failed to load road details');
@@ -1540,10 +1606,106 @@ export default function Map() {
     // Add state for self profile modal
     const [showSelfProfileModal, setShowSelfProfileModal] = useState(false);
 
+    // Add state for collection details
+    const [selectedCollectionId, setSelectedCollectionId] = useState(null);
+
+    // Add state for road editing
+    const [editingRoad, setEditingRoad] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+
     // Log when social modal state changes
     useEffect(() => {
         console.log('Social modal state changed:', showSocialModal);
     }, [showSocialModal]);
+
+    // Set global authentication state for components that need it
+    useEffect(() => {
+        // Make authentication state available globally for components that can't access props
+        window.isUserAuthenticated = auth?.user ? true : false;
+        window.userId = auth?.user?.id || null;
+        console.log('Global auth state set:', window.isUserAuthenticated);
+        console.log('Global user ID set:', window.userId);
+    }, [auth?.user]);
+
+    // Add event listeners for collection and road actions from SelfProfileModal
+    useEffect(() => {
+        const handleViewCollectionDetails = (event) => {
+            console.log('View collection details event received:', event.detail);
+            const { collection } = event.detail;
+            if (collection && collection.id) {
+                // Open the collection details modal through the social modal
+                setShowSocialModal(true);
+                setSelectedCollectionId(collection.id);
+            }
+        };
+
+        const handleEditCollection = (event) => {
+            console.log('Edit collection event received:', event.detail);
+            const { collection } = event.detail;
+            if (collection && collection.id) {
+                // Open the social modal with collections tab active and set the collection ID
+                setShowSocialModal(true);
+                setSelectedCollectionId(collection.id);
+            }
+        };
+
+        const handleEditRoad = (event) => {
+            console.log('Edit road event received:', event.detail);
+            const { road } = event.detail;
+            if (road && road.id) {
+                // Open the road edit modal
+                setEditingRoad(road);
+                setShowEditModal(true);
+            }
+        };
+
+        const handleViewRoadDetails = (event) => {
+            console.log('View road details event received:', event.detail);
+            const { roadId } = event.detail;
+            if (roadId) {
+                // Prevent event propagation and default behavior to avoid closing modals or navigating
+                if (event.preventDefault) {
+                    event.preventDefault();
+                }
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                }
+
+                // Open the rating modal with the road details
+                // Pass the event to handleRateRoad to prevent propagation
+                handleRateRoad(roadId, event);
+
+                // Important: Do not close the social modal
+                // The rating modal will appear on top due to higher z-index
+            }
+        };
+
+        const handleNavigateToRoad = (event) => {
+            console.log('Navigate to road event received:', event.detail);
+            const { road } = event.detail;
+            if (road && road.road_coordinates) {
+                // Set the selected road and open the navigation modal
+                setSelectedRoad(road);
+                setShowNavigationSelector(true);
+            }
+        };
+
+        // Add event listeners
+        window.addEventListener('viewCollectionDetails', handleViewCollectionDetails);
+        window.addEventListener('editCollection', handleEditCollection);
+        window.addEventListener('editRoad', handleEditRoad);
+        window.addEventListener('viewRoadDetails', handleViewRoadDetails);
+        window.addEventListener('navigateToRoad', handleNavigateToRoad);
+
+        // Clean up
+        return () => {
+            window.removeEventListener('viewCollectionDetails', handleViewCollectionDetails);
+            window.removeEventListener('editCollection', handleEditCollection);
+            window.removeEventListener('editRoad', handleEditRoad);
+            window.removeEventListener('viewRoadDetails', handleViewRoadDetails);
+            window.removeEventListener('navigateToRoad', handleNavigateToRoad);
+        };
+    }, []);
 
     // Toggle sidebar collapse
     const toggleSidebar = () => {
@@ -1554,21 +1716,7 @@ export default function Map() {
         <div className="flex h-screen relative">
             {/* Main Sidebar */}
             <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
-                {/* Sidebar toggle button */}
-                <button
-                    onClick={toggleSidebar}
-                    className="absolute top-4 right-2 p-2 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors"
-                    style={{
-                        zIndex: 9999,
-                        position: 'absolute !important',
-                        display: 'block !important',
-                        visibility: 'visible !important',
-                        opacity: 1,
-                        pointerEvents: 'auto'
-                    }}
-                >
-                    {sidebarCollapsed ? '→' : '←'}
-                </button>
+                {/* Sidebar toggle button removed - using only the "Hide Sidebar" button */}
 
                 {/* Collapsed sidebar content - show icons only */}
                 {sidebarCollapsed && (
@@ -2140,6 +2288,37 @@ export default function Map() {
                                     <option value="length">Longest Routes</option>
                                 </select>
                             </div>
+
+                            {/* Tags Filter */}
+                            <div>
+                                <label className="block text-sm text-gray-600 mb-1">Filter by Tags</label>
+                                <div className="tag-filter-section">
+                                    <div className="tag-filter-options">
+                                        {availableTags.map(tag => (
+                                            <div
+                                                key={tag.id}
+                                                className={`tag-filter-option tag-${tag.type || 'default'} ${
+                                                    selectedTagIds.includes(tag.id) ? 'selected' : ''
+                                                }`}
+                                                onClick={() => {
+                                                    if (selectedTagIds.includes(tag.id)) {
+                                                        setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id));
+                                                    } else {
+                                                        setSelectedTagIds([...selectedTagIds, tag.id]);
+                                                    }
+                                                }}
+                                            >
+                                                <FaTag className="mr-1 text-xs" />
+                                                {tag.name}
+                                            </div>
+                                        ))}
+
+                                        {availableTags.length === 0 && (
+                                            <div className="text-sm text-gray-500">No tags available</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Search Button */}
@@ -2214,6 +2393,18 @@ export default function Map() {
                                         </div>
                                     </div>
 
+                                    {/* Tags */}
+                                    {road.tags && road.tags.length > 0 && (
+                                        <div className="mt-2 tag-list">
+                                            {road.tags.map(tag => (
+                                                <div key={tag.id} className={`tag-item tag-${tag.type || 'default'}`}>
+                                                    <FaTag className="tag-item-icon" />
+                                                    {tag.name}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
                                     <div className="mt-3 flex gap-2">
                                         <button
                                             onClick={() => handleViewOnMap(road)}
@@ -2228,8 +2419,12 @@ export default function Map() {
                                             Navigate
                                         </button>
                                         <button
-                                            onClick={() => handleRateRoad(road.id)}
-                                            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                                            onClick={(e) => {
+                                                e.preventDefault(); // Prevent default navigation
+                                                e.stopPropagation(); // Prevent event bubbling
+                                                handleRateRoad(road.id, e);
+                                            }}
+                                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 font-bold shadow-md"
                                         >
                                             View Details
                                         </button>
@@ -2244,25 +2439,34 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {selectedRoad && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
-                        <div className="flex justify-between items-start mb-4">
-                            <NavigationAppSelector
-                                coordinates={selectedRoad.road_coordinates}
-                                roadName={selectedRoad.road_name}
-                                onClose={() => {
-                                    setSelectedRoad(null);
-                                }}
-                            />
-                            <button
-                                onClick={() => {
-                                    setSelectedRoad(null);
-                                }}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                ✕
-                            </button>
-                        </div>
+                <div
+                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000]"
+                    style={{ pointerEvents: 'auto' }}
+                    onClick={(e) => {
+                        // Prevent clicks on the overlay from closing the modal
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                >
+                    <div
+                        className="bg-white p-6 rounded-lg max-w-md w-full mx-4"
+                        style={{ pointerEvents: 'auto' }}
+                        onClick={(e) => {
+                            // Prevent clicks on the container from propagating to the overlay
+                            e.stopPropagation();
+                        }}
+                    >
+                        <NavigationAppSelector
+                            coordinates={selectedRoad.road_coordinates}
+                            roadName={selectedRoad.road_name}
+                            onClose={() => {
+                                setSelectedRoad(null);
+                                // Close the social modal if it's open
+                                if (showSocialModal) {
+                                    setShowSocialModal(false);
+                                }
+                            }}
+                        />
                     </div>
                 </div>
             )}
@@ -2274,12 +2478,20 @@ export default function Map() {
                     onClose={() => {
                         console.log('Closing social modal');
                         setShowSocialModal(false);
+                        setSelectedCollectionId(null); // Reset collection ID when closing
                     }}
-                    onViewRoadDetails={(roadId) => {
+                    selectedCollectionId={selectedCollectionId}
+                    onViewRoadDetails={(roadId, e) => {
                         try {
                             console.log("View road details from social modal:", roadId);
-                            handleRateRoad(roadId);
-                            setShowSocialModal(false);
+                            // Make sure we have the event object
+                            if (e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }
+                            // Pass the event to handleRateRoad
+                            handleRateRoad(roadId, e);
+                            // Don't close the social modal automatically
                         } catch (error) {
                             console.error("Error viewing road details:", error);
                         }
@@ -2332,6 +2544,119 @@ export default function Map() {
                 onClose={() => setShowSelfProfileModal(false)}
                 auth={auth}
             />
+
+            {/* Road Edit Modal */}
+            {showEditModal && editingRoad && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000] p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b">
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-xl font-bold">Edit Road</h2>
+                                <button
+                                    onClick={() => setShowEditModal(false)}
+                                    className="text-gray-500 hover:text-gray-700"
+                                >
+                                    <span className="text-xl">✕</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <form onSubmit={async (e) => {
+                                e.preventDefault();
+                                try {
+                                    console.log('Updating road:', editingRoad);
+
+                                    // Get token from localStorage
+                                    const token = localStorage.getItem('token');
+                                    if (!token) {
+                                        throw new Error('Authentication token not found');
+                                    }
+
+                                    // Update the road
+                                    const response = await axios.put(
+                                        `/api/saved-roads/${editingRoad.id}`,
+                                        {
+                                            road_name: editingRoad.road_name,
+                                            description: editingRoad.description,
+                                            is_public: editingRoad.is_public
+                                        },
+                                        {
+                                            headers: { Authorization: `Bearer ${token}` }
+                                        }
+                                    );
+
+                                    console.log('Road update response:', response.data);
+
+                                    // Update the road in the saved roads list
+                                    const updatedRoads = savedRoads.map(road =>
+                                        road.id === editingRoad.id ? response.data : road
+                                    );
+                                    setSavedRoads(updatedRoads);
+
+                                    setShowEditModal(false);
+                                } catch (error) {
+                                    console.error('Error updating road:', error);
+                                    alert('Failed to update road. Please try again.');
+                                }
+                            }}>
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Road Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editingRoad.road_name}
+                                        onChange={(e) => setEditingRoad({...editingRoad, road_name: e.target.value})}
+                                        className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={editingRoad.description || ''}
+                                        onChange={(e) => setEditingRoad({...editingRoad, description: e.target.value})}
+                                        className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+                                        rows="4"
+                                    />
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={editingRoad.is_public}
+                                            onChange={(e) => setEditingRoad({...editingRoad, is_public: e.target.checked})}
+                                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        />
+                                        <span className="ml-2 text-sm text-gray-700">Make this road public</span>
+                                    </label>
+                                </div>
+
+                                <div className="flex justify-end space-x-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowEditModal(false)}
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

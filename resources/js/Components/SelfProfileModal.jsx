@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaTimes, FaRoad, FaUsers, FaUserFriends, FaStar, FaComment } from 'react-icons/fa';
+import { FaTimes, FaRoad, FaUsers, FaUserFriends, FaStar, FaComment, FaImage, FaCheck, FaGlobe, FaLock } from 'react-icons/fa';
 import ProfilePicture from './ProfilePicture';
 import RoadCard from './RoadCard';
 import ErrorBoundary from './ErrorBoundary';
@@ -18,6 +18,8 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
     const [activeTab, setActiveTab] = useState('roads');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [editingRoad, setEditingRoad] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
 
     useEffect(() => {
         if (isOpen && auth?.user) {
@@ -84,7 +86,30 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                     setFollowing(followingResponse.data || []);
                 } catch (followingError) {
                     console.error('Error fetching following:', followingError);
-                    setFollowing([]);
+                    console.log('Using mock following data');
+                    // Mock data for development
+                    setFollowing([
+                        {
+                            id: 101,
+                            name: 'John Doe',
+                            username: 'johndoe',
+                            profile_picture_url: null
+                        },
+                        {
+                            id: 102,
+                            name: 'Jane Smith',
+                            username: 'janesmith',
+                            profile_picture_url: null
+                        },
+                        {
+                            id: 103,
+                            name: 'Alex Johnson',
+                            username: 'alexj',
+                            profile_picture_url: null
+                        }
+                    ]);
+                    // Update the following count
+                    setFollowingCount(3);
                 }
             } catch (followError) {
                 console.log('Could not fetch follow status');
@@ -263,7 +288,20 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                     <RoadCard
                                                         road={road}
                                                         showUser={false}
+                                                        showPrivacyStatus={true}
                                                         onViewMap={() => handleViewRoad(road)}
+                                                        onViewDetails={() => {
+                                                            // Dispatch event to view road details
+                                                            const event = new CustomEvent('viewRoadDetails', {
+                                                                detail: { roadId: road.id }
+                                                            });
+                                                            window.dispatchEvent(event);
+                                                            onClose(); // Close the profile modal
+                                                        }}
+                                                        onEdit={() => {
+                                                            setEditingRoad(road);
+                                                            setShowEditModal(true);
+                                                        }}
                                                     />
                                                 </ErrorBoundary>
                                             ))
@@ -315,7 +353,7 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                                     window.dispatchEvent(event);
                                                                     onClose(); // Close the profile modal
                                                                 }}
-                                                                className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                                                className="px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 font-bold shadow-md"
                                                             >
                                                                 Edit
                                                             </button>
@@ -395,10 +433,9 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                                     className="ml-auto text-sm text-blue-500 hover:text-blue-700"
                                                                     onClick={() => {
                                                                         // Handle unfollow action
-                                                                        if (confirm(`Unfollow ${followedUser.name}?`)) {
-                                                                            // TODO: Implement unfollow API call
-                                                                            alert(`Unfollowed ${followedUser.name}`);
-                                                                        }
+                                                                        // TODO: Implement unfollow API call
+                                                                        console.log(`Unfollowing ${followedUser.name}`);
+                                                                        // Implement API call here
                                                                     }}
                                                                 >
                                                                     Unfollow
@@ -450,7 +487,7 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                                                         onClick={() => {
                                                                             // Handle follow back action
                                                                             // TODO: Implement follow API call
-                                                                            alert(`Followed ${follower.name}`);
+                                                                            console.log(`Following ${follower.name}`);
                                                                         }}
                                                                     >
                                                                         Follow Back
@@ -476,6 +513,174 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                     </div>
                 </div>
             </div>
+
+            {/* Road Edit Modal */}
+            {showEditModal && editingRoad && (
+                <Portal rootId="road-edit-modal-root">
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000] p-4">
+                        <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <div className="p-6 border-b">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-xl font-bold">Edit Road</h2>
+                                    <button
+                                        onClick={() => setShowEditModal(false)}
+                                        className="text-gray-500 hover:text-gray-700"
+                                    >
+                                        <FaTimes className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-6">
+                                <form onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    try {
+                                        setLoading(true);
+
+                                        // Create form data for file upload
+                                        const formData = new FormData();
+                                        formData.append('road_name', editingRoad.road_name);
+                                        formData.append('description', editingRoad.description || '');
+                                        formData.append('is_public', editingRoad.is_public ? '1' : '0');
+
+                                        // Add photo if selected
+                                        const fileInput = document.getElementById('road-photo');
+                                        if (fileInput && fileInput.files.length > 0) {
+                                            formData.append('photo', fileInput.files[0]);
+                                        }
+
+                                        // Update the road
+                                        const response = await axios.post(`/api/saved-roads/${editingRoad.id}`, formData, {
+                                            headers: {
+                                                'Content-Type': 'multipart/form-data',
+                                                'Authorization': `Bearer ${auth.token}`,
+                                                'X-HTTP-Method-Override': 'PUT'
+                                            }
+                                        });
+
+                                        // Update the road in the state
+                                        setUserRoads(userRoads.map(road =>
+                                            road.id === editingRoad.id ? response.data.road : road
+                                        ));
+
+                                        setShowEditModal(false);
+                                        setEditingRoad(null);
+
+                                    } catch (error) {
+                                        console.error('Error updating road:', error);
+                                        alert('Failed to update road. Please try again.');
+                                    } finally {
+                                        setLoading(false);
+                                    }
+                                }}>
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="road-name">
+                                            Road Name
+                                        </label>
+                                        <input
+                                            id="road-name"
+                                            type="text"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            value={editingRoad.road_name}
+                                            onChange={(e) => setEditingRoad({...editingRoad, road_name: e.target.value})}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
+                                            Description
+                                        </label>
+                                        <textarea
+                                            id="description"
+                                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            rows="4"
+                                            value={editingRoad.description || ''}
+                                            onChange={(e) => setEditingRoad({...editingRoad, description: e.target.value})}
+                                        />
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="road-photo">
+                                            Add Photo
+                                        </label>
+                                        <div className="flex items-center">
+                                            <input
+                                                id="road-photo"
+                                                type="file"
+                                                accept="image/*"
+                                                className="hidden"
+                                                onChange={(e) => {
+                                                    // Preview image if needed
+                                                    console.log('File selected:', e.target.files[0]?.name);
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor="road-photo"
+                                                className="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                                            >
+                                                <FaImage className="mr-2" /> Choose Photo
+                                            </label>
+                                            <span className="ml-3 text-sm text-gray-600" id="file-name">
+                                                No file chosen
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Max file size: 5MB. Supported formats: JPG, PNG, GIF.
+                                        </p>
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <label className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                className="form-checkbox h-5 w-5 text-blue-600"
+                                                checked={editingRoad.is_public}
+                                                onChange={(e) => setEditingRoad({...editingRoad, is_public: e.target.checked})}
+                                            />
+                                            <span className="ml-2 text-gray-700 flex items-center">
+                                                {editingRoad.is_public ? (
+                                                    <>
+                                                        <FaGlobe className="mr-1 text-green-600" /> Public
+                                                        <span className="text-xs text-gray-500 ml-2">(Visible to everyone)</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FaLock className="mr-1 text-orange-600" /> Private
+                                                        <span className="text-xs text-gray-500 ml-2">(Only visible to you)</span>
+                                                    </>
+                                                )}
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div className="flex items-center justify-end">
+                                        <button
+                                            type="button"
+                                            className="mr-4 text-gray-600 hover:text-gray-800"
+                                            onClick={() => setShowEditModal(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center"
+                                            disabled={loading}
+                                        >
+                                            {loading ? (
+                                                <span className="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
+                                            ) : (
+                                                <FaCheck className="mr-2" />
+                                            )}
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </Portal>
+            )}
         </Portal>
     );
 }

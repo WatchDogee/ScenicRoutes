@@ -4,33 +4,85 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
     const [selectedApp, setSelectedApp] = useState('google');
 
     const openInMaps = () => {
+        // Log the coordinates for debugging
+        console.log('Raw coordinates:', coordinates);
+
         // Ensure coordinates are valid and in the correct format
-        if (!coordinates || !Array.isArray(coordinates) || coordinates.length < 2) {
-            console.error('Invalid coordinates format:', coordinates);
+        if (!coordinates) {
+            console.error('Coordinates are null or undefined');
             alert('Invalid route coordinates. Cannot navigate.');
             return;
         }
 
         // Parse coordinates if they're in string format
-        let parsedCoordinates = coordinates;
-        if (typeof coordinates[0] === 'string') {
-            try {
+        let parsedCoordinates;
+        try {
+            if (typeof coordinates === 'string') {
                 parsedCoordinates = JSON.parse(coordinates);
-            } catch (e) {
-                console.error('Failed to parse coordinates:', e);
-                alert('Invalid route coordinates. Cannot navigate.');
+            } else if (Array.isArray(coordinates)) {
+                parsedCoordinates = coordinates;
+            } else {
+                console.error('Coordinates are not in a recognized format:', coordinates);
+                alert('Invalid route coordinates format. Cannot navigate.');
                 return;
             }
+        } catch (e) {
+            console.error('Failed to parse coordinates:', e, coordinates);
+            alert('Failed to parse route coordinates. Cannot navigate.');
+            return;
+        }
+
+        console.log('Parsed coordinates:', parsedCoordinates);
+
+        // Ensure we have at least two points for a route
+        if (!Array.isArray(parsedCoordinates) || parsedCoordinates.length < 2) {
+            console.error('Not enough coordinate points:', parsedCoordinates);
+            alert('Route must have at least two points. Cannot navigate.');
+            return;
         }
 
         // Get first and last coordinates for the route
         const startPoint = parsedCoordinates[0];
         const endPoint = parsedCoordinates[parsedCoordinates.length - 1];
 
-        // Ensure start and end points are valid
-        if (!startPoint || !endPoint || startPoint.length < 2 || endPoint.length < 2) {
-            console.error('Invalid start or end point:', { startPoint, endPoint });
-            alert('Invalid route coordinates. Cannot navigate.');
+        console.log('Start point:', startPoint, 'End point:', endPoint);
+
+        // Check if coordinates are in [lat, lng] format or {lat, lng} format
+        let startLat, startLng, endLat, endLng;
+
+        if (Array.isArray(startPoint)) {
+            // [lat, lng] format
+            if (startPoint.length < 2 || endPoint.length < 2) {
+                console.error('Coordinate points do not have enough values:', { startPoint, endPoint });
+                alert('Invalid coordinate format. Cannot navigate.');
+                return;
+            }
+            startLat = startPoint[0];
+            startLng = startPoint[1];
+            endLat = endPoint[0];
+            endLng = endPoint[1];
+        } else if (typeof startPoint === 'object') {
+            // {lat, lng} or {lat, lon} format
+            if (!('lat' in startPoint) || !('lng' in startPoint) && !('lon' in startPoint) ||
+                !('lat' in endPoint) || !('lng' in endPoint) && !('lon' in endPoint)) {
+                console.error('Coordinate objects missing lat/lng properties:', { startPoint, endPoint });
+                alert('Invalid coordinate format. Cannot navigate.');
+                return;
+            }
+            startLat = startPoint.lat;
+            startLng = startPoint.lng || startPoint.lon;
+            endLat = endPoint.lat;
+            endLng = endPoint.lng || endPoint.lon;
+        } else {
+            console.error('Unrecognized coordinate format:', { startPoint, endPoint });
+            alert('Unrecognized coordinate format. Cannot navigate.');
+            return;
+        }
+
+        // Final validation of coordinate values
+        if (isNaN(startLat) || isNaN(startLng) || isNaN(endLat) || isNaN(endLng)) {
+            console.error('Coordinate values are not numbers:', { startLat, startLng, endLat, endLng });
+            alert('Invalid coordinate values. Cannot navigate.');
             return;
         }
 
@@ -45,25 +97,25 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
                 // Google Maps URL format
                 if (iOS) {
                     // iOS Google Maps
-                    url = `comgooglemaps://?saddr=${startPoint[0]},${startPoint[1]}&daddr=${endPoint[0]},${endPoint[1]}&directionsmode=driving`;
+                    url = `comgooglemaps://?saddr=${startLat},${startLng}&daddr=${endLat},${endLng}&directionsmode=driving`;
                 } else {
                     // Web/Android Google Maps
-                    url = `https://www.google.com/maps/dir/?api=1&origin=${startPoint[0]},${startPoint[1]}&destination=${endPoint[0]},${endPoint[1]}&travelmode=driving`;
+                    url = `https://www.google.com/maps/dir/?api=1&origin=${startLat},${startLng}&destination=${endLat},${endLng}&travelmode=driving`;
                 }
                 break;
 
             case 'apple':
                 // Apple Maps (iOS only)
-                url = `maps://maps.apple.com/?saddr=${startPoint[0]},${startPoint[1]}&daddr=${endPoint[0]},${endPoint[1]}`;
+                url = `maps://maps.apple.com/?saddr=${startLat},${startLng}&daddr=${endLat},${endLng}`;
                 break;
 
             case 'waze':
                 // Waze URL format
-                url = `waze://?ll=${endPoint[0]},${endPoint[1]}&navigate=yes`;
+                url = `waze://?ll=${endLat},${endLng}&navigate=yes`;
                 break;
 
             default:
-                url = `https://www.google.com/maps/dir/?api=1&origin=${startPoint[0]},${startPoint[1]}&destination=${endPoint[0]},${endPoint[1]}&travelmode=driving`;
+                url = `https://www.google.com/maps/dir/?api=1&origin=${startLat},${startLng}&destination=${endLat},${endLng}&travelmode=driving`;
         }
 
         // Open in a new tab instead of redirecting

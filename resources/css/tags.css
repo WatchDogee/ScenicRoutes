@@ -1,0 +1,116 @@
+/* Tag Styling */
+.tag-selector {
+  position: relative;
+}
+
+/* Tag type styling */
+.tag-scenic {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-motorcycle {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.tag-mountain {
+  background-color: #e0e7ff !important;
+  color: #3730a3 !important;
+}
+
+.tag-coastal {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.tag-forest {
+  background-color: #d1fae5 !important;
+  color: #047857 !important;
+}
+
+.tag-desert {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.tag-twisty {
+  background-color: #fce7f3 !important;
+  color: #9d174d !important;
+}
+
+.tag-beginner {
+  background-color: #d1fae5 !important;
+  color: #047857 !important;
+}
+
+.tag-advanced {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.tag-expert {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+/* Tag filter section */
+.tag-filter-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.tag-filter-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.tag-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-filter-option {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter-option.selected {
+  font-weight: 500;
+}
+
+.tag-filter-option:hover {
+  opacity: 0.8;
+}
+
+/* Tag display in cards */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.tag-item-icon {
+  margin-right: 0.25rem;
+  font-size: 0.5rem;
+}

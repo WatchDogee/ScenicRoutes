@@ -9,7 +9,7 @@ import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
 
-export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails }) {
+export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId }) {
     // Temporary auth state until we fix the context
     const [authState, setAuthState] = useState({
         isAuthenticated: false,
@@ -33,7 +33,9 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     display: flex !important;
                     visibility: visible !important;
                     opacity: 1 !important;
-                    z-index: 9999 !important;
+                    z-index: 10000 !important;
+                    position: fixed !important;
+                    pointer-events: auto !important;
                 }
             `;
             document.head.appendChild(styleTag);
@@ -96,6 +98,17 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
             }
         }
     }, [activeTab, isAuthenticated, user, isOpen]);
+
+    // Handle selected collection ID from props
+    useEffect(() => {
+        if (isOpen && initialCollectionId) {
+            console.log('Selected collection ID received:', initialCollectionId);
+            setSelectedCollectionId(initialCollectionId);
+            setShowCollectionDetailsModal(true);
+            // Switch to collections tab
+            setActiveTab('collections');
+        }
+    }, [isOpen, initialCollectionId]);
 
     const fetchCollections = async () => {
         try {
@@ -223,6 +236,12 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
         setShowCollectionModal(false);
     };
 
+    // Function to refresh collections data
+    const refreshCollections = () => {
+        console.log('Refreshing collections data');
+        fetchCollections();
+    };
+
     const handleViewUser = (user) => {
         setSelectedUserId(user.id);
         setShowUserProfileModal(true);
@@ -243,7 +262,8 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
         if (!isAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
-                    <p className="text-gray-600">Please log in to view your collections</p>
+                    <p className="text-gray-600">You can view collections, but you need to log in to create your own collections.</p>
+                    <p className="mt-2 text-sm text-gray-500">Public collections will be displayed here.</p>
                 </div>
             );
         }
@@ -354,7 +374,8 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
         if (!isAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
-                    <p className="text-gray-600">Please log in to view who you're following</p>
+                    <p className="text-gray-600">You can view users, but you need to log in to follow them.</p>
+                    <p className="mt-2 text-sm text-gray-500">Popular users will be displayed here.</p>
                 </div>
             );
         }
@@ -418,7 +439,8 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
         if (!isAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
-                    <p className="text-gray-600">Please log in to view your feed</p>
+                    <p className="text-gray-600">You can view popular content, but you need to log in to see a personalized feed.</p>
+                    <p className="mt-2 text-sm text-gray-500">Recent popular roads and collections will be displayed here.</p>
                 </div>
             );
         }
@@ -475,6 +497,11 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                             key={road.id}
                                             road={road}
                                             onViewMap={() => onViewRoad(road)}
+                                            onViewDetails={(roadId, e) => {
+                                                if (onViewRoadDetails) {
+                                                    onViewRoadDetails(roadId, e);
+                                                }
+                                            }}
                                         />
                                     );
                                 } catch (error) {
@@ -525,21 +552,35 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
 
     return (
         <>
-            <Modal show={isOpen} onClose={showCollectionModal ? () => {} : onClose} maxWidth="4xl">
+            <Modal
+                show={isOpen}
+                onClose={showCollectionModal ? () => {} : onClose}
+                maxWidth="4xl"
+                staticBackdrop={true}>
                 <div className="p-6" style={{ zIndex: 2000 }}>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-blue-600">Social Hub</h2>
-                        <button
-                            onClick={() => {
-                                console.log('Close button clicked in SocialModal');
-                                if (!showCollectionModal) {
-                                    onClose();
-                                }
-                            }}
-                            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
-                        >
-                            <FaTimes className="text-xl" />
-                        </button>
+                        <div className="flex items-center">
+                            {!isAuthenticated && (
+                                <a
+                                    href="/login"
+                                    className="mr-4 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                                >
+                                    Login to Participate
+                                </a>
+                            )}
+                            <button
+                                onClick={() => {
+                                    console.log('Close button clicked in SocialModal');
+                                    if (!showCollectionModal) {
+                                        onClose();
+                                    }
+                                }}
+                                className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100"
+                            >
+                                <FaTimes className="text-xl" />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex overflow-x-auto border-b mb-4">
@@ -608,8 +649,13 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
             {/* Collection Details Modal */}
             <CollectionDetailsModal
                 isOpen={showCollectionDetailsModal}
-                onClose={() => setShowCollectionDetailsModal(false)}
+                onClose={() => {
+                    setShowCollectionDetailsModal(false);
+                    // Refresh collections when modal is closed
+                    refreshCollections();
+                }}
                 collectionId={selectedCollectionId}
+                onCollectionUpdated={refreshCollections}
             />
         </>
     );

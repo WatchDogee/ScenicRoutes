@@ -3,15 +3,22 @@ import ProfilePicture from './ProfilePicture';
 import { useContext } from 'react';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import { withErrorBoundary } from './ErrorBoundary';
+import { FaTag } from 'react-icons/fa';
+import TagSelector from './TagSelector';
 
 function RoadCard({
     road,
     onViewMap,
     onNavigate,
     onViewDetails,
+    onEdit,
+    onTagsChange,
     showUser = true,
     showActions = true,
-    className = ''
+    className = '',
+    showPrivacyStatus = false,
+    showTags = true,
+    allowTagEdit = false
 }) {
     const { userSettings } = useContext(UserSettingsContext);
     const formatLength = (meters) => {
@@ -81,12 +88,11 @@ function RoadCard({
                     <p>Curve Rating: {getTwistinessLabel(road.twistiness)}</p>
                     <p>Elevation Gain: {formatElevation(road.elevation_gain)} ↑</p>
                     <p>Elevation Loss: {formatElevation(road.elevation_loss)} ↓</p>
-                    <p className="text-xs text-gray-500">Debug: {JSON.stringify({
-                        gain: road.elevation_gain,
-                        loss: road.elevation_loss,
-                        max: road.max_elevation,
-                        min: road.min_elevation
-                    })}</p>
+                    {showPrivacyStatus && (
+                        <p className={`text-xs mt-1 ${road.is_public ? 'text-green-600' : 'text-orange-600'}`}>
+                            {road.is_public ? 'Public' : 'Private'}
+                        </p>
+                    )}
                 </div>
                 <div className="text-sm text-right">
                     <p className="flex items-center justify-end">
@@ -101,6 +107,18 @@ function RoadCard({
                     )}
                 </div>
             </div>
+
+            {/* Tags */}
+            {showTags && road.tags && road.tags.length > 0 && (
+                <div className="mt-2">
+                    <TagSelector
+                        selectedTags={road.tags}
+                        onTagsChange={onTagsChange ? (tags) => onTagsChange(road.id, tags) : undefined}
+                        entityType="road"
+                        readOnly={!allowTagEdit}
+                    />
+                </div>
+            )}
 
             {showActions && (
                 <div className="mt-3 flex gap-2">
@@ -122,10 +140,22 @@ function RoadCard({
                     )}
                     {onViewDetails && (
                         <button
-                            onClick={() => onViewDetails(road.id)}
-                            className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onViewDetails(road.id, e);
+                            }}
+                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 font-bold shadow-md"
                         >
                             View Details
+                        </button>
+                    )}
+                    {onEdit && (
+                        <button
+                            onClick={() => onEdit(road)}
+                            className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600"
+                        >
+                            Edit
                         </button>
                     )}
                 </div>

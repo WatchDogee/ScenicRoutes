@@ -73,6 +73,18 @@ Route::get('/public/users/{id}/roads', function ($id) {
     return response()->json($roads);
 });
 
+// Public route for user's public collections
+Route::get('/public/users/{id}/collections', function ($id) {
+    $user = \App\Models\User::findOrFail($id);
+    $collections = \App\Models\Collection::where('user_id', $user->id)
+        ->where('is_public', true)
+        ->with(['user:id,name,profile_picture'])
+        ->withCount('roads')
+        ->get();
+
+    return response()->json($collections);
+});
+
 Route::get('/public/collections/{id}', function ($id) {
     $collection = \App\Models\Collection::with([
         'user:id,name,profile_picture',
@@ -136,9 +148,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/collections/{id}', [CollectionController::class, 'show']);
     Route::put('/collections/{id}', [CollectionController::class, 'update']);
     Route::delete('/collections/{id}', [CollectionController::class, 'destroy']);
-    Route::post('/collections/{id}/roads', [CollectionController::class, 'addRoad']);
+    Route::post('/collections/{id}/road', [CollectionController::class, 'addRoad']);
+    Route::post('/collections/{id}/roads', [CollectionController::class, 'addRoads']);
+    Route::post('/collections/{id}/cover-image', [CollectionController::class, 'uploadCoverImage']);
     Route::delete('/collections/{id}/roads/{roadId}', [CollectionController::class, 'removeRoad']);
     Route::post('/collections/{id}/reorder', [CollectionController::class, 'reorderRoads']);
+    Route::post('/collections/{id}/save-public-road', [CollectionController::class, 'savePublicRoad']);
 
     // Follow system routes
     Route::post('/users/{id}/follow', [FollowController::class, 'follow']);
@@ -190,4 +205,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Import POIs to database
     Route::post('/import-pois', [PointOfInterestController::class, 'importPois']);
+
+    // Tag routes
+    Route::get('/tags', [\App\Http\Controllers\TagController::class, 'index']);
+    Route::post('/tags', [\App\Http\Controllers\TagController::class, 'store']);
+    Route::get('/tags/{id}', [\App\Http\Controllers\TagController::class, 'show']);
+    Route::put('/tags/{id}', [\App\Http\Controllers\TagController::class, 'update']);
+    Route::delete('/tags/{id}', [\App\Http\Controllers\TagController::class, 'destroy']);
+
+    // Tag relationships
+    Route::get('/tags/{id}/roads', [\App\Http\Controllers\TagController::class, 'getRoads']);
+    Route::get('/tags/{id}/collections', [\App\Http\Controllers\TagController::class, 'getCollections']);
+
+    // Add/remove tags to/from roads and collections
+    Route::post('/saved-roads/{id}/tags', [\App\Http\Controllers\TagController::class, 'addTagsToRoad']);
+    Route::delete('/saved-roads/{id}/tags', [\App\Http\Controllers\TagController::class, 'removeTagsFromRoad']);
+    Route::post('/collections/{id}/tags', [\App\Http\Controllers\TagController::class, 'addTagsToCollection']);
+    Route::delete('/collections/{id}/tags', [\App\Http\Controllers\TagController::class, 'removeTagsFromCollection']);
 });

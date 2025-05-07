@@ -69,10 +69,14 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                 </div>
                                 <button
                                     onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         try {
                                             console.log("View road details:", road);
-                                            if (onViewRoadDetails) onViewRoadDetails(road.id);
+                                            if (onViewRoadDetails) {
+                                                // Allow all users to view road details
+                                                onViewRoadDetails(road.id, e);
+                                            }
                                         } catch (error) {
                                             console.error("Error viewing road details:", error);
                                         }
@@ -148,10 +152,14 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                 </div>
                                 <button
                                     onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         try {
                                             console.log("View road details:", road);
-                                            if (onViewRoadDetails) onViewRoadDetails(road.id);
+                                            if (onViewRoadDetails) {
+                                                // Allow all users to view road details
+                                                onViewRoadDetails(road.id, e);
+                                            }
                                         } catch (error) {
                                             console.error("Error viewing road details:", error);
                                         }
@@ -232,10 +240,15 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                 </div>
                                 <button
                                     onClick={(e) => {
+                                        e.preventDefault();
                                         e.stopPropagation();
                                         try {
                                             console.log("View road details:", road);
-                                            if (onViewRoadDetails) onViewRoadDetails(road.id);
+                                            if (onViewRoadDetails) {
+                                                // Allow all users to view road details
+                                                // Pass the event to prevent propagation
+                                                onViewRoadDetails(road.id, e);
+                                            }
                                         } catch (error) {
                                             console.error("Error viewing road details:", error);
                                         }

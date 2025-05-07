@@ -6,6 +6,7 @@ import ReviewCard from './ReviewCard';
 import PhotoGallery from './PhotoGallery';
 import PhotoUploader from './PhotoUploader';
 import TempPhotoUploader from './TempPhotoUploader';
+import TagSelector from './TagSelector';
 
 export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, initialRating = 0, initialComment = '' }) {
     const [rating, setRating] = useState(initialRating);
@@ -15,6 +16,8 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     const [userReviewId, setUserReviewId] = useState(null);
     const [tempReviewPhotos, setTempReviewPhotos] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedTags, setSelectedTags] = useState([]);
+    const [isTagsUpdating, setIsTagsUpdating] = useState(false);
 
     useEffect(() => {
         if (isOpen && road) {
@@ -42,6 +45,13 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                 console.log('Review photos map:', reviewPhotosMap);
                 setReviewPhotos(reviewPhotosMap);
 
+                // Set tags
+                if (road.tags) {
+                    setSelectedTags(road.tags);
+                } else {
+                    setSelectedTags([]);
+                }
+
                 // Set user's existing review data
                 const existingReview = road.reviews?.find(review => review.user?.id === auth.user?.id);
                 if (existingReview) {
@@ -58,6 +68,7 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                 // Set defaults
                 setRoadPhotos([]);
                 setReviewPhotos({});
+                setSelectedTags([]);
                 setRating(initialRating);
                 setComment(initialComment);
                 setUserReviewId(null);
@@ -67,7 +78,12 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
 
     if (!isOpen || !road) return null;
 
-    const handleSubmit = async () => {
+    const handleSubmit = async (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -93,16 +109,25 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                 // Update the road data
                 if (response.data.road) {
                     // Call the parent component's onSubmit to update UI
-                    onClose();
+                    // Use setTimeout to ensure event propagation is complete
+                    setTimeout(() => {
+                        onClose();
+                    }, 0);
                 }
             } else {
                 // Regular review submission without photo
-                onSubmit(rating, comment);
+                // Use setTimeout to ensure event propagation is complete
+                setTimeout(() => {
+                    onSubmit(rating, comment);
+                }, 0);
             }
         } catch (error) {
             console.error('Error submitting review with photos:', error);
             // Fall back to regular submission
-            onSubmit(rating, comment);
+            // Use setTimeout to ensure event propagation is complete
+            setTimeout(() => {
+                onSubmit(rating, comment);
+            }, 0);
         } finally {
             setIsSubmitting(false);
             setTempReviewPhotos([]);
@@ -176,20 +201,108 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
         return 'No ratings yet';
     };
 
+    const handleTagsChange = async (tags) => {
+        if (!auth?.user || auth.user.id !== road.user?.id) {
+            return; // Only the road owner can update tags
+        }
+
+        try {
+            setIsTagsUpdating(true);
+
+            // Update tags on the server
+            const response = await axios.post(`/api/saved-roads/${road.id}/tags`, {
+                tags: tags.map(tag => tag.id)
+            });
+
+            // Update local state
+            setSelectedTags(response.data.road.tags || []);
+
+            // Update the road in the parent component
+            if (response.data.road) {
+                // Dispatch an event to update the road in other components
+                const event = new CustomEvent('roadUpdated', {
+                    detail: { road: response.data.road }
+                });
+                window.dispatchEvent(event);
+            }
+        } catch (error) {
+            console.error('Error updating tags:', error);
+        } finally {
+            setIsTagsUpdating(false);
+        }
+    };
+
     return (
-        <div className="rating-modal-overlay">
-            <div className="rating-modal-container">
+        <div
+            className="rating-modal-overlay"
+            style={{
+                zIndex: 30000,
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'auto'
+            }}
+            onClick={(e) => {
+                // Prevent clicks on the overlay from closing the modal
+                e.preventDefault();
+                e.stopPropagation();
+            }}
+        >
+            <div
+                className="rating-modal-container"
+                style={{
+                    maxWidth: '800px',
+                    width: '90%',
+                    position: 'relative',
+                    zIndex: 30001,
+                    backgroundColor: 'white',
+                    borderRadius: '0.5rem',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    pointerEvents: 'auto'
+                }}
+                onClick={(e) => {
+                    // Prevent clicks on the container from propagating to the overlay
+                    e.stopPropagation();
+                }}
+            >
                 <div className="rating-modal-header">
                     <div>
                         <h2 className="rating-modal-title">{road.road_name}</h2>
                         <p className="rating-modal-subtitle">Added by {road.user?.name}</p>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="rating-modal-close-button"
-                    >
-                        ✕
-                    </button>
+                    <div className="flex items-center">
+                        {auth?.user?.id === road.user?.id && (
+                            <button
+                                onClick={() => {
+                                    // Dispatch event to edit road
+                                    const event = new CustomEvent('editRoad', {
+                                        detail: { road }
+                                    });
+                                    window.dispatchEvent(event);
+                                    onClose();
+                                }}
+                                className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 font-bold shadow-md mr-4"
+                            >
+                                Edit Road
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onClose();
+                            }}
+                            className="rating-modal-close-button"
+                        >
+                            ✕
+                        </button>
+                    </div>
                 </div>
 
                 <div className="rating-modal-stats">
@@ -205,6 +318,25 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         <div>
                             <h3 className="rating-modal-stats-title">Description</h3>
                             <p className="rating-modal-stats-content">{road.description || 'No description provided.'}</p>
+                        </div>
+                    </div>
+
+                    {/* Tags Section */}
+                    <div className="mt-4">
+                        <h3 className="rating-modal-stats-title">Tags</h3>
+                        <div className="mt-2">
+                            <TagSelector
+                                selectedTags={selectedTags}
+                                onTagsChange={auth?.user?.id === road.user?.id ? handleTagsChange : undefined}
+                                entityType="road"
+                                readOnly={!auth?.user || auth.user.id !== road.user?.id}
+                            />
+
+                            {auth?.user?.id === road.user?.id && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Add tags to help others find your road
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -229,63 +361,73 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
 
                 <div className="rating-modal-review-section">
                     <h3 className="rating-modal-section-title">Add Your Review</h3>
-                    <div className="rating-modal-stars">
-                        <StarRating
-                            rating={rating}
-                            onRatingChange={setRating}
-                            interactive={true}
-                            size="lg"
-                        />
-                    </div>
-                    <div>
-                        <label className="rating-modal-comment-label">Your Comment</label>
-                        <textarea
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            className="rating-modal-comment-textarea"
-                            rows="4"
-                            placeholder="Share your experience with this road..."
-                        />
-                    </div>
 
-                    {/* Show photo uploader for both new and existing reviews */}
-                    <div className="mt-4">
-                        <h4 className="text-sm font-medium text-gray-700 mb-2">Add Photos to Your Review</h4>
-
-                        {/* For existing reviews, display existing photos */}
-                        {userReviewId && reviewPhotos[userReviewId] && reviewPhotos[userReviewId].length > 0 && (
-                            <PhotoGallery
-                                photos={reviewPhotos[userReviewId]}
-                                onPhotoDeleted={handlePhotoDeleted}
-                                canDelete={true}
-                                className="mb-3"
-                            />
-                        )}
-
-                        {/* For existing reviews, show photo uploader with existing review ID */}
-                        {userReviewId ? (
-                            <PhotoUploader
-                                endpoint={`/api/reviews/${userReviewId}/photos`}
-                                onPhotoUploaded={handleReviewPhotoUploaded}
-                                existingPhotos={reviewPhotos[userReviewId] || []}
-                            />
-                        ) : (
-                            <div className="mb-3">
-                                <TempPhotoUploader
-                                    onPhotoSelected={(photo) => {
-                                        setTempReviewPhotos(prev => [...prev, photo]);
-                                    }}
-                                    onPhotoRemoved={(photo) => {
-                                        setTempReviewPhotos(prev => prev.filter(p => p.id !== photo.id));
-                                    }}
-                                    maxPhotos={5}
+                    {auth?.user ? (
+                        <>
+                            <div className="rating-modal-stars">
+                                <StarRating
+                                    rating={rating}
+                                    onRatingChange={setRating}
+                                    interactive={true}
+                                    size="lg"
                                 />
-                                <p className="text-xs text-gray-500 mt-2">
-                                    You can also add photos directly to the road above.
-                                </p>
                             </div>
-                        )}
-                    </div>
+                            <div>
+                                <label className="rating-modal-comment-label">Your Comment</label>
+                                <textarea
+                                    value={comment}
+                                    onChange={(e) => setComment(e.target.value)}
+                                    className="rating-modal-comment-textarea"
+                                    rows="4"
+                                    placeholder="Share your experience with this road..."
+                                />
+                            </div>
+
+                            {/* Show photo uploader for both new and existing reviews */}
+                            <div className="mt-4">
+                                <h4 className="text-sm font-medium text-gray-700 mb-2">Add Photos to Your Review</h4>
+
+                                {/* For existing reviews, display existing photos */}
+                                {userReviewId && reviewPhotos[userReviewId] && reviewPhotos[userReviewId].length > 0 && (
+                                    <PhotoGallery
+                                        photos={reviewPhotos[userReviewId]}
+                                        onPhotoDeleted={handlePhotoDeleted}
+                                        canDelete={true}
+                                        className="mb-3"
+                                    />
+                                )}
+
+                                {/* For existing reviews, show photo uploader with existing review ID */}
+                                {userReviewId ? (
+                                    <PhotoUploader
+                                        endpoint={`/api/reviews/${userReviewId}/photos`}
+                                        onPhotoUploaded={handleReviewPhotoUploaded}
+                                        existingPhotos={reviewPhotos[userReviewId] || []}
+                                    />
+                                ) : (
+                                    <div className="mb-3">
+                                        <TempPhotoUploader
+                                            onPhotoSelected={(photo) => {
+                                                setTempReviewPhotos(prev => [...prev, photo]);
+                                            }}
+                                            onPhotoRemoved={(photo) => {
+                                                setTempReviewPhotos(prev => prev.filter(p => p.id !== photo.id));
+                                            }}
+                                            maxPhotos={5}
+                                        />
+                                        <p className="text-xs text-gray-500 mt-2">
+                                            You can also add photos directly to the road above.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="bg-blue-50 p-4 rounded-lg text-center">
+                            <p className="text-blue-800 mb-2">You need to be logged in to leave reviews.</p>
+                            <p className="text-sm text-gray-600">You can still view all road details and reviews.</p>
+                        </div>
+                    )}
                 </div>
 
                 <div className="rating-modal-reviews-section">
@@ -311,20 +453,31 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
 
                 <div className="rating-modal-footer">
                     <button
-                        onClick={onClose}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onClose();
+                        }}
                         className="rating-modal-cancel-button"
                     >
-                        Cancel
+                        {auth?.user ? 'Cancel' : 'Close'}
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={rating === 0 || isSubmitting}
-                        className={`rating-modal-submit-button ${
-                            rating === 0 || isSubmitting ? 'rating-modal-submit-button-disabled' : 'rating-modal-submit-button-enabled'
-                        }`}
-                    >
-                        {isSubmitting ? 'Submitting...' : 'Submit Review'}
-                    </button>
+
+                    {auth?.user && (
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSubmit(e);
+                            }}
+                            disabled={rating === 0 || isSubmitting}
+                            className={`rating-modal-submit-button ${
+                                rating === 0 || isSubmitting ? 'rating-modal-submit-button-disabled' : 'rating-modal-submit-button-enabled'
+                            }`}
+                        >
+                            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

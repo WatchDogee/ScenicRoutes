@@ -48,4 +48,21 @@ class SavedRoad extends Model
     {
         return $this->hasMany(RoadPhoto::class);
     }
+
+    /**
+     * Get the tags for the road.
+     */
+    public function tags()
+    {
+        return $this->belongsToMany(Tag::class, 'road_tag', 'road_id', 'tag_id');
+    }
+
+    /**
+     * Get the collections that contain this road.
+     */
+    public function collections()
+    {
+        return $this->belongsToMany(Collection::class, 'collection_road', 'road_id', 'collection_id')
+            ->withPivot('order');
+    }
 }

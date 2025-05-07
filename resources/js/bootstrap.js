@@ -6,14 +6,9 @@ window.axios.defaults.withCredentials = true; // Ensure cookies are sent
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.headers.common['Accept'] = 'application/json';
 
-// Dynamically determine the base URL
+// Always use the current origin as the base URL
 const getBaseUrl = () => {
-    // In production, use the current origin
-    if (window.location.hostname !== 'localhost') {
-        return window.location.origin;
-    }
-    // In development, use localhost:8000
-    return 'http://localhost:8000';
+    return window.location.origin;
 };
 
 window.axios.defaults.baseURL = getBaseUrl();

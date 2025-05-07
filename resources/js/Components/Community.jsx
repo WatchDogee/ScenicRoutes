@@ -44,23 +44,21 @@ export default function Community({ auth }) {
     };
 
     const handleViewDetails = async (road) => {
-        if (!auth.user) {
-            alert('Please log in to view road details');
-            return;
-        }
         try {
             const response = await axios.get(`/api/saved-roads/${road.id}`);
             setSelectedRoadForReview(response.data);
             setRatingModalOpen(true);
 
-            // If user has already reviewed, pre-fill the form
-            const existingReview = response.data.reviews?.find(review => review.user?.id === auth.user.id);
-            if (existingReview) {
-                setLocalRating(existingReview.rating);
-                setLocalComment(existingReview.comment || '');
-            } else {
-                setLocalRating(0);
-                setLocalComment('');
+            // If user is logged in and has already reviewed, pre-fill the form
+            if (auth.user) {
+                const existingReview = response.data.reviews?.find(review => review.user?.id === auth.user.id);
+                if (existingReview) {
+                    setLocalRating(existingReview.rating);
+                    setLocalComment(existingReview.comment || '');
+                } else {
+                    setLocalRating(0);
+                    setLocalComment('');
+                }
             }
         } catch (error) {
             console.error('Error fetching road details:', error);

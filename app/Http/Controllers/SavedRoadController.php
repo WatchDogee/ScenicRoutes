@@ -30,7 +30,43 @@ class SavedRoadController extends Controller
 
     public function index()
     {
-        return response()->json(auth()->user()->savedRoads);
+        try {
+            // Log the authenticated user
+            \Log::info('Fetching saved roads for user', [
+                'user_id' => auth()->id(),
+                'user_name' => auth()->user()->name
+            ]);
+
+            // Get all roads (both public and private) for the authenticated user
+            // Include relationships needed for display
+            $roads = auth()->user()->savedRoads()
+                ->with([
+                    'reviews.user:id,name,profile_picture',
+                    'reviews.photos',
+                    'photos',
+                    'tags'
+                ])
+                ->withCount('reviews')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            // Log the number of roads found
+            \Log::info('Saved roads fetched successfully', [
+                'count' => $roads->count(),
+                'road_ids' => $roads->pluck('id')->toArray()
+            ]);
+
+            return response()->json($roads);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching saved roads: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to fetch saved roads',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -115,6 +151,7 @@ class SavedRoadController extends Controller
             $curvinessFilter = $request->input('curviness_filter', 'all');
             $minRating = filter_var($request->input('min_rating', 0), FILTER_VALIDATE_FLOAT);
             $sortBy = $request->input('sort_by', 'rating');
+            $tags = $request->input('tags');
 
             if ($lat === false || $lon === false || $radius === false) {
                 return response()->json(['error' => 'Invalid coordinates or radius format'], 400);
@@ -130,9 +167,18 @@ class SavedRoadController extends Controller
                     'reviews.user:id,name,profile_picture',
                     'reviews.photos',
                     'comments.user:id,name,profile_picture',
-                    'photos'
+                    'photos',
+                    'tags'
                 ])
                 ->withAvg('reviews', 'rating');
+
+            // Filter by tags if provided
+            if ($tags) {
+                $tagIds = explode(',', $tags);
+                $query->whereHas('tags', function($q) use ($tagIds) {
+                    $q->whereIn('tags.id', $tagIds);
+                });
+            }
 
             // Get all roads first
             $roads = $query->get();
@@ -279,6 +325,14 @@ class SavedRoadController extends Controller
                         'created_at' => $photo->created_at,
                         'user_id' => $photo->user_id,
                     ];
+                }) : [],
+                'tags' => $road->tags ? $road->tags->map(function ($tag) {
+                    return [
+                        'id' => $tag->id,
+                        'name' => $tag->name,
+                        'slug' => $tag->slug,
+                        'type' => $tag->type,
+                    ];
                 }) : []
                 ];
             });
@@ -412,7 +466,8 @@ class SavedRoadController extends Controller
                     'reviews.user:id,name,profile_picture',
                     'reviews.photos',
                     'comments.user:id,name,profile_picture',
-                    'photos'
+                    'photos',
+                    'tags'
                 ])
                 ->withAvg('reviews', 'rating')
                 ->findOrFail($id);
@@ -471,15 +526,51 @@ class SavedRoadController extends Controller
                 'twistiness' => 'nullable|numeric',
                 'corner_count' => 'nullable|integer',
                 'length' => 'nullable|numeric',
-                'is_public' => 'nullable|boolean'
+                'is_public' => 'nullable|boolean',
+                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
             ]);
 
             // Only update fields that are actually present in the request
-            $updateData = array_filter($validatedData, function ($value) {
-                return $value !== null;
-            });
+            $updateData = array_filter($validatedData, function ($value, $key) {
+                return $value !== null && $key !== 'photo';
+            }, ARRAY_FILTER_USE_BOTH);
+
+            // Handle boolean conversion for is_public
+            if (isset($updateData['is_public'])) {
+                $updateData['is_public'] = filter_var($updateData['is_public'], FILTER_VALIDATE_BOOLEAN);
+            }
 
             $road->update($updateData);
+
+            // Handle photo upload if provided
+            if ($request->hasFile('photo')) {
+                try {
+                    // Store the photo
+                    $path = $request->file('photo')->store('road-photos', 'public');
+
+                    // Create a new road photo
+                    $photo = new \App\Models\RoadPhoto([
+                        'saved_road_id' => $road->id,
+                        'user_id' => auth()->id(),
+                        'photo_path' => $path,
+                        'caption' => $request->input('caption')
+                    ]);
+
+                    $photo->save();
+
+                    \Log::info('Road photo added successfully', [
+                        'road_id' => $road->id,
+                        'photo_id' => $photo->id,
+                        'path' => $path
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Error uploading road photo: ' . $e->getMessage(), [
+                        'road_id' => $road->id,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue without failing the whole request
+                }
+            }
 
             // Load the relationships before returning
             $road = $road->fresh([
@@ -499,8 +590,9 @@ class SavedRoadController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['error' => $e->errors()], 422);
         } catch (\Exception $e) {
-            \Log::error('Error updating road: ' . $e->getMessage());
-            \Log::error($e->getTraceAsString());
+            \Log::error('Error updating road: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(['error' => 'Failed to update road.'], 500);
         }
     }
