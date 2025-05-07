@@ -7,6 +7,7 @@ import '../css/rating-modal.css';
 import '../css/poi.css';
 import '../css/fix-scrolling.css';
 import '../css/tags.css';
+import '../css/modal-fixes.css';
 
 import { createRoot } from 'react-dom/client';
 import { createInertiaApp } from '@inertiajs/react';

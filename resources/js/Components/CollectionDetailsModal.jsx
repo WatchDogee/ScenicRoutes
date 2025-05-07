@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaTimes, FaFolder, FaRoad, FaUser, FaPlus, FaCamera, FaImage } from 'react-icons/fa';
+import { FaTimes, FaFolder, FaRoad, FaUser, FaPlus, FaCamera, FaImage, FaTag } from 'react-icons/fa';
 import Portal from './Portal';
 import RoadCard from './RoadCard';
+import TagSelector from './TagSelector';
 
 export default function CollectionDetailsModal({ isOpen, onClose, collectionId, onCollectionUpdated }) {
     const [collection, setCollection] = useState(null);
@@ -22,6 +23,8 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
     const [coverImagePreview, setCoverImagePreview] = useState(null);
     const [uploadingCoverImage, setUploadingCoverImage] = useState(false);
     const [showCoverImageModal, setShowCoverImageModal] = useState(false);
+    const [collectionTags, setCollectionTags] = useState([]);
+    const [isTagsUpdating, setIsTagsUpdating] = useState(false);
     const fileInputRef = useRef(null);
 
     // Get current user ID from window object
@@ -48,6 +51,13 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                 description: collection.description || '',
                 is_public: collection.is_public || false
             });
+
+            // Set collection tags
+            if (collection.tags) {
+                setCollectionTags(collection.tags);
+            } else {
+                setCollectionTags([]);
+            }
         }
     }, [collection]);
 
@@ -187,6 +197,14 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
         onClose();
     };
 
+    const handleNavigateRoad = (road) => {
+        // Dispatch event to navigate to road
+        const event = new CustomEvent('navigateToRoad', {
+            detail: { road }
+        });
+        window.dispatchEvent(event);
+    };
+
     const handleCoverImageChange = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -292,6 +310,44 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
             detail: { roadId }
         });
         window.dispatchEvent(event);
+    };
+
+    const handleTagsChange = async (tags) => {
+        if (!collection || !currentUserId || collection.user_id != currentUserId) {
+            return; // Only the collection owner can update tags
+        }
+
+        try {
+            setIsTagsUpdating(true);
+            setError(null);
+
+            // Get token from localStorage
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('Authentication token not found');
+            }
+
+            // Update tags on the server
+            const response = await axios.post(`/api/collections/${collectionId}/tags`, {
+                tags: tags.map(tag => tag.id)
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Update local state
+            setCollectionTags(response.data.collection.tags || []);
+            setCollection(response.data.collection);
+
+            // Notify parent component that collection was updated
+            if (onCollectionUpdated) {
+                onCollectionUpdated();
+            }
+        } catch (error) {
+            console.error('Error updating collection tags:', error);
+            setError('Failed to update tags');
+        } finally {
+            setIsTagsUpdating(false);
+        }
     };
 
     // Stop propagation of events to prevent closing the parent modal
@@ -416,6 +472,21 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                                 </label>
                                             </div>
 
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    Tags
+                                                </label>
+                                                <TagSelector
+                                                    selectedTags={collectionTags}
+                                                    onTagsChange={handleTagsChange}
+                                                    entityType="collection"
+                                                    readOnly={false}
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Add tags to help others find your collection
+                                                </p>
+                                            </div>
+
                                             <div className="flex justify-end space-x-2">
                                                 <button
                                                     type="button"
@@ -490,6 +561,25 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                                 <p className="text-gray-600">{collection.description}</p>
                                             </div>
                                         )}
+
+                                        {/* Tags Section */}
+                                        <div className="mb-6">
+                                            <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
+                                            <TagSelector
+                                                selectedTags={collectionTags}
+                                                onTagsChange={collection.user_id == currentUserId ? handleTagsChange : undefined}
+                                                entityType="collection"
+                                                readOnly={!collection.user_id || collection.user_id != currentUserId}
+                                            />
+                                            {isTagsUpdating && (
+                                                <p className="text-xs text-gray-500 mt-1">Updating tags...</p>
+                                            )}
+                                            {collection.user_id == currentUserId && (
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Add tags to help others find your collection
+                                                </p>
+                                            )}
+                                        </div>
                                     </>
                                 )}
 
@@ -519,6 +609,7 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                                             road={road}
                                                             showUser={false}
                                                             onViewMap={handleViewRoad}
+                                                            onNavigate={handleNavigateRoad}
                                                             onViewDetails={() => handleViewRoadDetails(road.id)}
                                                         />
                                                     );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Portal from './Portal';
 
 export default function NavigationAppSelector({ coordinates, roadName, onClose }) {
     const [selectedApp, setSelectedApp] = useState('google');
@@ -123,11 +124,41 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
     };
 
     return (
-        <div className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow relative">
+        <Portal rootId="navigation-modal-root">
+            <div
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+                style={{
+                    pointerEvents: 'auto',
+                    zIndex: 999999,
+                    position: 'fixed'
+                }}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (onClose) onClose();
+                }}
+            >
+                <div
+                    className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow relative"
+                    style={{
+                        pointerEvents: 'auto',
+                        position: 'relative',
+                        zIndex: 1000000
+                    }}
+                    onClick={(e) => {
+                        // Prevent clicks from propagating
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                >
             {/* Close button */}
             {onClose && (
                 <button
-                    onClick={onClose}
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onClose();
+                    }}
                     className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                     aria-label="Close navigation panel"
                 >
@@ -138,51 +169,66 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
             <h3 className="text-lg font-semibold">Navigate to {roadName}</h3>
 
             <div className="flex flex-col space-y-2">
-                <label className="inline-flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
                     <input
                         type="radio"
                         className="form-radio"
                         name="navigation-app"
                         value="google"
                         checked={selectedApp === 'google'}
-                        onChange={(e) => setSelectedApp(e.target.value)}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            setSelectedApp(e.target.value);
+                        }}
                     />
                     <span className="ml-2">Google Maps</span>
                 </label>
 
                 {/iPad|iPhone|iPod/.test(navigator.platform) && (
-                    <label className="inline-flex items-center">
+                    <label className="inline-flex items-center cursor-pointer">
                         <input
                             type="radio"
                             className="form-radio"
                             name="navigation-app"
                             value="apple"
                             checked={selectedApp === 'apple'}
-                            onChange={(e) => setSelectedApp(e.target.value)}
+                            onChange={(e) => {
+                                e.stopPropagation();
+                                setSelectedApp(e.target.value);
+                            }}
                         />
                         <span className="ml-2">Apple Maps</span>
                     </label>
                 )}
 
-                <label className="inline-flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
                     <input
                         type="radio"
                         className="form-radio"
                         name="navigation-app"
                         value="waze"
                         checked={selectedApp === 'waze'}
-                        onChange={(e) => setSelectedApp(e.target.value)}
+                        onChange={(e) => {
+                            e.stopPropagation();
+                            setSelectedApp(e.target.value);
+                        }}
                     />
                     <span className="ml-2">Waze</span>
                 </label>
             </div>
 
             <button
-                onClick={openInMaps}
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openInMaps();
+                }}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors"
             >
                 Open in Navigation App
             </button>
-        </div>
+                </div>
+            </div>
+        </Portal>
     );
 }

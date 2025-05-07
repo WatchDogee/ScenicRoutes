@@ -40,6 +40,19 @@
                 overflow-y: auto;
                 max-height: 90vh;
             }
+
+            /* Portal roots should be on top of everything */
+            #navigation-modal-root,
+            #rating-modal-root,
+            #collection-modal-root {
+                position: relative;
+                z-index: 9999999;
+            }
+
+            /* Ensure all interactive elements are clickable */
+            button, a, input, textarea, select, [role="button"] {
+                pointer-events: auto !important;
+            }
         </style>
 
         <!-- Scripts -->
@@ -54,5 +67,8 @@
         <div id="user-profile-modal-root"></div>
         <div id="self-profile-modal-root"></div>
         <div id="error-boundary-root"></div>
+        <div id="navigation-modal-root"></div>
+        <div id="rating-modal-root"></div>
+        <div id="collection-modal-root"></div>
     </body>
 </html>

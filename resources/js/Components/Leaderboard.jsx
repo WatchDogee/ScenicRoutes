@@ -67,24 +67,44 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                     <StarRating value={road.average_rating} readOnly size="sm" />
                                     <span className="ml-1 text-sm text-gray-600">({road.reviews_count || 0})</span>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                            console.log("View road details:", road);
-                                            if (onViewRoadDetails) {
-                                                // Allow all users to view road details
-                                                onViewRoadDetails(road.id, e);
+                                <div className="flex space-x-2 mt-1">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                // Dispatch event to navigate to road
+                                                const event = new CustomEvent('navigateToRoad', {
+                                                    detail: { road }
+                                                });
+                                                window.dispatchEvent(event);
+                                            } catch (error) {
+                                                console.error("Error navigating to road:", error);
                                             }
-                                        } catch (error) {
-                                            console.error("Error viewing road details:", error);
-                                        }
-                                    }}
-                                    className="mt-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    View Details
-                                </button>
+                                        }}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Navigate
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                console.log("View road details:", road);
+                                                if (onViewRoadDetails) {
+                                                    // Allow all users to view road details
+                                                    onViewRoadDetails(road.id, e);
+                                                }
+                                            } catch (error) {
+                                                console.error("Error viewing road details:", error);
+                                            }
+                                        }}
+                                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                        View Details
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -150,24 +170,44 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                     <FaComment className="text-blue-500" />
                                     <span className="ml-1 text-sm font-medium">{road.reviews_count || 0} reviews</span>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                            console.log("View road details:", road);
-                                            if (onViewRoadDetails) {
-                                                // Allow all users to view road details
-                                                onViewRoadDetails(road.id, e);
+                                <div className="flex space-x-2 mt-1">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                // Dispatch event to navigate to road
+                                                const event = new CustomEvent('navigateToRoad', {
+                                                    detail: { road }
+                                                });
+                                                window.dispatchEvent(event);
+                                            } catch (error) {
+                                                console.error("Error navigating to road:", error);
                                             }
-                                        } catch (error) {
-                                            console.error("Error viewing road details:", error);
-                                        }
-                                    }}
-                                    className="mt-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    View Details
-                                </button>
+                                        }}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Navigate
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                console.log("View road details:", road);
+                                                if (onViewRoadDetails) {
+                                                    // Allow all users to view road details
+                                                    onViewRoadDetails(road.id, e);
+                                                }
+                                            } catch (error) {
+                                                console.error("Error viewing road details:", error);
+                                            }
+                                        }}
+                                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                        View Details
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -238,25 +278,45 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                     <FaEye className="text-green-500" />
                                     <span className="ml-1 text-sm font-medium">{road.view_count || road.reviews_count || 0} views</span>
                                 </div>
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        try {
-                                            console.log("View road details:", road);
-                                            if (onViewRoadDetails) {
-                                                // Allow all users to view road details
-                                                // Pass the event to prevent propagation
-                                                onViewRoadDetails(road.id, e);
+                                <div className="flex space-x-2 mt-1">
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                // Dispatch event to navigate to road
+                                                const event = new CustomEvent('navigateToRoad', {
+                                                    detail: { road }
+                                                });
+                                                window.dispatchEvent(event);
+                                            } catch (error) {
+                                                console.error("Error navigating to road:", error);
                                             }
-                                        } catch (error) {
-                                            console.error("Error viewing road details:", error);
-                                        }
-                                    }}
-                                    className="mt-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                                >
-                                    View Details
-                                </button>
+                                        }}
+                                        className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    >
+                                        Navigate
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            try {
+                                                console.log("View road details:", road);
+                                                if (onViewRoadDetails) {
+                                                    // Allow all users to view road details
+                                                    // Pass the event to prevent propagation
+                                                    onViewRoadDetails(road.id, e);
+                                                }
+                                            } catch (error) {
+                                                console.error("Error viewing road details:", error);
+                                            }
+                                        }}
+                                        className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                    >
+                                        View Details
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

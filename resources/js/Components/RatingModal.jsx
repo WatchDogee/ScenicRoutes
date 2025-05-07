@@ -7,6 +7,7 @@ import PhotoGallery from './PhotoGallery';
 import PhotoUploader from './PhotoUploader';
 import TempPhotoUploader from './TempPhotoUploader';
 import TagSelector from './TagSelector';
+import Portal from './Portal';
 
 export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, initialRating = 0, initialComment = '' }) {
     const [rating, setRating] = useState(initialRating);
@@ -233,43 +234,46 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     };
 
     return (
-        <div
-            className="rating-modal-overlay"
-            style={{
-                zIndex: 30000,
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'auto'
-            }}
-            onClick={(e) => {
-                // Prevent clicks on the overlay from closing the modal
-                e.preventDefault();
-                e.stopPropagation();
-            }}
-        >
+        <Portal rootId="rating-modal-root">
             <div
-                className="rating-modal-container"
+                className="rating-modal-overlay"
                 style={{
-                    maxWidth: '800px',
-                    width: '90%',
-                    position: 'relative',
-                    zIndex: 30001,
-                    backgroundColor: 'white',
-                    borderRadius: '0.5rem',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    zIndex: 999999,
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     pointerEvents: 'auto'
                 }}
                 onClick={(e) => {
-                    // Prevent clicks on the container from propagating to the overlay
+                    // Close when clicking on the overlay
+                    e.preventDefault();
                     e.stopPropagation();
+                    onClose();
                 }}
+            >
+                <div
+                    className="rating-modal-container"
+                    style={{
+                        maxWidth: '800px',
+                        width: '90%',
+                        position: 'relative',
+                        zIndex: 1000000,
+                        backgroundColor: 'white',
+                        borderRadius: '0.5rem',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                        pointerEvents: 'auto'
+                    }}
+                    onClick={(e) => {
+                        // Prevent clicks on the container from propagating to the overlay
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
             >
                 <div className="rating-modal-header">
                     <div>
@@ -277,6 +281,51 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         <p className="rating-modal-subtitle">Added by {road.user?.name}</p>
                     </div>
                     <div className="flex items-center">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Dispatch event to view road on map
+                                const event = new CustomEvent('viewRoadOnMap', {
+                                    detail: { road }
+                                });
+                                window.dispatchEvent(event);
+                                onClose();
+                            }}
+                            className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-bold shadow-md mr-2"
+                        >
+                            View on Map
+                        </button>
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Dispatch event to navigate to road
+                                const event = new CustomEvent('navigateToRoad', {
+                                    detail: { road }
+                                });
+                                window.dispatchEvent(event);
+                            }}
+                            className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 font-bold shadow-md mr-2"
+                        >
+                            Navigate
+                        </button>
+                        {auth?.user && (
+                            <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    // Dispatch event to save road to collection
+                                    const event = new CustomEvent('saveRoadToCollection', {
+                                        detail: { road }
+                                    });
+                                    window.dispatchEvent(event);
+                                }}
+                                className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-bold shadow-md mr-2"
+                            >
+                                Save to Collection
+                            </button>
+                        )}
                         {auth?.user?.id === road.user?.id && (
                             <button
                                 onClick={() => {
@@ -287,7 +336,7 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                                     window.dispatchEvent(event);
                                     onClose();
                                 }}
-                                className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 font-bold shadow-md mr-4"
+                                className="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 font-bold shadow-md mr-4"
                             >
                                 Edit Road
                             </button>
@@ -479,7 +528,8 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         </button>
                     )}
                 </div>
+                </div>
             </div>
-        </div>
+        </Portal>
     );
 }

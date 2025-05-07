@@ -1,0 +1,81 @@
+/* Modal fixes for z-index and pointer events */
+
+/* Portal roots should be on top of everything */
+#navigation-modal-root,
+#rating-modal-root,
+#collection-modal-root {
+    position: relative;
+    z-index: 9999999 !important;
+}
+
+/* Ensure navigation modal is always on top */
+.navigation-modal,
+.navigation-modal-overlay,
+.navigation-app-selector {
+    z-index: 9999999 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.navigation-modal-content {
+    z-index: 10000000 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure rating modal (view details) is always on top */
+.rating-modal-overlay {
+    z-index: 9999999 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.rating-modal-container {
+    z-index: 10000000 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure social modal is below other modals */
+.social-modal {
+    z-index: 9999 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.social-modal-content {
+    z-index: 10000 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+/* Fix for buttons in modals */
+.rating-modal-container button,
+.navigation-modal-content button,
+.social-modal-content button {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Fix for inputs in modals */
+.rating-modal-container input,
+.rating-modal-container textarea,
+.navigation-modal-content input,
+.navigation-modal-content select,
+.social-modal-content input,
+.social-modal-content textarea {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* Fix for modal overlays */
+.fixed.inset-0 {
+    pointer-events: auto !important;
+}
+
+/* Ensure all interactive elements are clickable */
+button, a, input, textarea, select, [role="button"] {
+    pointer-events: auto !important;
+}

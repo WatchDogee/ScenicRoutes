@@ -45,12 +45,14 @@ export default function Modal({
             <Dialog
                 as="div"
                 id="modal"
-                className="fixed inset-0 z-[9999] flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
+                className="fixed inset-0 flex transform items-center overflow-y-auto px-4 py-6 transition-all sm:px-0"
                 style={{
                     display: 'flex !important',
                     visibility: 'visible !important',
                     opacity: 1,
-                    pointerEvents: 'auto'
+                    pointerEvents: 'auto',
+                    zIndex: 9999,
+                    position: 'fixed'
                 }}
                 onClick={(e) => {
                     // Prevent clicks on the dialog from propagating
@@ -79,7 +81,11 @@ export default function Modal({
                 >
                     <DialogPanel
                         className={`mb-6 transform overflow-hidden rounded-lg bg-white shadow-xl transition-all sm:mx-auto sm:w-full ${maxWidthClass}`}
-                        style={{ pointerEvents: 'auto' }}
+                        style={{
+                            pointerEvents: 'auto',
+                            position: 'relative',
+                            zIndex: 10000
+                        }}
                         onClick={(e) => {
                             // Always stop propagation to prevent closing
                             e.stopPropagation();

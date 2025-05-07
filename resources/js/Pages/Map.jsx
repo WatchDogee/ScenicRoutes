@@ -91,6 +91,8 @@ export default function Map() {
     const [sortBy, setSortBy] = useState('rating');
     const [availableTags, setAvailableTags] = useState([]);
     const [selectedTagIds, setSelectedTagIds] = useState([]);
+    const [roadToAddToCollection, setRoadToAddToCollection] = useState(null);
+    const [activeTab, setActiveTab] = useState('leaderboard');
     // Local state for settings that need to be tracked in this component
     const [localSettings, setLocalSettings] = useState({
         default_search_radius: 10,
@@ -1690,12 +1692,80 @@ export default function Map() {
             }
         };
 
+        const handleViewRoadOnMap = (event) => {
+            console.log('View road on map event received:', event.detail);
+            const { road } = event.detail;
+            if (road && road.road_coordinates) {
+                try {
+                    // Close any open modals
+                    setShowSocialModal(false);
+
+                    // Parse the road coordinates
+                    const coordinates = typeof road.road_coordinates === 'string'
+                        ? JSON.parse(road.road_coordinates)
+                        : road.road_coordinates;
+
+                    if (coordinates && coordinates.length > 0) {
+                        // Calculate the center of the road
+                        const bounds = L.latLngBounds(coordinates.map(coord => [coord[0], coord[1]]));
+                        const center = bounds.getCenter();
+
+                        // Set the map view to the road
+                        if (mapRef.current) {
+                            mapRef.current.setView([center.lat, center.lng], 13);
+
+                            // Draw the road on the map
+                            if (roadLayerRef.current) {
+                                mapRef.current.removeLayer(roadLayerRef.current);
+                            }
+
+                            roadLayerRef.current = L.polyline(coordinates, {
+                                color: '#3388ff',
+                                weight: 5,
+                                opacity: 0.8
+                            }).addTo(mapRef.current);
+
+                            // Fit the map to the road bounds
+                            mapRef.current.fitBounds(bounds, { padding: [50, 50] });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error viewing road on map:', error);
+                }
+            }
+        };
+
+        const handleSaveRoadToCollection = (event) => {
+            console.log('Save road to collection event received:', event.detail);
+            const { road } = event.detail;
+
+            // Check if user is authenticated
+            if (auth.user) {
+                console.log('User is authenticated, opening collections modal');
+                // Open the social modal with the collections tab active
+                setShowSocialModal(true);
+                setActiveTab('collections');
+
+                // Set the road to add to a collection
+                setRoadToAddToCollection(road);
+
+                // Update global auth state for child components
+                window.isUserAuthenticated = true;
+                window.userId = auth.user.id;
+            } else {
+                console.log('User is not authenticated');
+                alert('You need to be logged in to save roads to collections');
+            }
+        };
+
         // Add event listeners
         window.addEventListener('viewCollectionDetails', handleViewCollectionDetails);
         window.addEventListener('editCollection', handleEditCollection);
         window.addEventListener('editRoad', handleEditRoad);
         window.addEventListener('viewRoadDetails', handleViewRoadDetails);
         window.addEventListener('navigateToRoad', handleNavigateToRoad);
+        window.addEventListener('viewRoadOnMap', handleViewRoadOnMap);
+        window.addEventListener('saveRoadToCollection', handleSaveRoadToCollection);
 
         // Clean up
         return () => {
@@ -1704,6 +1774,8 @@ export default function Map() {
             window.removeEventListener('editRoad', handleEditRoad);
             window.removeEventListener('viewRoadDetails', handleViewRoadDetails);
             window.removeEventListener('navigateToRoad', handleNavigateToRoad);
+            window.removeEventListener('viewRoadOnMap', handleViewRoadOnMap);
+            window.removeEventListener('saveRoadToCollection', handleSaveRoadToCollection);
         };
     }, []);
 
@@ -2439,36 +2511,17 @@ export default function Map() {
 
             {/* Navigation App Selector Modal */}
             {selectedRoad && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000]"
-                    style={{ pointerEvents: 'auto' }}
-                    onClick={(e) => {
-                        // Prevent clicks on the overlay from closing the modal
-                        e.preventDefault();
-                        e.stopPropagation();
+                <NavigationAppSelector
+                    coordinates={selectedRoad.road_coordinates}
+                    roadName={selectedRoad.road_name}
+                    onClose={() => {
+                        setSelectedRoad(null);
+                        // Close the social modal if it's open
+                        if (showSocialModal) {
+                            setShowSocialModal(false);
+                        }
                     }}
-                >
-                    <div
-                        className="bg-white p-6 rounded-lg max-w-md w-full mx-4"
-                        style={{ pointerEvents: 'auto' }}
-                        onClick={(e) => {
-                            // Prevent clicks on the container from propagating to the overlay
-                            e.stopPropagation();
-                        }}
-                    >
-                        <NavigationAppSelector
-                            coordinates={selectedRoad.road_coordinates}
-                            roadName={selectedRoad.road_name}
-                            onClose={() => {
-                                setSelectedRoad(null);
-                                // Close the social modal if it's open
-                                if (showSocialModal) {
-                                    setShowSocialModal(false);
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
+                />
             )}
 
             {/* Social Modal */}
@@ -2479,8 +2532,12 @@ export default function Map() {
                         console.log('Closing social modal');
                         setShowSocialModal(false);
                         setSelectedCollectionId(null); // Reset collection ID when closing
+                        setRoadToAddToCollection(null); // Reset road to add when closing
                     }}
                     selectedCollectionId={selectedCollectionId}
+                    roadToAdd={roadToAddToCollection}
+                    activeTab={activeTab}
+                    setActiveTab={setActiveTab}
                     onViewRoadDetails={(roadId, e) => {
                         try {
                             console.log("View road details from social modal:", roadId);
@@ -2528,15 +2585,21 @@ export default function Map() {
             )}
 
             {/* Rating Modal */}
-            <RatingModal
-                isOpen={ratingModalOpen}
-                onClose={() => setRatingModalOpen(false)}
-                onSubmit={handleSubmitReview}
-                road={selectedRoadForReview}
-                auth={auth}
-                initialRating={localRating}
-                initialComment={localComment}
-            />
+            {ratingModalOpen && selectedRoadForReview && (
+                <RatingModal
+                    isOpen={ratingModalOpen}
+                    onClose={() => {
+                        console.log('Closing rating modal');
+                        setRatingModalOpen(false);
+                        setSelectedRoadForReview(null);
+                    }}
+                    onSubmit={handleSubmitReview}
+                    road={selectedRoadForReview}
+                    auth={auth}
+                    initialRating={localRating}
+                    initialComment={localComment}
+                />
+            )}
 
             {/* Self Profile Modal */}
             <SelfProfileModal

@@ -9,7 +9,7 @@ import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
 
-export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId }) {
+export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId, roadToAdd, activeTab: initialActiveTab, setActiveTab: setParentActiveTab }) {
     // Temporary auth state until we fix the context
     const [authState, setAuthState] = useState({
         isAuthenticated: false,
@@ -41,27 +41,37 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
             document.head.appendChild(styleTag);
         }
 
-        const token = localStorage.getItem('token');
-        if (token) {
-            axios.get('/api/user', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            .then(response => {
-                console.log('User data loaded for SocialModal');
-                setAuthState({
-                    isAuthenticated: true,
-                    user: response.data
-                });
-            })
-            .catch((error) => {
-                console.error('Error loading user data for SocialModal:', error);
-                setAuthState({
-                    isAuthenticated: false,
-                    user: null
-                });
+        // Check if we have global auth state from the Map component
+        if (window.isUserAuthenticated && window.userId) {
+            console.log('Using global auth state for SocialModal');
+            setAuthState({
+                isAuthenticated: true,
+                user: { id: window.userId }
             });
         } else {
-            console.log('No token found for SocialModal');
+            // Fallback to token check
+            const token = localStorage.getItem('token');
+            if (token) {
+                axios.get('/api/user', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                .then(response => {
+                    console.log('User data loaded for SocialModal');
+                    setAuthState({
+                        isAuthenticated: true,
+                        user: response.data
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error loading user data for SocialModal:', error);
+                    setAuthState({
+                        isAuthenticated: false,
+                        user: null
+                    });
+                });
+            } else {
+                console.log('No token found for SocialModal');
+            }
         }
 
         // Cleanup function
@@ -75,7 +85,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     }, [isOpen]);
 
     const { isAuthenticated, user } = authState;
-    const [activeTab, setActiveTab] = useState('leaderboard');
+    const [activeTab, setActiveTab] = useState(initialActiveTab || 'leaderboard');
     const [showCollectionModal, setShowCollectionModal] = useState(false);
     const [showUserProfileModal, setShowUserProfileModal] = useState(false);
     const [showCollectionDetailsModal, setShowCollectionDetailsModal] = useState(false);
@@ -107,8 +117,25 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
             setShowCollectionDetailsModal(true);
             // Switch to collections tab
             setActiveTab('collections');
+            if (setParentActiveTab) {
+                setParentActiveTab('collections');
+            }
         }
     }, [isOpen, initialCollectionId]);
+
+    // Handle road to add to collection
+    useEffect(() => {
+        if (isOpen && roadToAdd) {
+            console.log('Road to add to collection received:', roadToAdd);
+            // Switch to collections tab
+            setActiveTab('collections');
+            if (setParentActiveTab) {
+                setParentActiveTab('collections');
+            }
+            // Open the collection modal with the road to add
+            setShowCollectionModal(true);
+        }
+    }, [isOpen, roadToAdd]);
 
     const fetchCollections = async () => {
         try {
@@ -557,7 +584,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 onClose={showCollectionModal ? () => {} : onClose}
                 maxWidth="4xl"
                 staticBackdrop={true}>
-                <div className="p-6" style={{ zIndex: 2000 }}>
+                <div className="p-6" style={{ zIndex: 9000 }}>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-2xl font-bold text-blue-600">Social Hub</h2>
                         <div className="flex items-center">
@@ -586,25 +613,45 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     <div className="flex overflow-x-auto border-b mb-4">
                         <button
                             className={`px-4 py-3 ${activeTab === 'leaderboard' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
-                            onClick={() => setActiveTab('leaderboard')}
+                            onClick={() => {
+                                setActiveTab('leaderboard');
+                                if (setParentActiveTab) {
+                                    setParentActiveTab('leaderboard');
+                                }
+                            }}
                         >
                             <FaTrophy className="inline mr-1" /> Leaderboard
                         </button>
                         <button
                             className={`px-4 py-3 ${activeTab === 'collections' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
-                            onClick={() => setActiveTab('collections')}
+                            onClick={() => {
+                                setActiveTab('collections');
+                                if (setParentActiveTab) {
+                                    setParentActiveTab('collections');
+                                }
+                            }}
                         >
                             <FaFolder className="inline mr-1" /> Collections
                         </button>
                         <button
                             className={`px-4 py-3 ${activeTab === 'following' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
-                            onClick={() => setActiveTab('following')}
+                            onClick={() => {
+                                setActiveTab('following');
+                                if (setParentActiveTab) {
+                                    setParentActiveTab('following');
+                                }
+                            }}
                         >
                             <FaUserFriends className="inline mr-1" /> Following
                         </button>
                         <button
                             className={`px-4 py-3 ${activeTab === 'feed' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
-                            onClick={() => setActiveTab('feed')}
+                            onClick={() => {
+                                setActiveTab('feed');
+                                if (setParentActiveTab) {
+                                    setParentActiveTab('feed');
+                                }
+                            }}
                         >
                             <FaUsers className="inline mr-1" /> Feed
                         </button>
@@ -644,6 +691,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     setShowCollectionModal(false);
                 }}
                 onSuccess={handleCollectionCreated}
+                roadToAdd={roadToAdd}
             />
 
             {/* Collection Details Modal */}
