@@ -33,9 +33,19 @@ export default function ProfilePicture({ user, size = 'md', className = '' }) {
         if (!user) return null;
 
         // Check different possible properties for the profile picture
-        return user.profile_picture_url ||
-               user.profile_picture ||
-               (user.profile_picture_path ? `/storage/${user.profile_picture_path}` : null);
+        const picturePath = user.profile_picture_url ||
+                          user.profile_picture ||
+                          (user.profile_picture_path ? user.profile_picture_path : null);
+
+        if (!picturePath) return null;
+
+        // If the path already starts with http, return it as is
+        if (picturePath.startsWith('http')) {
+            return picturePath;
+        }
+
+        // Otherwise, construct the full URL using the current origin
+        return `${window.location.origin}/storage/${picturePath.replace(/^\/storage\//, '')}`;
     };
 
     const profilePictureUrl = getProfilePictureUrl();

@@ -23,7 +23,9 @@ class SavedRoad extends Model
         'elevation_gain',
         'elevation_loss',
         'max_elevation',
-        'min_elevation'
+        'min_elevation',
+        'country',
+        'region'
     ];
 
     public function user()

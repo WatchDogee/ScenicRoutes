@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class CollectionController extends Controller
 {
@@ -32,11 +33,45 @@ class CollectionController extends Controller
      */
     public function publicCollections(Request $request)
     {
-        $collections = Collection::where('is_public', true)
-            ->with(['user:id,name,profile_picture', 'roads' => function($query) {
-                $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating')
-                    ->limit(3); // Just get a few roads for preview
-            }])
+        $country = $request->input('country');
+        $query = $request->input('query');
+        $tagIds = $request->input('tags') ? explode(',', $request->input('tags')) : null;
+
+        // Start with base query
+        $collectionsQuery = Collection::where('is_public', true);
+
+        // Filter by search query if provided
+        if ($query) {
+            $collectionsQuery->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%");
+            });
+        }
+
+        // Filter by tags if provided
+        if ($tagIds) {
+            $collectionsQuery->whereHas('tags', function($q) use ($tagIds) {
+                $q->whereIn('tags.id', $tagIds);
+            });
+        }
+
+        // Filter by country if provided
+        if ($country) {
+            $collectionsQuery->whereHas('roads', function($q) use ($country) {
+                $q->where('country', $country);
+            });
+        }
+
+        // Get collections with related data
+        $collections = $collectionsQuery
+            ->with([
+                'user:id,name,profile_picture',
+                'tags',
+                'roads' => function($query) {
+                    $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating', 'country', 'region')
+                        ->limit(3); // Just get a few roads for preview
+                }
+            ])
             ->latest()
             ->paginate(10);
 

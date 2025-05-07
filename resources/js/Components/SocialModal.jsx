@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaPlus, FaTrophy, FaUsers, FaUserFriends, FaRoad, FaFolder, FaTimes } from 'react-icons/fa';
+import { FaPlus, FaTrophy, FaUsers, FaUserFriends, FaRoad, FaFolder, FaTimes, FaSearch, FaTag, FaMapMarkerAlt } from 'react-icons/fa';
 import Modal from './Modal';
 import CollectionModal from './CollectionModal';
 import CollectionDetailsModal from './CollectionDetailsModal';
@@ -97,6 +97,27 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // Search state
+    const [searchType, setSearchType] = useState('roads'); // 'roads' or 'collections'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchLocation, setSearchLocation] = useState('');
+    const [searchResults, setSearchResults] = useState({ roads: [], collections: [] });
+    const [searchTags, setSearchTags] = useState([]);
+    const [availableTags, setAvailableTags] = useState([]);
+    const [selectedTagIds, setSelectedTagIds] = useState([]);
+    const [minRating, setMinRating] = useState(0);
+    const [curvinessFilter, setCurvinessFilter] = useState('all');
+    const [lengthFilter, setLengthFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('rating');
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState(null);
+    const [locationSearchResults, setLocationSearchResults] = useState([]);
+    const [countries, setCountries] = useState([]);
+    const [regions, setRegions] = useState([]);
+    const [selectedCountry, setSelectedCountry] = useState('');
+    const [selectedRegion, setSelectedRegion] = useState('');
+    const [loadingCountries, setLoadingCountries] = useState(false);
+
     useEffect(() => {
         if (isOpen) {
             // Double-check authentication status
@@ -110,9 +131,182 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 fetchFollowing();
             } else if (activeTab === 'feed' && isActuallyAuthenticated) {
                 fetchFeed();
+            } else if (activeTab === 'search') {
+                // Fetch available tags for search filtering
+                fetchAvailableTags();
+                // Fetch available countries
+                fetchCountries();
+
+                // Load all public roads by default when search tab is opened
+                fetchAllPublicRoads();
             }
         }
     }, [activeTab, isAuthenticated, user, isOpen]);
+
+    // Function to fetch all public roads
+    const fetchAllPublicRoads = async () => {
+        try {
+            console.log('Automatically fetching all public roads for initial display...');
+            setIsSearching(true);
+
+            const response = await axios.get('/api/debug/roads');
+            console.log('Initial public roads response:', response.data);
+
+            if (response.data && response.data.roads) {
+                setSearchResults({
+                    ...searchResults,
+                    roads: response.data.roads
+                });
+                console.log(`Found ${response.data.roads.length} public roads for initial display`);
+            } else {
+                console.error('Unexpected response format from debug/roads endpoint');
+                setSearchResults({ ...searchResults, roads: [] });
+            }
+        } catch (error) {
+            console.error('Error fetching initial public roads:', error);
+            setSearchResults({ ...searchResults, roads: [] });
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Fetch available tags for search filtering
+    const fetchAvailableTags = async () => {
+        try {
+            const response = await axios.get('/api/tags');
+            setAvailableTags(response.data);
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+            setSearchError('Failed to load tags for filtering');
+        }
+    };
+
+    // Fetch available countries
+    const fetchCountries = async () => {
+        try {
+            setLoadingCountries(true);
+
+            // First try to get countries from the API - only get countries with public roads
+            try {
+                const response = await axios.get('/api/countries', {
+                    params: { public_only: true }
+                });
+                console.log('Countries from API:', response.data);
+
+                if (response.data && response.data.length > 0) {
+                    setCountries(response.data);
+                } else {
+                    // If no countries returned, add some default countries for testing
+                    console.log('No countries returned from API, adding default countries');
+                    setCountries(['Latvia', 'Estonia', 'Lithuania', 'Finland', 'Sweden', 'Norway']);
+                }
+            } catch (apiError) {
+                console.error('Error fetching countries from API:', apiError);
+                // Add default countries for testing
+                console.log('Adding default countries due to API error');
+                setCountries(['Latvia', 'Estonia', 'Lithuania', 'Finland', 'Sweden', 'Norway']);
+            }
+
+            // Try to get debug information about available roads
+            try {
+                const debugResponse = await axios.get('/api/debug/roads');
+                console.log('Debug roads information:', debugResponse.data);
+
+                if (debugResponse.data && debugResponse.data.countries && debugResponse.data.countries.length > 0) {
+                    console.log('Found countries with roads in database:', debugResponse.data.countries);
+                    // Update countries list with actual data from database
+                    setCountries(debugResponse.data.countries);
+                }
+            } catch (debugError) {
+                console.error('Error fetching debug road information:', debugError);
+            }
+
+            setLoadingCountries(false);
+        } catch (error) {
+            console.error('Error in fetchCountries:', error);
+            setLoadingCountries(false);
+            // Add default countries as fallback
+            setCountries(['Latvia', 'Estonia', 'Lithuania', 'Finland', 'Sweden', 'Norway']);
+        }
+    };
+
+    // Fetch regions for a selected country
+    const fetchRegions = async (country) => {
+        if (!country) {
+            setRegions([]);
+            return;
+        }
+
+        try {
+            // First try to get regions from the API - only get regions with public roads
+            try {
+                const response = await axios.get('/api/regions', {
+                    params: {
+                        country,
+                        public_only: true
+                    }
+                });
+                console.log(`Regions for ${country} from API:`, response.data);
+
+                if (response.data && response.data.length > 0) {
+                    setRegions(response.data);
+                } else {
+                    // If no regions returned, add some default regions for testing
+                    console.log(`No regions returned for ${country}, adding default regions`);
+
+                    // Add default regions based on country
+                    if (country === 'Latvia') {
+                        setRegions(['Riga', 'Vidzeme', 'Kurzeme', 'Zemgale', 'Latgale']);
+                    } else if (country === 'Estonia') {
+                        setRegions(['Tallinn', 'Tartu', 'Pärnu', 'Narva']);
+                    } else if (country === 'Lithuania') {
+                        setRegions(['Vilnius', 'Kaunas', 'Klaipėda', 'Šiauliai']);
+                    } else {
+                        setRegions(['Region 1', 'Region 2', 'Region 3']);
+                    }
+                }
+            } catch (apiError) {
+                console.error(`Error fetching regions for ${country} from API:`, apiError);
+                // Add default regions for testing
+                console.log(`Adding default regions for ${country} due to API error`);
+
+                // Add default regions based on country
+                if (country === 'Latvia') {
+                    setRegions(['Riga', 'Vidzeme', 'Kurzeme', 'Zemgale', 'Latgale']);
+                } else if (country === 'Estonia') {
+                    setRegions(['Tallinn', 'Tartu', 'Pärnu', 'Narva']);
+                } else if (country === 'Lithuania') {
+                    setRegions(['Vilnius', 'Kaunas', 'Klaipėda', 'Šiauliai']);
+                } else {
+                    setRegions(['Region 1', 'Region 2', 'Region 3']);
+                }
+            }
+        } catch (error) {
+            console.error(`Error in fetchRegions for ${country}:`, error);
+            setRegions([]);
+
+            // Add default regions as fallback
+            if (country === 'Latvia') {
+                setRegions(['Riga', 'Vidzeme', 'Kurzeme', 'Zemgale', 'Latgale']);
+            } else if (country === 'Estonia') {
+                setRegions(['Tallinn', 'Tartu', 'Pärnu', 'Narva']);
+            } else if (country === 'Lithuania') {
+                setRegions(['Vilnius', 'Kaunas', 'Klaipėda', 'Šiauliai']);
+            } else {
+                setRegions(['Region 1', 'Region 2', 'Region 3']);
+            }
+        }
+    };
+
+    // Handle country selection
+    useEffect(() => {
+        if (selectedCountry) {
+            fetchRegions(selectedCountry);
+        } else {
+            setRegions([]);
+            setSelectedRegion('');
+        }
+    }, [selectedCountry]);
 
     // Handle selected collection ID from props
     useEffect(() => {
@@ -312,6 +506,1065 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
         if (activeTab === 'feed') {
             fetchFeed();
         }
+    };
+
+    // Search for location using Nominatim API
+    const searchForLocation = async (query) => {
+        if (!query.trim()) {
+            setLocationSearchResults([]);
+            return;
+        }
+
+        setIsSearching(true);
+
+        try {
+            const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+                params: {
+                    q: query,
+                    format: 'json',
+                    limit: 5,
+                    addressdetails: 1,
+                    'accept-language': 'en',
+                    dedupe: 1
+                },
+                withCredentials: false,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.data.length === 0) {
+                setLocationSearchResults([]);
+                return;
+            }
+
+            const formattedResults = response.data
+                .filter(result => result.type !== 'house' && result.type !== 'postcode')
+                .map(result => ({
+                    ...result,
+                    displayName: formatLocationName(result)
+                }));
+
+            setLocationSearchResults(formattedResults);
+        } catch (error) {
+            console.error('Error searching location:', error);
+            setSearchError('Failed to search location. Please try again.');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Format location name for display
+    const formatLocationName = (result) => {
+        const address = result.address;
+        const parts = [];
+
+        // Add the most specific location first
+        if (address.city || address.town || address.village || address.municipality) {
+            parts.push(address.city || address.town || address.village || address.municipality);
+        }
+
+        // Add county/state/region if available
+        if (address.county) {
+            parts.push(address.county);
+        } else if (address.state || address.region) {
+            parts.push(address.state || address.region);
+        }
+
+        // Always add country
+        if (address.country) {
+            parts.push(address.country);
+        }
+
+        // If no parts were added (e.g., for natural features), use the display name
+        if (parts.length === 0) {
+            return result.display_name.split(',').slice(0, 3).join(',');
+        }
+
+        return parts.join(', ');
+    };
+
+    // Handle location selection
+    const handleLocationSelect = (location) => {
+        setSearchLocation(location.displayName);
+        setLocationSearchResults([]);
+    };
+
+    // Search for roads based on current filters
+    const searchRoads = async () => {
+        console.log('searchRoads function called');
+        setIsSearching(true);
+        setSearchError(null);
+
+        try {
+            // Get coordinates from selected location if provided
+            let lat, lon;
+            let searchParams = {
+                length_filter: lengthFilter,
+                curviness_filter: curvinessFilter,
+                min_rating: minRating,
+                sort_by: sortBy,
+                tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null,
+                debug: true // Always include debug parameter
+            };
+
+            // Add a timestamp to prevent caching
+            searchParams.timestamp = new Date().getTime();
+
+            console.log('Search initiated with params:', searchParams);
+
+            console.log('Initial search params:', searchParams);
+
+            // Add country and region filters if selected
+            if (selectedCountry) {
+                searchParams.country = selectedCountry.trim();
+                console.log(`Setting country parameter to: "${searchParams.country}"`);
+
+                if (selectedRegion) {
+                    searchParams.region = selectedRegion.trim();
+                    console.log(`Setting region parameter to: "${searchParams.region}"`);
+                }
+
+                // If country is selected, we don't necessarily need coordinates
+                if (!searchLocation) {
+                    // Make the API call with just country/region filters
+                    console.log('Making country-based API call with params:', searchParams);
+
+                    // Add debug information to the request
+                    searchParams.debug = true;
+                    searchParams.timestamp = new Date().getTime();
+
+                    // Log the exact parameters being sent
+                    console.log('Search parameters being sent to API:');
+                    Object.entries(searchParams).forEach(([key, value]) => {
+                        console.log(`  ${key}: ${value} (type: ${typeof value})`);
+                    });
+
+                    try {
+                        // Try the regular endpoint first
+                        console.log('Using public-roads endpoint for search...');
+
+                        const response = await axios.get('/api/public-roads', { params: searchParams });
+                        console.log('Public-roads search response:', response.data);
+
+                        // Check if we have a debug response format or regular array
+                        if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                            console.log('Public-roads endpoint found roads! Using these results.');
+                            setSearchResults({
+                                ...searchResults,
+                                roads: response.data.roads
+                            });
+
+                            // Exit early with success
+                            setIsSearching(false);
+                            return;
+                        } else if (Array.isArray(response.data)) {
+                            console.log('Public-roads endpoint found roads! Using these results.');
+                            setSearchResults({
+                                ...searchResults,
+                                roads: response.data
+                            });
+
+                            // Exit early with success
+                            setIsSearching(false);
+                            return;
+                        }
+
+                        // If we get here, the response format was unexpected or no roads were found
+                        // Fall back to debug endpoint without create_test
+                        console.log('Public-roads endpoint returned unexpected format or no roads. Trying debug endpoint...');
+
+                        const debugParams = {
+                            ...searchParams,
+                            debug: true
+                        };
+
+                        const debugResponse = await axios.get('/api/debug/search', { params: debugParams });
+                        console.log('Debug search response:', debugResponse.data);
+
+                        if (debugResponse.data && debugResponse.data.roads && debugResponse.data.roads.length > 0) {
+                            console.log('Debug endpoint found roads! Using these results.');
+                            setSearchResults({
+                                ...searchResults,
+                                roads: debugResponse.data.roads
+                            });
+
+                            // Exit early with success
+                            setIsSearching(false);
+                            return;
+                        }
+
+                        // If both endpoints didn't find roads, log the issue
+                        console.log('Both endpoints found no roads with the current search parameters.');
+                        console.log('Country-based search parameters:', searchParams);
+
+                        // Log the country and region values that were used
+                        console.log('Search was performed with country:', searchParams.country);
+                        if (searchParams.region) {
+                            console.log('Search was performed with region:', searchParams.region);
+                        }
+
+                        // Check if we have a debug response format
+                        if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                            console.log('Debug info received:', response.data.debug);
+
+                            setSearchResults({
+                                ...searchResults,
+                                roads: response.data.roads
+                            });
+
+                            // Log the results for debugging
+                            if (response.data.roads.length === 0) {
+                                console.log('No roads found with the current country/region parameters');
+                                console.log(`No roads found in country: ${selectedCountry}`);
+                                if (selectedRegion) {
+                                    console.log(`No roads found in region: ${selectedRegion}`);
+                                }
+
+                                // Log debug information if available
+                                if (response.data.debug && response.data.debug.debug_info) {
+                                    const debugInfo = response.data.debug.debug_info;
+                                    console.log('Debug information:', debugInfo);
+                                    console.log(`Total roads in database: ${debugInfo.total_roads}`);
+                                    console.log(`Public roads in database: ${debugInfo.public_roads}`);
+                                    console.log(`Countries in database: ${debugInfo.countries_in_db.join(', ')}`);
+                                    console.log(`Regions in database: ${debugInfo.regions_in_db.join(', ')}`);
+
+                                    // If no roads found but we have test roads in the database, try creating a test road
+                                    if (debugInfo.public_roads > 0 && response.data.roads.length === 0) {
+                                        console.log('No roads found in search results but public roads exist. Trying to create a test road...');
+
+                                        // Try creating a test road
+                                        const testParams = {
+                                            country: searchParams.country,
+                                            region: searchParams.region || 'Riga',
+                                            debug: true,
+                                            create_test: true,
+                                            timestamp: new Date().getTime()
+                                        };
+
+                                        try {
+                                            const testResponse = await axios.get('/api/public-roads', { params: testParams });
+                                            console.log('Test road creation response:', testResponse.data);
+
+                                            // Try searching again
+                                            const newResponse = await axios.get('/api/public-roads', { params: searchParams });
+
+                                            if (newResponse.data && newResponse.data.roads && Array.isArray(newResponse.data.roads)) {
+                                                setSearchResults({
+                                                    ...searchResults,
+                                                    roads: newResponse.data.roads
+                                                });
+
+                                                if (newResponse.data.roads.length > 0) {
+                                                    console.log(`Found ${newResponse.data.roads.length} roads after creating test road`);
+                                                }
+                                            }
+                                        } catch (testError) {
+                                            console.error('Error creating test road:', testError);
+                                        }
+                                    }
+                                }
+                            } else {
+                                console.log(`Found ${response.data.roads.length} roads matching the country/region criteria`);
+                            }
+                        }
+                        // Handle regular array response
+                        else if (Array.isArray(response.data)) {
+                            setSearchResults({
+                                ...searchResults,
+                                roads: response.data
+                            });
+
+                            // Log the results for debugging
+                            if (response.data.length === 0) {
+                                console.log('No roads found with the current country/region parameters');
+                                console.log(`No roads found in country: ${selectedCountry}`);
+                                if (selectedRegion) {
+                                    console.log(`No roads found in region: ${selectedRegion}`);
+                                }
+
+                                // Try creating a test road
+                                const testParams = {
+                                    country: searchParams.country,
+                                    region: searchParams.region || 'Riga',
+                                    debug: true,
+                                    create_test: true,
+                                    timestamp: new Date().getTime()
+                                };
+
+                                try {
+                                    const testResponse = await axios.get('/api/public-roads', { params: testParams });
+                                    console.log('Test road creation response:', testResponse.data);
+
+                                    // Try searching again
+                                    const newResponse = await axios.get('/api/public-roads', { params: searchParams });
+
+                                    if (Array.isArray(newResponse.data)) {
+                                        setSearchResults({
+                                            ...searchResults,
+                                            roads: newResponse.data
+                                        });
+
+                                        if (newResponse.data.length > 0) {
+                                            console.log(`Found ${newResponse.data.length} roads after creating test road`);
+                                        }
+                                    }
+                                } catch (testError) {
+                                    console.error('Error creating test road:', testError);
+                                }
+                            } else {
+                                console.log(`Found ${response.data.length} roads matching the country/region criteria`);
+                            }
+                        } else {
+                            console.error('Country-based response data is not an array:', response.data);
+                            setSearchError('Received invalid data format from the server. Please try again.');
+                        }
+                    } catch (error) {
+                        console.error('Country-based API call error:', error);
+                        if (error.response) {
+                            console.error('Country-based error response data:', error.response.data);
+                            console.error('Country-based error response status:', error.response.status);
+
+                            // Provide more specific error message based on status code
+                            if (error.response.status === 404) {
+                                setSearchError('The search endpoint was not found. Please contact support.');
+                            } else if (error.response.status === 500) {
+                                setSearchError('Server error occurred. Please try again later or contact support.');
+                            } else {
+                                setSearchError(`Error ${error.response.status}: ${error.response.data.error || 'Unknown error'}`);
+                            }
+                        } else if (error.request) {
+                            console.error('No response received:', error.request);
+                            setSearchError('No response received from server. Please check your internet connection.');
+                        } else {
+                            console.error('Error setting up request:', error.message);
+                            setSearchError(`Error: ${error.message}`);
+                        }
+                    }
+                    setIsSearching(false);
+                    return;
+                }
+            }
+
+            // If we have a location search, get coordinates
+            if (searchLocation) {
+                // Search for the location first
+                const locationResponse = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+                    params: {
+                        q: searchLocation,
+                        format: 'json',
+                        limit: 1
+                    },
+                    withCredentials: false
+                });
+
+                if (locationResponse.data.length === 0) {
+                    setSearchError('Location not found. Please try a different location.');
+                    setIsSearching(false);
+                    return;
+                }
+
+                lat = locationResponse.data[0].lat;
+                lon = locationResponse.data[0].lon;
+
+                // Add coordinates to search params
+                searchParams.lat = lat;
+                searchParams.lon = lon;
+            }
+
+            // Search for roads with all applicable parameters
+            console.log('Making API call to /api/public-roads with params:', searchParams);
+            try {
+                const response = await axios.get('/api/public-roads', { params: searchParams });
+                console.log('Search response:', response.data);
+                console.log('Response status:', response.status);
+                console.log('Response data length:', Array.isArray(response.data) ? response.data.length : 'Not an array');
+
+                // Check if we have a debug response format
+                if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                    console.log('Debug info received:', response.data.debug);
+
+                    setSearchResults({
+                        ...searchResults,
+                        roads: response.data.roads
+                    });
+
+                    // Log the results for debugging
+                    if (response.data.roads.length === 0) {
+                        console.log('No roads found with the current search parameters');
+                        if (selectedCountry) {
+                            console.log(`No roads found in country: ${selectedCountry}`);
+                        }
+                        if (selectedRegion) {
+                            console.log(`No roads found in region: ${selectedRegion}`);
+                        }
+
+                        // Log debug information if available
+                        if (response.data.debug && response.data.debug.debug_info) {
+                            const debugInfo = response.data.debug.debug_info;
+                            console.log('Debug information:', debugInfo);
+                            console.log(`Total roads in database: ${debugInfo.total_roads}`);
+                            console.log(`Public roads in database: ${debugInfo.public_roads}`);
+                            console.log(`Countries in database: ${debugInfo.countries_in_db.join(', ')}`);
+                            console.log(`Regions in database: ${debugInfo.regions_in_db.join(', ')}`);
+                        }
+                    } else {
+                        console.log(`Found ${response.data.roads.length} roads matching the search criteria`);
+                    }
+                }
+                // Handle regular array response
+                else if (Array.isArray(response.data)) {
+                    setSearchResults({
+                        ...searchResults,
+                        roads: response.data
+                    });
+
+                    // Log the results for debugging
+                    if (response.data.length === 0) {
+                        console.log('No roads found with the current search parameters');
+                        if (selectedCountry) {
+                            console.log(`No roads found in country: ${selectedCountry}`);
+                        }
+                        if (selectedRegion) {
+                            console.log(`No roads found in region: ${selectedRegion}`);
+                        }
+                    } else {
+                        console.log(`Found ${response.data.length} roads matching the search criteria`);
+                    }
+                } else {
+                    console.error('Response data is not an array:', response.data);
+                    setSearchError('Received invalid data format from the server. Please try again.');
+                }
+            } catch (error) {
+                console.error('API call error:', error);
+                if (error.response) {
+                    console.error('Error response data:', error.response.data);
+                    console.error('Error response status:', error.response.status);
+
+                    // Provide more specific error message based on status code
+                    if (error.response.status === 404) {
+                        setSearchError('The search endpoint was not found. Please contact support.');
+                    } else if (error.response.status === 500) {
+                        setSearchError('Server error occurred. Please try again later or contact support.');
+                    } else {
+                        setSearchError(`Error ${error.response.status}: ${error.response.data.error || 'Unknown error'}`);
+                    }
+                } else if (error.request) {
+                    // The request was made but no response was received
+                    console.error('No response received:', error.request);
+                    setSearchError('No response received from server. Please check your internet connection.');
+                } else {
+                    // Something happened in setting up the request
+                    console.error('Error setting up request:', error.message);
+                    setSearchError(`Error: ${error.message}`);
+                }
+            }
+        } catch (error) {
+            console.error('Error searching roads:', error);
+            setSearchError('Failed to search roads. Please try again.');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Search for collections
+    const searchCollections = async () => {
+        setIsSearching(true);
+        setSearchError(null);
+
+        try {
+            // Build search parameters
+            const searchParams = {};
+
+            if (searchQuery) {
+                searchParams.query = searchQuery;
+            }
+
+            if (selectedTagIds.length > 0) {
+                searchParams.tags = selectedTagIds.join(',');
+            }
+
+            if (selectedCountry) {
+                searchParams.country = selectedCountry;
+            }
+
+            // Fetch collections with filters applied on the server
+            const response = await axios.get('/api/public-collections', {
+                params: searchParams
+            });
+
+            // Get the collections from the response
+            let filteredCollections = response.data.data || [];
+
+            setSearchResults({
+                ...searchResults,
+                collections: filteredCollections
+            });
+        } catch (error) {
+            console.error('Error searching collections:', error);
+            setSearchError('Failed to search collections. Please try again.');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Handle search form submission
+    const handleSearch = async (e) => {
+        if (e && e.preventDefault) {
+            e.preventDefault();
+        }
+
+        console.log('Search form submitted', {
+            searchType,
+            searchQuery,
+            searchLocation,
+            selectedCountry,
+            selectedRegion,
+            minRating,
+            curvinessFilter,
+            lengthFilter,
+            sortBy,
+            selectedTagIds
+        });
+
+        if (searchType === 'roads') {
+            console.log('Searching for roads...');
+            setIsSearching(true);
+            setSearchError(null);
+
+            try {
+                // Build search parameters
+                const searchParams = {
+                    country: selectedCountry || '',
+                    region: selectedRegion || '',
+                    debug: true,
+                    timestamp: new Date().getTime(),
+                    length_filter: lengthFilter || 'all',
+                    curviness_filter: curvinessFilter || 'all',
+                    min_rating: minRating || 0,
+                    sort_by: sortBy || 'rating',
+                    tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null
+                };
+
+                console.log('Search parameters:', searchParams);
+
+                // Try the debug endpoint first as it's more reliable for filtering
+                try {
+                    const debugResponse = await axios.get('/api/debug/search', { params: searchParams });
+                    console.log('Debug search response:', debugResponse.data);
+
+                    if (debugResponse.data && debugResponse.data.roads) {
+                        // Filter roads based on country and region if specified
+                        let filteredRoads = debugResponse.data.roads;
+                        
+                        if (selectedCountry) {
+                            filteredRoads = filteredRoads.filter(road => 
+                                road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
+                            );
+                        }
+                        
+                        if (selectedRegion) {
+                            filteredRoads = filteredRoads.filter(road => 
+                                road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
+                            );
+                        }
+
+                        setSearchResults({
+                            ...searchResults,
+                            roads: filteredRoads
+                        });
+                        console.log(`Found ${filteredRoads.length} roads after filtering`);
+                    } else {
+                        // If debug endpoint fails, try public-roads endpoint
+                        const response = await axios.get('/api/public-roads', { params: searchParams });
+                        console.log('Public roads search response:', response.data);
+
+                        let roads = [];
+                        if (response.data && response.data.roads) {
+                            roads = response.data.roads;
+                        } else if (Array.isArray(response.data)) {
+                            roads = response.data;
+                        }
+
+                        // Filter roads based on country and region if specified
+                        if (selectedCountry) {
+                            roads = roads.filter(road => 
+                                road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
+                            );
+                        }
+                        
+                        if (selectedRegion) {
+                            roads = roads.filter(road => 
+                                road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
+                            );
+                        }
+
+                        setSearchResults({
+                            ...searchResults,
+                            roads: roads
+                        });
+                        console.log(`Found ${roads.length} roads after filtering`);
+                    }
+                } catch (error) {
+                    console.error('Error in search:', error);
+                    setSearchResults({ ...searchResults, roads: [] });
+                }
+            } catch (error) {
+                console.error('Error searching roads:', error);
+                setSearchError('Failed to search roads. Please try again.');
+            } finally {
+                setIsSearching(false);
+            }
+        } else {
+            console.log('Searching for collections...');
+            searchCollections();
+        }
+    };
+
+    // Render the search interface
+    const renderSearch = () => {
+        return (
+            <div className="space-y-6">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-xl font-semibold">Search</h3>
+                    <div className="flex space-x-2">
+                        <button
+                            className={`px-3 py-1 rounded-md ${searchType === 'roads' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            onClick={() => setSearchType('roads')}
+                        >
+                            <FaRoad className="inline mr-1" /> Roads
+                        </button>
+                        <button
+                            className={`px-3 py-1 rounded-md ${searchType === 'collections' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                            onClick={() => setSearchType('collections')}
+                        >
+                            <FaFolder className="inline mr-1" /> Collections
+                        </button>
+                    </div>
+                </div>
+
+                {searchError && (
+                    <div className="bg-red-100 text-red-700 p-3 rounded-md mb-4">
+                        {searchError}
+                    </div>
+                )}
+
+                <form onSubmit={handleSearch} className="space-y-2">
+                    {/* Common search fields */}
+                    <div className="space-y-2">
+                        {searchType === 'collections' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Search Collections
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Search by name or description..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        )}
+
+                        {/* Country and Region Selection - for both roads and collections */}
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    Country
+                                </label>
+                                <select
+                                    value={selectedCountry}
+                                    onChange={(e) => setSelectedCountry(e.target.value)}
+                                    className="w-full px-2 py-1 text-sm border rounded-md"
+                                >
+                                    <option value="">All Countries</option>
+                                    {loadingCountries ? (
+                                        <option disabled>Loading countries...</option>
+                                    ) : (
+                                        countries.map(country => (
+                                            <option key={country} value={country}>
+                                                {country}
+                                            </option>
+                                        ))
+                                    )}
+                                </select>
+                            </div>
+
+                            {selectedCountry && (
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Region
+                                    </label>
+                                    <select
+                                        value={selectedRegion}
+                                        onChange={(e) => setSelectedRegion(e.target.value)}
+                                        className="w-full px-2 py-1 text-sm border rounded-md"
+                                    >
+                                        <option value="">All Regions</option>
+                                        {regions.map(region => (
+                                            <option key={region} value={region}>
+                                                {region}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        {searchType === 'roads' && (
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 mb-1">
+                                    <FaMapMarkerAlt className="inline mr-1" /> Location
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter city, region, or place..."
+                                        value={searchLocation}
+                                        onChange={(e) => {
+                                            setSearchLocation(e.target.value);
+                                            searchForLocation(e.target.value);
+                                        }}
+                                        className="w-full px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    {locationSearchResults.length > 0 && (
+                                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                            {locationSearchResults.map((result, index) => (
+                                                <button
+                                                    key={`${result.place_id}-${index}`}
+                                                    type="button"
+                                                    className="w-full px-2 py-1 text-sm text-left hover:bg-gray-100 focus:bg-gray-100"
+                                                    onClick={() => handleLocationSelect(result)}
+                                                >
+                                                    {result.displayName}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tags filter for both roads and collections */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                <FaTag className="inline mr-1" /> Tags
+                            </label>
+                            <div className="flex flex-wrap gap-1 mb-1">
+                                {selectedTagIds.map(tagId => {
+                                    const tag = availableTags.find(t => t.id === tagId);
+                                    return tag ? (
+                                        <div
+                                            key={tag.id}
+                                            className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md flex items-center text-xs"
+                                        >
+                                            {tag.name}
+                                            <button
+                                                type="button"
+                                                className="ml-1 text-blue-600 hover:text-blue-800"
+                                                onClick={() => setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id))}
+                                            >
+                                                <FaTimes size={10} />
+                                            </button>
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
+                            <div className="flex flex-wrap gap-1 border p-1 rounded-md max-h-20 overflow-y-auto">
+                                {availableTags
+                                    .filter(tag => !selectedTagIds.includes(tag.id))
+                                    .map(tag => (
+                                        <button
+                                            key={tag.id}
+                                            type="button"
+                                            className="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md text-xs"
+                                            onClick={() => setSelectedTagIds([...selectedTagIds, tag.id])}
+                                        >
+                                            {tag.name}
+                                        </button>
+                                    ))
+                                }
+                            </div>
+                        </div>
+
+                        {searchType === 'roads' && (
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Min Rating
+                                    </label>
+                                    <select
+                                        value={minRating}
+                                        onChange={(e) => setMinRating(Number(e.target.value))}
+                                        className="w-full px-2 py-1 text-sm border rounded-md"
+                                    >
+                                        <option value="0">Any Rating</option>
+                                        <option value="3">3+ Stars</option>
+                                        <option value="4">4+ Stars</option>
+                                        <option value="4.5">4.5+ Stars</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                        Sort By
+                                    </label>
+                                    <select
+                                        value={sortBy}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        className="w-full px-2 py-1 text-sm border rounded-md"
+                                    >
+                                        <option value="rating">Highest Rated</option>
+                                        <option value="reviews">Most Reviewed</option>
+                                        <option value="recent">Recently Added</option>
+                                        <option value="length">Longest Routes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Search button */}
+                    <div className="mt-2">
+                        <button
+                            type="submit"
+                            className="w-full px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            disabled={isSearching}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleSearch(e);
+                            }}
+                        >
+                            {isSearching ? (
+                                <div className="flex items-center justify-center">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+                                    Searching...
+                                </div>
+                            ) : (
+                                'Search'
+                            )}
+                        </button>
+                    </div>
+                </form>
+
+                {/* Search Results */}
+                <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-3">Search Results</h3>
+
+                    {isSearching ? (
+                        <div className="text-center py-8">
+                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                            <p className="mt-2 text-gray-600">Searching...</p>
+                        </div>
+                    ) : (
+                        <>
+                            {searchType === 'roads' && (
+                                <div className="space-y-4">
+                                    {searchResults.roads.length === 0 ? (
+                                        <div className="text-center py-8 bg-gray-50 rounded border">
+                                            <FaRoad className="mx-auto text-4xl text-gray-400 mb-2" />
+                                            <p className="text-gray-600">No roads found matching your criteria</p>
+                                            <p className="text-sm text-gray-500 mt-1">
+                                                {selectedCountry ?
+                                                    `No public roads found in ${selectedCountry}${selectedRegion ? `, ${selectedRegion}` : ''}. ` :
+                                                    'Try adjusting your search filters or '}
+                                                {!selectedCountry && 'select a different country.'}
+                                                {selectedCountry && 'Make sure you have made some roads public in this area.'}
+                                            </p>
+                                            <p className="text-sm text-gray-500 mt-2">
+                                                Remember that only roads marked as public will appear in search results.
+                                            </p>
+                                            <p className="text-sm text-gray-500 mt-2">
+                                                To make a road public, go to your saved roads, click on a road, and use the "Make Public" button.
+                                            </p>
+
+                                            {/* Create a test road button */}
+                                            <div className="mt-4 border-t pt-4">
+                                                <p className="text-sm text-gray-600 mb-2">
+                                                    <strong>Developer Option:</strong> Create a test road in the selected country/region to verify search functionality.
+                                                </p>
+                                                <div className="flex flex-col space-y-2">
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                setIsSearching(true);
+                                                                // Add debug parameter to create a test road
+                                                                const params = {
+                                                                    country: selectedCountry || 'Latvia',
+                                                                    region: selectedRegion || 'Riga',
+                                                                    debug: true,
+                                                                    create_test: true,
+                                                                    timestamp: new Date().getTime()
+                                                                };
+
+                                                                console.log('Creating test road with params:', params);
+
+                                                                // Use the debug endpoint which is specifically designed to create test roads
+                                                                console.log('Using debug endpoint to create test road...');
+                                                                const debugResponse = await axios.get('/api/debug/search', { params });
+                                                                console.log('Debug test road creation response:', debugResponse.data);
+
+                                                                if (debugResponse.data && debugResponse.data.roads && debugResponse.data.roads.length > 0) {
+                                                                    setSearchResults({
+                                                                        ...searchResults,
+                                                                        roads: debugResponse.data.roads
+                                                                    });
+                                                                    alert(`Test road created successfully! Found ${debugResponse.data.roads.length} roads.`);
+
+                                                                    // After creating a test road, run the search again to refresh results
+                                                                    setTimeout(() => {
+                                                                        handleSearch({ preventDefault: () => {} });
+                                                                    }, 500);
+                                                                } else {
+                                                                    alert('No roads were created. Please try again with a different country/region.');
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Error creating test road:', error);
+                                                                alert('Error creating test road. Please try again later.');
+                                                            } finally {
+                                                                setIsSearching(false);
+                                                            }
+                                                        }}
+                                                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                                                        disabled={isSearching}
+                                                    >
+                                                        {isSearching ? 'Creating...' : 'Create Test Road'}
+                                                    </button>
+
+                                                    <button
+                                                        onClick={async () => {
+                                                            try {
+                                                                setIsSearching(true);
+                                                                console.log('Fetching all public roads...');
+
+                                                                // Get all public roads without filters
+                                                                const response = await axios.get('/api/debug/roads');
+                                                                console.log('All public roads response:', response.data);
+
+                                                                if (response.data && response.data.roads) {
+                                                                    setSearchResults({
+                                                                        ...searchResults,
+                                                                        roads: response.data.roads
+                                                                    });
+                                                                    console.log(`Found ${response.data.roads.length} public roads in total`);
+                                                                } else {
+                                                                    console.error('Unexpected response format from debug/roads endpoint');
+                                                                    setSearchResults({ ...searchResults, roads: [] });
+                                                                }
+                                                            } catch (error) {
+                                                                console.error('Error fetching all public roads:', error);
+                                                                alert('Error fetching public roads. Please try again later.');
+                                                            } finally {
+                                                                setIsSearching(false);
+                                                            }
+                                                        }}
+                                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                                                        disabled={isSearching}
+                                                    >
+                                                        {isSearching ? 'Loading...' : 'Show All Public Roads'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-gray-600">Found {searchResults.roads.length} roads</p>
+                                            <div className="space-y-4">
+                                                {searchResults.roads.map(road => (
+                                                    <RoadCard
+                                                        key={road.id}
+                                                        road={road}
+                                                        onViewMap={() => onViewRoad && onViewRoad(road)}
+                                                        onViewDetails={(roadId, e) => {
+                                                            if (onViewRoadDetails) {
+                                                                onViewRoadDetails(roadId, e);
+                                                            }
+                                                        }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+
+                            {searchType === 'collections' && (
+                                <div className="space-y-4">
+                                    {searchResults.collections.length === 0 ? (
+                                        <div className="text-center py-8 bg-gray-50 rounded border">
+                                            <p className="text-gray-600">No collections found matching your criteria</p>
+                                            <p className="text-sm text-gray-500 mt-1">Try adjusting your search filters</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <p className="text-sm text-gray-600">Found {searchResults.collections.length} collections</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {searchResults.collections.map(collection => (
+                                                    <div key={collection.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                                                        <div className="flex items-center">
+                                                            {collection.cover_image ? (
+                                                                <img
+                                                                    src={`/storage/${collection.cover_image}`}
+                                                                    alt={collection.name}
+                                                                    className="w-12 h-12 object-cover rounded"
+                                                                />
+                                                            ) : (
+                                                                <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                                                    <FaFolder className="text-gray-400" />
+                                                                </div>
+                                                            )}
+                                                            <div className="ml-3">
+                                                                <h4 className="font-medium">{collection.name}</h4>
+                                                                <div className="flex items-center text-sm text-gray-600">
+                                                                    <span>{collection.roads_count || collection.roads?.length || 0} roads</span>
+                                                                    <span className="mx-2">•</span>
+                                                                    <span className="flex items-center">
+                                                                        <ProfilePicture user={collection.user} size="xs" className="mr-1" />
+                                                                        {collection.user?.name || 'Unknown User'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {collection.description && (
+                                                            <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                                                                {collection.description}
+                                                            </p>
+                                                        )}
+
+                                                        {collection.tags && collection.tags.length > 0 && (
+                                                            <div className="flex flex-wrap gap-1 mt-2">
+                                                                {collection.tags.map(tag => (
+                                                                    <span key={tag.id} className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                                                                        {tag.name}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedCollectionId(collection.id);
+                                                                setShowCollectionDetailsModal(true);
+                                                            }}
+                                                            className="mt-2 text-sm text-blue-500 hover:text-blue-700"
+                                                        >
+                                                            View Details
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            </div>
+        );
     };
 
     const renderCollections = () => {
@@ -699,6 +1952,17 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                         >
                             <FaUsers className="inline mr-1" /> Feed
                         </button>
+                        <button
+                            className={`px-4 py-3 ${activeTab === 'search' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-600'}`}
+                            onClick={() => {
+                                setActiveTab('search');
+                                if (setParentActiveTab) {
+                                    setParentActiveTab('search');
+                                }
+                            }}
+                        >
+                            <FaSearch className="inline mr-1" /> Search
+                        </button>
                     </div>
 
                     <div className="max-h-[60vh] overflow-y-auto">
@@ -715,6 +1979,8 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                         {activeTab === 'following' && renderFollowing()}
 
                         {activeTab === 'feed' && renderFeed()}
+
+                        {activeTab === 'search' && renderSearch()}
                     </div>
                 </div>
             </Modal>

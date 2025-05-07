@@ -4,6 +4,7 @@ use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GetRoadsController;
 use App\Http\Controllers\LeaderboardController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PointOfInterestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedRoadController;
@@ -168,6 +169,136 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Public routes
 Route::get('/public-roads', [SavedRoadController::class, 'publicRoads']);
+Route::get('/public-roads/{id}', [SavedRoadController::class, 'showPublic']);
+
+// Debug endpoint to check all roads
+Route::get('/debug/roads', function() {
+    $roads = \App\Models\SavedRoad::select('id', 'road_name', 'country', 'region', 'is_public', 'length', 'corner_count', 'twistiness')
+        ->where('is_public', true)
+        ->get();
+
+    return response()->json([
+        'total_count' => $roads->count(),
+        'roads' => $roads,
+        'countries' => $roads->pluck('country')->unique()->values(),
+        'regions' => $roads->pluck('region')->unique()->values(),
+    ]);
+});
+
+// Debug endpoint to search roads by country, rating, and tags
+Route::get('/debug/search', function(Request $request) {
+    $country = $request->input('country');
+    $region = $request->input('region');
+    $minRating = $request->input('min_rating');
+    $tags = $request->input('tags');
+
+    // Log search parameters for debugging
+    \Log::info('Debug search parameters', [
+        'country' => $country,
+        'region' => $region,
+        'min_rating' => $minRating,
+        'tags' => $tags
+    ]);
+
+    $query = \App\Models\SavedRoad::with(['tags'])
+        ->where('is_public', true);
+
+    // Filter by country
+    if ($country) {
+        $query->where(function($q) use ($country) {
+            $q->whereRaw('LOWER(country) = ?', [strtolower($country)])
+              ->orWhere('country', $country)
+              ->orWhereRaw('country LIKE ?', ["%$country%"]);
+        });
+    }
+
+    // Filter by region
+    if ($region) {
+        $query->where(function($q) use ($region) {
+            $q->whereRaw('LOWER(region) = ?', [strtolower($region)])
+              ->orWhere('region', $region)
+              ->orWhereRaw('region LIKE ?', ["%$region%"]);
+        });
+    }
+
+    // Filter by minimum rating
+    if ($minRating) {
+        $query->where('average_rating', '>=', $minRating)
+              ->whereNotNull('average_rating')
+              ->where('average_rating', '>', 0);
+    }
+
+    // Filter by tags
+    if ($tags) {
+        $tagArray = is_array($tags) ? $tags : explode(',', $tags);
+        $query->whereHas('tags', function ($q) use ($tagArray) {
+            $q->whereIn('tags.id', $tagArray)
+              ->orWhereIn('tags.name', $tagArray);
+        });
+    }
+
+    $roads = $query->get();
+
+    // Always create a test road if requested or if no roads found
+    $createTest = $request->has('create_test') && ($request->input('create_test') === 'true' || $request->input('create_test') === true);
+
+    if (($roads->count() === 0 && $country) || $createTest) {
+        $user = \App\Models\User::first();
+
+        if ($user) {
+            // Generate a unique name with timestamp to avoid duplicates
+            $timestamp = date('His');
+            $testRoad = new \App\Models\SavedRoad([
+                'user_id' => $user->id,
+                'road_name' => "Debug Test Road in " . ($region ? "$region, " : "") . $country . " ($timestamp)",
+                'road_coordinates' => json_encode([
+                    [56.9496, 24.1052], // Default coordinates
+                    [56.9506, 24.1152],
+                    [56.9516, 24.1252]
+                ]),
+                'twistiness' => 0.005,
+                'corner_count' => 5,
+                'length' => 5000, // 5km
+                'is_public' => true,
+                'description' => "This is a debug test road created via direct API request",
+                'country' => $country,
+                'region' => $region ?: 'Test Region',
+                'elevation_gain' => 25,
+                'elevation_loss' => 9,
+                'max_elevation' => 135,
+                'min_elevation' => 110
+            ]);
+
+            $testRoad->save();
+
+            // Re-run the query to include the new road
+            $roads = $query->get();
+        }
+    }
+
+    return response()->json([
+        'query' => [
+            'country' => $country,
+            'region' => $region,
+            'min_rating' => $minRating,
+            'tags' => $tags,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ],
+        'total_count' => $roads->count(),
+        'roads' => $roads,
+        'debug' => [
+            'roads_with_ratings' => $roads->map(function($road) {
+                return [
+                    'id' => $road->id,
+                    'name' => $road->road_name,
+                    'average_rating' => $road->average_rating,
+                    'tags' => $road->tags->pluck('name')
+                ];
+            })
+        ]
+    ]);
+});
 
 // Leaderboard routes
 Route::get('/leaderboard', [LeaderboardController::class, 'all']);
@@ -179,6 +310,11 @@ Route::get('/leaderboard/most-followed-users', [LeaderboardController::class, 'm
 
 // Public collections
 Route::get('/public-collections', [CollectionController::class, 'publicCollections']);
+
+// Location routes
+Route::get('/countries', [LocationController::class, 'getCountries']);
+Route::get('/regions', [LocationController::class, 'getRegions']);
+Route::get('/country-stats', [LocationController::class, 'getCountryStats']);
 
 // Points of Interest routes
 Route::get('/pois', [PointOfInterestController::class, 'index']);

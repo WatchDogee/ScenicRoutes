@@ -22,6 +22,7 @@ function RoadCard({
 }) {
     const { userSettings } = useContext(UserSettingsContext);
     const formatLength = (meters) => {
+        if (!meters && meters !== 0) return 'N/A';
         if (userSettings?.measurement_units === 'imperial') {
             return ((meters / 1000) * 0.621371).toFixed(2) + ' miles';
         }
@@ -37,6 +38,7 @@ function RoadCard({
     };
 
     const getTwistinessLabel = (twistiness) => {
+        if (!twistiness && twistiness !== 0) return 'N/A';
         if (twistiness > 0.007) return 'Very Curvy';
         if (twistiness > 0.0035) return 'Moderately Curvy';
         return 'Mellow';
@@ -84,7 +86,7 @@ function RoadCard({
             <div className="mt-3 grid grid-cols-2 gap-4">
                 <div className="text-sm">
                     <p>Length: {formatLength(road.length)}</p>
-                    <p>Corners: {road.corner_count}</p>
+                    <p>Corners: {road.corner_count || 'N/A'}</p>
                     <p>Curve Rating: {getTwistinessLabel(road.twistiness)}</p>
                     <p>Elevation Gain: {formatElevation(road.elevation_gain)} ↑</p>
                     <p>Elevation Loss: {formatElevation(road.elevation_loss)} ↓</p>
@@ -102,9 +104,7 @@ function RoadCard({
                             ({road.reviews?.length || 0} reviews)
                         </span>
                     </p>
-                    {road.max_elevation && (
-                        <p>Max Elevation: {formatElevation(road.max_elevation)}</p>
-                    )}
+                    <p>Max Elevation: {formatElevation(road.max_elevation)}</p>
                 </div>
             </div>
 

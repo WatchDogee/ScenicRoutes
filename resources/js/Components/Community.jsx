@@ -45,7 +45,8 @@ export default function Community({ auth }) {
 
     const handleViewDetails = async (road) => {
         try {
-            const response = await axios.get(`/api/saved-roads/${road.id}`);
+            // Use the public endpoint to view road details without requiring authentication
+            const response = await axios.get(`/api/public-roads/${road.id}`);
             setSelectedRoadForReview(response.data);
             setRatingModalOpen(true);
 
@@ -59,6 +60,9 @@ export default function Community({ auth }) {
                     setLocalRating(0);
                     setLocalComment('');
                 }
+            } else {
+                setLocalRating(0);
+                setLocalComment('');
             }
         } catch (error) {
             console.error('Error fetching road details:', error);

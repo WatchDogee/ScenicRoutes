@@ -93,16 +93,21 @@ export default function SavedRoads({ auth }) {
 
     const handleViewDetails = async (road) => {
         try {
-            // Fetch the latest road data with reviews and comments
-            const response = await apiClient.get(`/saved-roads/${road.id}`);
+            // Use the public endpoint to view road details without requiring authentication
+            const response = await apiClient.get(`/api/public-roads/${road.id}`);
             setSelectedRoadForReview(response.data);
             setRatingModalOpen(true);
-            
-            // If user has already reviewed, pre-fill the form
-            const existingReview = response.data.reviews?.find(review => review.user?.id === auth?.user?.id);
-            if (existingReview) {
-                setLocalRating(existingReview.rating);
-                setLocalComment(existingReview.comment || '');
+
+            // If user is logged in and has already reviewed, pre-fill the form
+            if (auth?.user) {
+                const existingReview = response.data.reviews?.find(review => review.user?.id === auth.user.id);
+                if (existingReview) {
+                    setLocalRating(existingReview.rating);
+                    setLocalComment(existingReview.comment || '');
+                } else {
+                    setLocalRating(0);
+                    setLocalComment('');
+                }
             } else {
                 setLocalRating(0);
                 setLocalComment('');
@@ -141,7 +146,7 @@ export default function SavedRoads({ auth }) {
     return (
         <div className="p-4">
             {/* Collapsible header for Saved Roads */}
-            <div 
+            <div
                 className="flex justify-between items-center mb-4 cursor-pointer"
                 onClick={() => setIsListExpanded(!isListExpanded)}
             >
@@ -158,7 +163,7 @@ export default function SavedRoads({ auth }) {
                     <div className="space-y-4">
                     {roads.map(road => (
                             <div key={road.id} className="border rounded-lg bg-white shadow">
-                                <div 
+                                <div
                                     className="p-3 cursor-pointer"
                                     onClick={() => toggleRoadExpansion(road.id)}
                                 >
@@ -169,26 +174,26 @@ export default function SavedRoads({ auth }) {
                                         </span>
                                     </div>
                                 </div>
-                                
+
                                 {expandedRoads[road.id] && (
                                     <div className="px-3 pb-3 border-t">
                                         <p className="text-sm text-gray-600 mb-2">
                                             {road.description || 'No description available'}
                                         </p>
                                         <div className="flex gap-2">
-                                <button 
+                                <button
                                     onClick={() => handleNavigateClick(road)}
                                                 className="px-2 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                                 >
                                     Navigate
                                 </button>
-                                            <button 
+                                            <button
                                                 onClick={() => handleViewDetails(road)}
                                                 className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
                                             >
                                                 View Details
                                             </button>
-                                            <button 
+                                            <button
                                                 onClick={() => handleDelete(road.id)}
                                                 className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
                                             >
@@ -213,7 +218,7 @@ export default function SavedRoads({ auth }) {
                                 <p className="text-sm text-gray-600">Rating: {road.average_rating || 'No ratings yet'}</p>
                             </div>
                             <div className="flex gap-2">
-                        <button 
+                        <button
                                     onClick={(e) => {
                                         e.preventDefault();
                                         e.stopPropagation();

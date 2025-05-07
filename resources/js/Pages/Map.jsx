@@ -695,9 +695,8 @@ export default function Map() {
 
     const handleRoadClick = async (roadId) => {
         try {
-            const response = await axios.get(`/api/saved-roads/${roadId}`, {
-                headers: { Authorization: `Bearer ${auth.token}` },
-            });
+            // Use the public endpoint to view road details without requiring authentication
+            const response = await axios.get(`/api/public-roads/${roadId}`);
             setSelectedRoad(response.data);
             displayRoadOnMap(response.data);
         } catch (error) {
@@ -1535,22 +1534,26 @@ export default function Map() {
             e.stopPropagation();
         }
 
-        if (!auth.user) {
-            alert('Please log in to rate roads');
-            return;
-        }
         try {
-            const response = await axios.get(`/api/saved-roads/${roadId}`);
+            // Use the public endpoint to view road details without requiring authentication
+            const response = await axios.get(`/api/public-roads/${roadId}`);
             const road = response.data;
-            // Check if user has already reviewed this road
-            const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
-            if (existingReview) {
-                setLocalRating(existingReview.rating);
-                setLocalComment(existingReview.comment || '');
+
+            // If user is logged in, check for existing review
+            if (auth.user) {
+                const existingReview = road.reviews?.find(review => review.user?.id === auth.user.id);
+                if (existingReview) {
+                    setLocalRating(existingReview.rating);
+                    setLocalComment(existingReview.comment || '');
+                } else {
+                    setLocalRating(0);
+                    setLocalComment('');
+                }
             } else {
                 setLocalRating(0);
                 setLocalComment('');
             }
+
             setSelectedRoadForReview(road);
 
             // Open the rating modal without closing the social modal
