@@ -10,9 +10,9 @@ import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
 
 export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId, roadToAdd, activeTab: initialActiveTab, setActiveTab: setParentActiveTab }) {
-    // Temporary auth state until we fix the context
+    // Get auth state from parent component or localStorage
     const [authState, setAuthState] = useState({
-        isAuthenticated: false,
+        isAuthenticated: !!localStorage.getItem('token'),
         user: null
     });
 
@@ -99,11 +99,16 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
 
     useEffect(() => {
         if (isOpen) {
-            if (activeTab === 'collections' && isAuthenticated && user) {
+            // Double-check authentication status
+            const token = localStorage.getItem('token');
+            const tempAuthState = localStorage.getItem('temp_auth_state');
+            const isActuallyAuthenticated = isAuthenticated || !!token || !!tempAuthState || !!window.isUserAuthenticated;
+
+            if (activeTab === 'collections' && isActuallyAuthenticated) {
                 fetchCollections();
-            } else if (activeTab === 'following' && isAuthenticated && user) {
+            } else if (activeTab === 'following' && isActuallyAuthenticated) {
                 fetchFollowing();
-            } else if (activeTab === 'feed' && isAuthenticated && user) {
+            } else if (activeTab === 'feed' && isActuallyAuthenticated) {
                 fetchFeed();
             }
         }
@@ -126,14 +131,38 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     // Handle road to add to collection
     useEffect(() => {
         if (isOpen && roadToAdd) {
-            console.log('Road to add to collection received:', roadToAdd);
-            // Switch to collections tab
-            setActiveTab('collections');
-            if (setParentActiveTab) {
-                setParentActiveTab('collections');
+            console.log('SocialModal: Road to add to collection received:', roadToAdd);
+
+            // Check if this is a new road being added with a valid ID
+            const isNewRoadAddition = roadToAdd && roadToAdd.id;
+
+            if (isNewRoadAddition) {
+                console.log('SocialModal: Valid road detected, preparing to open collection modal');
+
+                // Switch to collections tab
+                setActiveTab('collections');
+                if (setParentActiveTab) {
+                    setParentActiveTab('collections');
+                }
+
+                // Add a longer delay before opening the collection modal
+                // This ensures any previous modals are fully closed and DOM is updated
+                setTimeout(() => {
+                    // Check again that the component is still mounted and the road is still valid
+                    if (isOpen && roadToAdd && roadToAdd.id) {
+                        console.log('SocialModal: Opening collection modal for road:', roadToAdd.id);
+
+                        // First make sure no other modals are open
+                        setShowCollectionDetailsModal(false);
+                        setShowUserProfileModal(false);
+
+                        // Then open the collection modal
+                        setShowCollectionModal(true);
+                    }
+                }, 300);
+            } else {
+                console.log('SocialModal: Ignoring roadToAdd as it appears to be invalid or from a previous session');
             }
-            // Open the collection modal with the road to add
-            setShowCollectionModal(true);
         }
     }, [isOpen, roadToAdd]);
 
@@ -286,7 +315,12 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     };
 
     const renderCollections = () => {
-        if (!isAuthenticated) {
+        // Double-check authentication status
+        const token = localStorage.getItem('token');
+        const tempAuthState = localStorage.getItem('temp_auth_state');
+        const isActuallyAuthenticated = isAuthenticated || !!token || !!tempAuthState || !!window.isUserAuthenticated;
+
+        if (!isActuallyAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
                     <p className="text-gray-600">You can view collections, but you need to log in to create your own collections.</p>
@@ -398,7 +432,12 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     };
 
     const renderFollowing = () => {
-        if (!isAuthenticated) {
+        // Double-check authentication status
+        const token = localStorage.getItem('token');
+        const tempAuthState = localStorage.getItem('temp_auth_state');
+        const isActuallyAuthenticated = isAuthenticated || !!token || !!tempAuthState || !!window.isUserAuthenticated;
+
+        if (!isActuallyAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
                     <p className="text-gray-600">You can view users, but you need to log in to follow them.</p>
@@ -463,7 +502,12 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     };
 
     const renderFeed = () => {
-        if (!isAuthenticated) {
+        // Double-check authentication status
+        const token = localStorage.getItem('token');
+        const tempAuthState = localStorage.getItem('temp_auth_state');
+        const isActuallyAuthenticated = isAuthenticated || !!token || !!tempAuthState || !!window.isUserAuthenticated;
+
+        if (!isActuallyAuthenticated) {
             return (
                 <div className="text-center py-8 bg-gray-50 rounded border">
                     <p className="text-gray-600">You can view popular content, but you need to log in to see a personalized feed.</p>
@@ -691,7 +735,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     setShowCollectionModal(false);
                 }}
                 onSuccess={handleCollectionCreated}
-                roadToAdd={roadToAdd}
+                roadToAdd={roadToAdd && roadToAdd.id ? roadToAdd : null}
             />
 
             {/* Collection Details Modal */}

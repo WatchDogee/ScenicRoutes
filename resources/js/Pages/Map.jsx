@@ -11,6 +11,7 @@ import RatingModal from '../Components/RatingModal';
 import SocialModal from '../Components/SocialModal';
 import SelfProfileModal from '../Components/SelfProfileModal';
 import StarRating from '../Components/StarRating';
+import SaveToCollectionModal from '../Components/SaveToCollectionModal';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
 import { FaTag } from 'react-icons/fa';
@@ -76,6 +77,7 @@ export default function Map() {
     const [ratingModalOpen, setRatingModalOpen] = useState(false);
     const [localRating, setLocalRating] = useState(0);
     const [localComment, setLocalComment] = useState('');
+    const [showSaveToCollectionModal, setShowSaveToCollectionModal] = useState(false);
     const searchTimeoutRef = useRef(null);
     const communitySearchTimeoutRef = useRef(null);
     const [isSearching, setIsSearching] = useState(false);
@@ -1615,9 +1617,18 @@ export default function Map() {
     const [editingRoad, setEditingRoad] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
 
-    // Log when social modal state changes
+    // Log when social modal state changes and reset roadToAddToCollection when closing
     useEffect(() => {
         console.log('Social modal state changed:', showSocialModal);
+
+        // Reset roadToAddToCollection when opening the social modal directly
+        // (not through SaveToCollectionModal's onCreateNew)
+        if (showSocialModal && !roadToAddToCollection) {
+            console.log('Opening social modal without a road to add');
+        } else if (!showSocialModal) {
+            // Reset when closing the modal
+            setRoadToAddToCollection(null);
+        }
     }, [showSocialModal]);
 
     // Set global authentication state for components that need it
@@ -1635,6 +1646,8 @@ export default function Map() {
             console.log('View collection details event received:', event.detail);
             const { collection } = event.detail;
             if (collection && collection.id) {
+                // Explicitly set roadToAddToCollection to null when opening for collection details
+                setRoadToAddToCollection(null);
                 // Open the collection details modal through the social modal
                 setShowSocialModal(true);
                 setSelectedCollectionId(collection.id);
@@ -1645,6 +1658,8 @@ export default function Map() {
             console.log('Edit collection event received:', event.detail);
             const { collection } = event.detail;
             if (collection && collection.id) {
+                // Explicitly set roadToAddToCollection to null when opening for collection editing
+                setRoadToAddToCollection(null);
                 // Open the social modal with collections tab active and set the collection ID
                 setShowSocialModal(true);
                 setSelectedCollectionId(collection.id);
@@ -1739,19 +1754,31 @@ export default function Map() {
             console.log('Save road to collection event received:', event.detail);
             const { road } = event.detail;
 
-            // Check if user is authenticated
-            if (auth.user) {
-                console.log('User is authenticated, opening collections modal');
-                // Open the social modal with the collections tab active
-                setShowSocialModal(true);
-                setActiveTab('collections');
+            // Check if user is authenticated - use both auth.user and localStorage token
+            const token = localStorage.getItem('token');
+
+            if (auth.user || token) {
+                console.log('User is authenticated, opening save to collection modal');
+
+                // Set global auth state for child components
+                window.isUserAuthenticated = true;
+                window.userId = auth.user?.id;
+
+                // Store auth state in localStorage for components that might not have access to auth prop
+                if (!token && auth.user) {
+                    // If we have auth.user but no token, store a temporary token
+                    localStorage.setItem('temp_auth_state', 'true');
+                }
 
                 // Set the road to add to a collection
                 setRoadToAddToCollection(road);
 
-                // Update global auth state for child components
-                window.isUserAuthenticated = true;
-                window.userId = auth.user.id;
+                // Only open the SaveToCollectionModal - it will have options for both
+                // adding to existing collections and creating a new one
+                setShowSaveToCollectionModal(true);
+
+                // Make sure social modal is closed to prevent modal stacking issues
+                setShowSocialModal(false);
             } else {
                 console.log('User is not authenticated');
                 alert('You need to be logged in to save roads to collections');
@@ -2166,6 +2193,8 @@ export default function Map() {
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
                         console.log('Social Hub button clicked');
+                        // Explicitly set roadToAddToCollection to null when opening directly
+                        setRoadToAddToCollection(null);
                         setShowSocialModal(true);
                     }}
                     className="absolute top-16 right-4 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-colors font-semibold"
@@ -2607,6 +2636,32 @@ export default function Map() {
                 onClose={() => setShowSelfProfileModal(false)}
                 auth={auth}
             />
+
+            {/* Save To Collection Modal */}
+            {showSaveToCollectionModal && roadToAddToCollection && (
+                <SaveToCollectionModal
+                    isOpen={showSaveToCollectionModal}
+                    onClose={() => {
+                        setShowSaveToCollectionModal(false);
+                        setRoadToAddToCollection(null);
+                    }}
+                    roadToAdd={roadToAddToCollection}
+                    onSuccess={(collection) => {
+                        console.log('Road added to collection:', collection);
+                        setShowSaveToCollectionModal(false);
+                        setRoadToAddToCollection(null);
+                        alert(`Road added to collection "${collection.name}" successfully!`);
+                    }}
+                    onCreateNew={(road) => {
+                        console.log('Creating new collection with road:', road);
+                        // Set the road to add to a collection
+                        setRoadToAddToCollection(road);
+                        // Open the SocialModal with collections tab
+                        setActiveTab('collections');
+                        setShowSocialModal(true);
+                    }}
+                />
+            )}
 
             {/* Road Edit Modal */}
             {showEditModal && editingRoad && (

@@ -3,7 +3,8 @@
 /* Portal roots should be on top of everything */
 #navigation-modal-root,
 #rating-modal-root,
-#collection-modal-root {
+#collection-modal-root,
+#save-to-collection-modal-root {
     position: relative;
     z-index: 9999999 !important;
 }
@@ -49,10 +50,16 @@
     pointer-events: auto !important;
 }
 
+/* Ensure save-to-collection modal is on top of other modals */
+#save-to-collection-modal-root {
+    z-index: 10000000 !important;
+}
+
 /* Fix for buttons in modals */
 .rating-modal-container button,
 .navigation-modal-content button,
-.social-modal-content button {
+.social-modal-content button,
+#save-to-collection-modal-root button {
     pointer-events: auto !important;
     position: relative !important;
     z-index: 1 !important;
@@ -64,7 +71,9 @@
 .navigation-modal-content input,
 .navigation-modal-content select,
 .social-modal-content input,
-.social-modal-content textarea {
+.social-modal-content textarea,
+#save-to-collection-modal-root input,
+#save-to-collection-modal-root textarea {
     pointer-events: auto !important;
     position: relative !important;
     z-index: 1 !important;

@@ -47,18 +47,27 @@ export default function CollectionModal({
         }
 
         // If a road is being added directly, add it to selected roads
-        if (roadToAdd) {
-            setSelectedRoads(prev => {
-                // Check if road is already selected
-                if (!prev.find(r => r.id === roadToAdd.id)) {
-                    return [...prev, {
-                        id: roadToAdd.id,
-                        name: roadToAdd.road_name,
-                        order: prev.length
-                    }];
-                }
-                return prev;
-            });
+        if (roadToAdd && roadToAdd.id) {
+            console.log('CollectionModal: Adding road to selected roads:', roadToAdd.id);
+
+            // Use a small timeout to ensure the component is fully mounted
+            setTimeout(() => {
+                setSelectedRoads(prev => {
+                    // Check if road is already selected
+                    if (!prev.find(r => r.id === roadToAdd.id)) {
+                        console.log('CollectionModal: Road not already selected, adding to selection');
+                        return [...prev, {
+                            id: roadToAdd.id,
+                            name: roadToAdd.road_name,
+                            order: prev.length
+                        }];
+                    }
+                    console.log('CollectionModal: Road already selected, not adding again');
+                    return prev;
+                });
+            }, 100);
+        } else if (roadToAdd) {
+            console.log('CollectionModal: Invalid road object received:', roadToAdd);
         }
 
         // Fetch user's saved roads

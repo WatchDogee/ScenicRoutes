@@ -70,5 +70,6 @@
         <div id="navigation-modal-root"></div>
         <div id="rating-modal-root"></div>
         <div id="collection-modal-root"></div>
+        <div id="save-to-collection-modal-root"></div>
     </body>
 </html>

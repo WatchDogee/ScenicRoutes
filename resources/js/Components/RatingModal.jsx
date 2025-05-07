@@ -310,22 +310,21 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         >
                             Navigate
                         </button>
-                        {auth?.user && (
-                            <button
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    // Dispatch event to save road to collection
-                                    const event = new CustomEvent('saveRoadToCollection', {
-                                        detail: { road }
-                                    });
-                                    window.dispatchEvent(event);
-                                }}
-                                className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-bold shadow-md mr-2"
-                            >
-                                Save to Collection
-                            </button>
-                        )}
+                        {/* Always show Save to Collection button - authentication will be checked in the handler */}
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // Dispatch event to save road to collection
+                                const event = new CustomEvent('saveRoadToCollection', {
+                                    detail: { road }
+                                });
+                                window.dispatchEvent(event);
+                            }}
+                            className="px-3 py-1 bg-purple-600 text-white rounded-md hover:bg-purple-700 font-bold shadow-md mr-2"
+                        >
+                            Save to Collection
+                        </button>
                         {auth?.user?.id === road.user?.id && (
                             <button
                                 onClick={() => {
