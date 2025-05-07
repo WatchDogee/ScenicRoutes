@@ -16,6 +16,8 @@ class Collection extends Model
         'is_public',
         'is_featured',
         'cover_image',
+        'saved_count',
+        'likes_count',
     ];
 
     /**

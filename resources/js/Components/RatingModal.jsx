@@ -375,16 +375,10 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                         <div className="mt-2">
                             <TagSelector
                                 selectedTags={selectedTags}
-                                onTagsChange={auth?.user?.id === road.user?.id ? handleTagsChange : undefined}
+                                onTagsChange={undefined}
                                 entityType="road"
-                                readOnly={!auth?.user || auth.user.id !== road.user?.id}
+                                readOnly={true}
                             />
-
-                            {auth?.user?.id === road.user?.id && (
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Add tags to help others find your road
-                                </p>
-                            )}
                         </div>
                     </div>
                 </div>

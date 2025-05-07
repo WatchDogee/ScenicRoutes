@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { FaPlus, FaTrophy, FaUsers, FaUserFriends, FaRoad, FaFolder, FaTimes, FaSearch, FaTag, FaMapMarkerAlt } from 'react-icons/fa';
+import { FaPlus, FaTrophy, FaUsers, FaUserFriends, FaRoad, FaFolder, FaTimes, FaSearch, FaTag, FaMapMarkerAlt, FaFilter, FaChevronDown, FaSpinner } from 'react-icons/fa';
+import CompactSearchForm from './CompactSearchForm';
 import Modal from './Modal';
 import CollectionModal from './CollectionModal';
 import CollectionDetailsModal from './CollectionDetailsModal';
@@ -117,6 +118,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     const [selectedCountry, setSelectedCountry] = useState('');
     const [selectedRegion, setSelectedRegion] = useState('');
     const [loadingCountries, setLoadingCountries] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
@@ -146,25 +148,28 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     // Function to fetch all public roads
     const fetchAllPublicRoads = async () => {
         try {
-            console.log('Automatically fetching all public roads for initial display...');
             setIsSearching(true);
 
-            const response = await axios.get('/api/debug/roads');
-            console.log('Initial public roads response:', response.data);
+            const response = await axios.get('/api/public-roads', {
+                params: { timestamp: new Date().getTime() } // Prevent caching
+            });
 
             if (response.data && response.data.roads) {
-                setSearchResults({
-                    ...searchResults,
-                    roads: response.data.roads
-                });
-                console.log(`Found ${response.data.roads.length} public roads for initial display`);
+                setSearchResults(prevResults => ({
+                    ...prevResults,
+                    roads: [...response.data.roads] // Create a new array to ensure state update
+                }));
+            } else if (Array.isArray(response.data)) {
+                setSearchResults(prevResults => ({
+                    ...prevResults,
+                    roads: [...response.data]
+                }));
             } else {
-                console.error('Unexpected response format from debug/roads endpoint');
-                setSearchResults({ ...searchResults, roads: [] });
+                setSearchResults(prevResults => ({ ...prevResults, roads: [] }));
             }
         } catch (error) {
-            console.error('Error fetching initial public roads:', error);
-            setSearchResults({ ...searchResults, roads: [] });
+            console.error('Error fetching public roads:', error);
+            setSearchResults(prevResults => ({ ...prevResults, roads: [] }));
         } finally {
             setIsSearching(false);
         }
@@ -975,7 +980,9 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
 
         try {
             // Build search parameters
-            const searchParams = {};
+            const searchParams = {
+                timestamp: new Date().getTime() // Prevent caching
+            };
 
             if (searchQuery) {
                 searchParams.query = searchQuery;
@@ -994,16 +1001,34 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 params: searchParams
             });
 
-            // Get the collections from the response
-            let filteredCollections = response.data.data || [];
+            // Handle different response formats
+            let filteredCollections = [];
 
-            setSearchResults({
-                ...searchResults,
-                collections: filteredCollections
-            });
+            if (response.data && response.data.data) {
+                // Paginated response format
+                filteredCollections = response.data.data;
+            } else if (Array.isArray(response.data)) {
+                // Direct array response format
+                filteredCollections = response.data;
+            } else if (response.data && Array.isArray(response.data.collections)) {
+                // Object with collections array
+                filteredCollections = response.data.collections;
+            }
+
+            // Update state with filtered collections
+            setSearchResults(prevResults => ({
+                ...prevResults,
+                collections: [...filteredCollections] // Create a new array to ensure state update
+            }));
         } catch (error) {
             console.error('Error searching collections:', error);
             setSearchError('Failed to search collections. Please try again.');
+
+            // Set empty collections array on error
+            setSearchResults(prevResults => ({
+                ...prevResults,
+                collections: []
+            }));
         } finally {
             setIsSearching(false);
         }
@@ -1015,21 +1040,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
             e.preventDefault();
         }
 
-        console.log('Search form submitted', {
-            searchType,
-            searchQuery,
-            searchLocation,
-            selectedCountry,
-            selectedRegion,
-            minRating,
-            curvinessFilter,
-            lengthFilter,
-            sortBy,
-            selectedTagIds
-        });
-
         if (searchType === 'roads') {
-            console.log('Searching for roads...');
             setIsSearching(true);
             setSearchError(null);
 
@@ -1038,8 +1049,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 const searchParams = {
                     country: selectedCountry || '',
                     region: selectedRegion || '',
-                    debug: true,
-                    timestamp: new Date().getTime(),
+                    timestamp: new Date().getTime(), // Prevent caching
                     length_filter: lengthFilter || 'all',
                     curviness_filter: curvinessFilter || 'all',
                     min_rating: minRating || 0,
@@ -1047,68 +1057,38 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null
                 };
 
-                console.log('Search parameters:', searchParams);
-
-                // Try the debug endpoint first as it's more reliable for filtering
                 try {
-                    const debugResponse = await axios.get('/api/debug/search', { params: searchParams });
-                    console.log('Debug search response:', debugResponse.data);
+                    // Get public roads with filters
+                    const response = await axios.get('/api/public-roads', { params: searchParams });
 
-                    if (debugResponse.data && debugResponse.data.roads) {
-                        // Filter roads based on country and region if specified
-                        let filteredRoads = debugResponse.data.roads;
-
-                        if (selectedCountry) {
-                            filteredRoads = filteredRoads.filter(road =>
-                                road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
-                            );
-                        }
-
-                        if (selectedRegion) {
-                            filteredRoads = filteredRoads.filter(road =>
-                                road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
-                            );
-                        }
-
-                        setSearchResults({
-                            ...searchResults,
-                            roads: filteredRoads
-                        });
-                        console.log(`Found ${filteredRoads.length} roads after filtering`);
-                    } else {
-                        // If debug endpoint fails, try public-roads endpoint
-                        const response = await axios.get('/api/public-roads', { params: searchParams });
-                        console.log('Public roads search response:', response.data);
-
-                        let roads = [];
-                        if (response.data && response.data.roads) {
-                            roads = response.data.roads;
-                        } else if (Array.isArray(response.data)) {
-                            roads = response.data;
-                        }
-
-                        // Filter roads based on country and region if specified
-                        if (selectedCountry) {
-                            roads = roads.filter(road =>
-                                road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
-                            );
-                        }
-
-                        if (selectedRegion) {
-                            roads = roads.filter(road =>
-                                road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
-                            );
-                        }
-
-                        setSearchResults({
-                            ...searchResults,
-                            roads: roads
-                        });
-                        console.log(`Found ${roads.length} roads after filtering`);
+                    let roads = [];
+                    if (response.data && response.data.roads) {
+                        roads = response.data.roads;
+                    } else if (Array.isArray(response.data)) {
+                        roads = response.data;
                     }
+
+                    // Filter roads based on country and region if specified
+                    if (selectedCountry) {
+                        roads = roads.filter(road =>
+                            road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
+                        );
+                    }
+
+                    if (selectedRegion) {
+                        roads = roads.filter(road =>
+                            road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
+                        );
+                    }
+
+                    // Update state with filtered roads
+                    setSearchResults(prevResults => ({
+                        ...prevResults,
+                        roads: [...roads] // Create a new array to ensure state update
+                    }));
                 } catch (error) {
-                    console.error('Error in search:', error);
-                    setSearchResults({ ...searchResults, roads: [] });
+                    console.error('Error searching roads:', error);
+                    setSearchResults(prevResults => ({ ...prevResults, roads: [] }));
                 }
             } catch (error) {
                 console.error('Error searching roads:', error);
@@ -1117,7 +1097,6 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 setIsSearching(false);
             }
         } else {
-            console.log('Searching for collections...');
             searchCollections();
         }
     };
@@ -1150,264 +1129,31 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     </div>
                 )}
 
-                <form onSubmit={handleSearch} className="space-y-2">
-                    {/* Common search fields */}
-                    <div className="space-y-2">
-                        {searchType === 'collections' && (
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Search Collections
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Search by name or description..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </div>
-                        )}
-
-                        {/* Country and Region Selection - for both roads and collections */}
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    Country
-                                </label>
-                                <select
-                                    value={selectedCountry}
-                                    onChange={(e) => setSelectedCountry(e.target.value)}
-                                    className="w-full px-2 py-1 text-sm border rounded-md"
-                                >
-                                    <option value="">All Countries</option>
-                                    {loadingCountries ? (
-                                        <option disabled>Loading countries...</option>
-                                    ) : (
-                                        countries.map(country => (
-                                            <option key={country} value={country}>
-                                                {country}
-                                            </option>
-                                        ))
-                                    )}
-                                </select>
-                            </div>
-
-                            {selectedCountry && (
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Region
-                                    </label>
-                                    <select
-                                        value={selectedRegion}
-                                        onChange={(e) => setSelectedRegion(e.target.value)}
-                                        className="w-full px-2 py-1 text-sm border rounded-md"
-                                    >
-                                        <option value="">All Regions</option>
-                                        {regions.map(region => (
-                                            <option key={region} value={region}>
-                                                {region}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-                        </div>
-
-                        {searchType === 'roads' && (
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 mb-1">
-                                    <FaMapMarkerAlt className="inline mr-1" /> Location
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Enter city, region, or place..."
-                                        value={searchLocation}
-                                        onChange={(e) => {
-                                            setSearchLocation(e.target.value);
-                                            searchForLocation(e.target.value);
-                                        }}
-                                        className="w-full px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
-                                    {locationSearchResults.length > 0 && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                            {locationSearchResults.map((result, index) => (
-                                                <button
-                                                    key={`${result.place_id}-${index}`}
-                                                    type="button"
-                                                    className="w-full px-2 py-1 text-sm text-left hover:bg-gray-100 focus:bg-gray-100"
-                                                    onClick={() => handleLocationSelect(result)}
-                                                >
-                                                    {result.displayName}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Tags filter for both roads and collections */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                <FaTag className="inline mr-1" /> Tags
-                            </label>
-                            <div className="flex flex-wrap gap-1 mb-1">
-                                {selectedTagIds.map(tagId => {
-                                    const tag = availableTags.find(t => t.id === tagId);
-                                    return tag ? (
-                                        <div
-                                            key={tag.id}
-                                            className={`px-2 py-0.5 rounded-md flex items-center text-xs font-medium ${
-                                                tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
-                                            }`}
-                                            style={{ boxShadow: '0 0 0 2px currentColor' }}
-                                            title={tag.description || ''}
-                                        >
-                                            <FaTag className="mr-1 text-xs" />
-                                            {tag.name}
-                                            <button
-                                                type="button"
-                                                className="ml-1 hover:text-red-600"
-                                                onClick={() => setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id))}
-                                                aria-label={`Remove ${tag.name} tag`}
-                                            >
-                                                <FaTimes size={10} />
-                                            </button>
-                                        </div>
-                                    ) : null;
-                                })}
-                            </div>
-                            <div className="border p-1 rounded-md max-h-40 overflow-y-auto">
-                                {/* Group tags by category */}
-                                {(() => {
-                                    // Filter out already selected tags
-                                    const filteredTags = availableTags.filter(tag => !selectedTagIds.includes(tag.id));
-
-                                    // Group tags by category
-                                    const groupedTags = filteredTags.reduce((acc, tag) => {
-                                        const category = tag.type || 'other';
-                                        if (!acc[category]) {
-                                            acc[category] = [];
-                                        }
-                                        acc[category].push(tag);
-                                        return acc;
-                                    }, {});
-
-                                    // Define category display names and order
-                                    const categoryOrder = [
-                                        'road_characteristic',
-                                        'surface_type',
-                                        'scenery',
-                                        'experience',
-                                        'vehicle',
-                                        'other'
-                                    ];
-
-                                    const categoryNames = {
-                                        'road_characteristic': 'Road Characteristics',
-                                        'surface_type': 'Surface Types',
-                                        'scenery': 'Scenery Types',
-                                        'experience': 'Experience Types',
-                                        'vehicle': 'Vehicle Suitability',
-                                        'other': 'Other Tags'
-                                    };
-
-                                    return (
-                                        <div className="space-y-2">
-                                            {categoryOrder.map(category => {
-                                                const tags = groupedTags[category];
-                                                if (!tags || tags.length === 0) return null;
-
-                                                return (
-                                                    <div key={category} className="mb-1">
-                                                        <div className={`px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700 uppercase tracking-wider tag-${category}`}>
-                                                            {categoryNames[category]}
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-1 p-1">
-                                                            {tags.map(tag => (
-                                                                <button
-                                                                    key={tag.id}
-                                                                    type="button"
-                                                                    className={`px-2 py-0.5 rounded-md text-xs hover:opacity-80 ${
-                                                                        tag.type ? `tag-${tag.type}` : 'bg-gray-100 hover:bg-gray-200'
-                                                                    }`}
-                                                                    onClick={() => setSelectedTagIds([...selectedTagIds, tag.id])}
-                                                                    title={tag.description || ''}
-                                                                >
-                                                                    <FaTag className="inline mr-1 text-xs" />
-                                                                    {tag.name}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-
-                        {searchType === 'roads' && (
-                            <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Min Rating
-                                    </label>
-                                    <select
-                                        value={minRating}
-                                        onChange={(e) => setMinRating(Number(e.target.value))}
-                                        className="w-full px-2 py-1 text-sm border rounded-md"
-                                    >
-                                        <option value="0">Any Rating</option>
-                                        <option value="3">3+ Stars</option>
-                                        <option value="4">4+ Stars</option>
-                                        <option value="4.5">4.5+ Stars</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                        Sort By
-                                    </label>
-                                    <select
-                                        value={sortBy}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        className="w-full px-2 py-1 text-sm border rounded-md"
-                                    >
-                                        <option value="rating">Highest Rated</option>
-                                        <option value="reviews">Most Reviewed</option>
-                                        <option value="recent">Recently Added</option>
-                                        <option value="length">Longest Routes</option>
-                                    </select>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Search button */}
-                    <div className="mt-2">
-                        <button
-                            type="submit"
-                            className="w-full px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                            disabled={isSearching}
-                            onClick={(e) => {
-                                e.preventDefault();
-                                handleSearch(e);
-                            }}
-                        >
-                            {isSearching ? (
-                                <div className="flex items-center justify-center">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-                                    Searching...
-                                </div>
-                            ) : (
-                                'Search'
-                            )}
-                        </button>
-                    </div>
-                </form>
+                <CompactSearchForm
+                    searchType={searchType}
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    selectedCountry={selectedCountry}
+                    setSelectedCountry={setSelectedCountry}
+                    selectedRegion={selectedRegion}
+                    setSelectedRegion={setSelectedRegion}
+                    countries={countries}
+                    regions={regions}
+                    loadingCountries={loadingCountries}
+                    selectedTagIds={selectedTagIds}
+                    setSelectedTagIds={setSelectedTagIds}
+                    availableTags={availableTags}
+                    handleSearch={handleSearch}
+                    isSearching={isSearching}
+                    minRating={minRating}
+                    setMinRating={setMinRating}
+                    curvinessFilter={curvinessFilter}
+                    setCurvinessFilter={setCurvinessFilter}
+                    lengthFilter={lengthFilter}
+                    setLengthFilter={setLengthFilter}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                />
 
                 {/* Search Results */}
                 <div className="mt-6">
@@ -1440,93 +1186,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                                 To make a road public, go to your saved roads, click on a road, and use the "Make Public" button.
                                             </p>
 
-                                            {/* Create a test road button */}
-                                            <div className="mt-4 border-t pt-4">
-                                                <p className="text-sm text-gray-600 mb-2">
-                                                    <strong>Developer Option:</strong> Create a test road in the selected country/region to verify search functionality.
-                                                </p>
-                                                <div className="flex flex-col space-y-2">
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                setIsSearching(true);
-                                                                // Add debug parameter to create a test road
-                                                                const params = {
-                                                                    country: selectedCountry || 'Latvia',
-                                                                    region: selectedRegion || 'Riga',
-                                                                    debug: true,
-                                                                    create_test: true,
-                                                                    timestamp: new Date().getTime()
-                                                                };
 
-                                                                console.log('Creating test road with params:', params);
-
-                                                                // Use the debug endpoint which is specifically designed to create test roads
-                                                                console.log('Using debug endpoint to create test road...');
-                                                                const debugResponse = await axios.get('/api/debug/search', { params });
-                                                                console.log('Debug test road creation response:', debugResponse.data);
-
-                                                                if (debugResponse.data && debugResponse.data.roads && debugResponse.data.roads.length > 0) {
-                                                                    setSearchResults({
-                                                                        ...searchResults,
-                                                                        roads: debugResponse.data.roads
-                                                                    });
-                                                                    alert(`Test road created successfully! Found ${debugResponse.data.roads.length} roads.`);
-
-                                                                    // After creating a test road, run the search again to refresh results
-                                                                    setTimeout(() => {
-                                                                        handleSearch({ preventDefault: () => {} });
-                                                                    }, 500);
-                                                                } else {
-                                                                    alert('No roads were created. Please try again with a different country/region.');
-                                                                }
-                                                            } catch (error) {
-                                                                console.error('Error creating test road:', error);
-                                                                alert('Error creating test road. Please try again later.');
-                                                            } finally {
-                                                                setIsSearching(false);
-                                                            }
-                                                        }}
-                                                        className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-                                                        disabled={isSearching}
-                                                    >
-                                                        {isSearching ? 'Creating...' : 'Create Test Road'}
-                                                    </button>
-
-                                                    <button
-                                                        onClick={async () => {
-                                                            try {
-                                                                setIsSearching(true);
-                                                                console.log('Fetching all public roads...');
-
-                                                                // Get all public roads without filters
-                                                                const response = await axios.get('/api/debug/roads');
-                                                                console.log('All public roads response:', response.data);
-
-                                                                if (response.data && response.data.roads) {
-                                                                    setSearchResults({
-                                                                        ...searchResults,
-                                                                        roads: response.data.roads
-                                                                    });
-                                                                    console.log(`Found ${response.data.roads.length} public roads in total`);
-                                                                } else {
-                                                                    console.error('Unexpected response format from debug/roads endpoint');
-                                                                    setSearchResults({ ...searchResults, roads: [] });
-                                                                }
-                                                            } catch (error) {
-                                                                console.error('Error fetching all public roads:', error);
-                                                                alert('Error fetching public roads. Please try again later.');
-                                                            } finally {
-                                                                setIsSearching(false);
-                                                            }
-                                                        }}
-                                                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                                                        disabled={isSearching}
-                                                    >
-                                                        {isSearching ? 'Loading...' : 'Show All Public Roads'}
-                                                    </button>
-                                                </div>
-                                            </div>
                                         </div>
                                     ) : (
                                         <>

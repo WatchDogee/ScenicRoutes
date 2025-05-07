@@ -444,7 +444,7 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
 
     const renderFeaturedCollections = () => {
         if (!leaderboardData?.featured_collections?.length) {
-            return <p className="text-center text-gray-500 py-4">No curator collections found</p>;
+            return <p className="text-center text-gray-500 py-4">No popular collections found</p>;
         }
 
         return (
@@ -624,11 +624,21 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                                     )}
                                 </div>
                             </div>
-                            <div className="flex flex-col items-end">
+                            <div className="flex flex-col items-end space-y-1">
                                 <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
                                     <FaRoad className="text-blue-500" />
                                     <span className="ml-1 text-sm font-medium">{collection.roads_count || collection.roads?.length || 0} roads</span>
                                 </div>
+                                <div className="flex items-center bg-green-50 px-3 py-1 rounded-full">
+                                    <FaUsers className="text-green-500" />
+                                    <span className="ml-1 text-sm font-medium">{collection.saved_count || 0} saves</span>
+                                </div>
+                                {collection.likes_count > 0 && (
+                                    <div className="flex items-center bg-red-50 px-3 py-1 rounded-full">
+                                        <FaStar className="text-red-500" />
+                                        <span className="ml-1 text-sm font-medium">{collection.likes_count} likes</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -855,8 +865,6 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
                 return renderMostActiveUsers();
             case 'most-followed':
                 return renderMostFollowedUsers();
-            case 'top-curators':
-                return renderTopCurators();
             default:
                 return renderTopRatedRoads();
         }
@@ -953,12 +961,11 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
             { id: 'popular-roads-by-country', icon: <FaGlobe className="inline mr-1" />, label: 'By Country' }
         ],
         collections: [
-            { id: 'featured-collections', icon: <FaFolder className="inline mr-1" />, label: 'Featured Collections' }
+            { id: 'featured-collections', icon: <FaFolder className="inline mr-1" />, label: 'Popular Collections' }
         ],
         users: [
             { id: 'most-active', icon: <FaRoad className="inline mr-1" />, label: 'Most Active' },
-            { id: 'most-followed', icon: <FaUsers className="inline mr-1" />, label: 'Most Followed' },
-            { id: 'top-curators', icon: <FaAward className="inline mr-1" />, label: 'Top Curators' }
+            { id: 'most-followed', icon: <FaUsers className="inline mr-1" />, label: 'Most Followed' }
         ]
     };
 

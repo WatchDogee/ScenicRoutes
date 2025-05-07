@@ -478,12 +478,12 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                                 </label>
                                                 <TagSelector
                                                     selectedTags={collectionTags}
-                                                    onTagsChange={handleTagsChange}
+                                                    onTagsChange={undefined}
                                                     entityType="collection"
-                                                    readOnly={false}
+                                                    readOnly={true}
                                                 />
                                                 <p className="text-xs text-gray-500 mt-1">
-                                                    Add tags to help others find your collection
+                                                    Tags help others find your collection
                                                 </p>
                                             </div>
 
@@ -567,18 +567,10 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                             <h4 className="text-sm font-medium text-gray-700 mb-2">Tags</h4>
                                             <TagSelector
                                                 selectedTags={collectionTags}
-                                                onTagsChange={collection.user_id == currentUserId ? handleTagsChange : undefined}
+                                                onTagsChange={undefined}
                                                 entityType="collection"
-                                                readOnly={!collection.user_id || collection.user_id != currentUserId}
+                                                readOnly={true}
                                             />
-                                            {isTagsUpdating && (
-                                                <p className="text-xs text-gray-500 mt-1">Updating tags...</p>
-                                            )}
-                                            {collection.user_id == currentUserId && (
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    Add tags to help others find your collection
-                                                </p>
-                                            )}
                                         </div>
                                     </>
                                 )}
