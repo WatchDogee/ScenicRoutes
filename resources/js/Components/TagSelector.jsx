@@ -4,7 +4,7 @@ import { FaTimes, FaPlus, FaTag } from 'react-icons/fa';
 
 /**
  * TagSelector component for selecting and managing tags
- * 
+ *
  * @param {Object} props
  * @param {Array} props.selectedTags - Array of currently selected tag objects
  * @param {Function} props.onTagsChange - Callback when tags are added/removed
@@ -12,9 +12,9 @@ import { FaTimes, FaPlus, FaTag } from 'react-icons/fa';
  * @param {boolean} props.readOnly - Whether the component is read-only (just for display)
  * @param {string} props.className - Additional CSS classes
  */
-export default function TagSelector({ 
-    selectedTags = [], 
-    onTagsChange, 
+export default function TagSelector({
+    selectedTags = [],
+    onTagsChange,
     entityType = 'road',
     readOnly = false,
     className = ''
@@ -69,13 +69,13 @@ export default function TagSelector({
                 name: newTagName,
                 type: entityType
             });
-            
+
             // Add the new tag to available tags
             setAvailableTags([...availableTags, response.data.tag]);
-            
+
             // Select the new tag
             handleAddTag(response.data.tag);
-            
+
             // Reset form
             setNewTagName('');
             setShowNewTagForm(false);
@@ -98,25 +98,26 @@ export default function TagSelector({
             {/* Selected Tags */}
             <div className="flex flex-wrap gap-2 mb-2">
                 {selectedTags.map(tag => (
-                    <div 
-                        key={tag.id} 
-                        className={`flex items-center bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm ${
-                            tag.type ? `tag-${tag.type}` : ''
+                    <div
+                        key={tag.id}
+                        className={`flex items-center px-2 py-1 rounded-full text-sm font-medium ${
+                            tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
                         }`}
+                        style={{ boxShadow: '0 0 0 2px currentColor' }}
                     >
                         <FaTag className="mr-1 text-xs" />
                         <span>{tag.name}</span>
                         {!readOnly && (
-                            <button 
+                            <button
                                 onClick={() => handleRemoveTag(tag.id)}
-                                className="ml-1 text-blue-600 hover:text-blue-800"
+                                className="ml-1 hover:text-red-600"
                             >
                                 <FaTimes size={12} />
                             </button>
                         )}
                     </div>
                 ))}
-                
+
                 {!readOnly && (
                     <button
                         onClick={() => setShowTagSelector(true)}
@@ -140,7 +141,7 @@ export default function TagSelector({
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    
+
                     <div className="max-h-48 overflow-y-auto">
                         {isLoading ? (
                             <div className="p-2 text-center text-gray-500">Loading tags...</div>
@@ -163,7 +164,7 @@ export default function TagSelector({
                             </div>
                         )}
                     </div>
-                    
+
                     {/* Create New Tag */}
                     <div className="p-2 border-t">
                         {showNewTagForm ? (

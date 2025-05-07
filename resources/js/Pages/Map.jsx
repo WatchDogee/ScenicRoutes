@@ -14,7 +14,7 @@ import StarRating from '../Components/StarRating';
 import SaveToCollectionModal from '../Components/SaveToCollectionModal';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
-import { FaTag } from 'react-icons/fa';
+import { FaTag, FaTimes } from 'react-icons/fa';
 
 export default function Map() {
     const { userSettings } = useContext(UserSettingsContext);

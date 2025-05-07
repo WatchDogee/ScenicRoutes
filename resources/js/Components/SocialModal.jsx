@@ -1057,15 +1057,15 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     if (debugResponse.data && debugResponse.data.roads) {
                         // Filter roads based on country and region if specified
                         let filteredRoads = debugResponse.data.roads;
-                        
+
                         if (selectedCountry) {
-                            filteredRoads = filteredRoads.filter(road => 
+                            filteredRoads = filteredRoads.filter(road =>
                                 road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
                             );
                         }
-                        
+
                         if (selectedRegion) {
-                            filteredRoads = filteredRoads.filter(road => 
+                            filteredRoads = filteredRoads.filter(road =>
                                 road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
                             );
                         }
@@ -1089,13 +1089,13 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
 
                         // Filter roads based on country and region if specified
                         if (selectedCountry) {
-                            roads = roads.filter(road => 
+                            roads = roads.filter(road =>
                                 road.country && road.country.toLowerCase() === selectedCountry.toLowerCase()
                             );
                         }
-                        
+
                         if (selectedRegion) {
-                            roads = roads.filter(road => 
+                            roads = roads.filter(road =>
                                 road.region && road.region.toLowerCase() === selectedRegion.toLowerCase()
                             );
                         }
@@ -1258,12 +1258,16 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                     return tag ? (
                                         <div
                                             key={tag.id}
-                                            className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md flex items-center text-xs"
+                                            className={`px-2 py-0.5 rounded-md flex items-center text-xs font-medium ${
+                                                tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
+                                            }`}
+                                            style={{ boxShadow: '0 0 0 2px currentColor' }}
                                         >
+                                            <FaTag className="mr-1 text-xs" />
                                             {tag.name}
                                             <button
                                                 type="button"
-                                                className="ml-1 text-blue-600 hover:text-blue-800"
+                                                className="ml-1 hover:text-red-600"
                                                 onClick={() => setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id))}
                                             >
                                                 <FaTimes size={10} />
@@ -1279,9 +1283,12 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                         <button
                                             key={tag.id}
                                             type="button"
-                                            className="bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-md text-xs"
+                                            className={`px-2 py-0.5 rounded-md text-xs hover:opacity-80 ${
+                                                tag.type ? `tag-${tag.type}` : 'bg-gray-100 hover:bg-gray-200'
+                                            }`}
                                             onClick={() => setSelectedTagIds([...selectedTagIds, tag.id])}
                                         >
+                                            <FaTag className="inline mr-1 text-xs" />
                                             {tag.name}
                                         </button>
                                     ))
