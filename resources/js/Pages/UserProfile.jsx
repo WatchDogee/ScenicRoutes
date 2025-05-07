@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head } from '@inertiajs/react';
-import { FaRoad, FaUsers, FaUserFriends, FaEdit, FaCog } from 'react-icons/fa';
+import { FaRoad, FaUsers, FaUserFriends, FaEdit, FaCog, FaExternalLinkAlt } from 'react-icons/fa';
 import axios from 'axios';
 import ProfilePicture from '@/Components/ProfilePicture';
 import RoadCard from '@/Components/RoadCard';
@@ -13,6 +13,8 @@ export default function UserProfile({ auth }) {
     const [userRoads, setUserRoads] = useState([]);
     const [followersCount, setFollowersCount] = useState(0);
     const [followingCount, setFollowingCount] = useState(0);
+    const [followers, setFollowers] = useState([]);
+    const [following, setFollowing] = useState([]);
     const [collections, setCollections] = useState([]);
     const [activeTab, setActiveTab] = useState('roads');
     const [loading, setLoading] = useState(true);
@@ -46,10 +48,30 @@ export default function UserProfile({ auth }) {
                 const followResponse = await axios.get(`/api/users/${auth.user.id}/follow-status`);
                 setFollowersCount(followResponse.data.followers_count || 0);
                 setFollowingCount(followResponse.data.following_count || 0);
+
+                // Fetch followers list
+                try {
+                    const followersResponse = await axios.get(`/api/users/${auth.user.id}/followers`);
+                    setFollowers(followersResponse.data || []);
+                } catch (followersError) {
+                    console.error('Error fetching followers:', followersError);
+                    setFollowers([]);
+                }
+
+                // Fetch following list
+                try {
+                    const followingResponse = await axios.get(`/api/users/${auth.user.id}/following`);
+                    setFollowing(followingResponse.data || []);
+                } catch (followingError) {
+                    console.error('Error fetching following:', followingError);
+                    setFollowing([]);
+                }
             } catch (followError) {
                 console.log('Could not fetch follow status');
                 setFollowersCount(0);
                 setFollowingCount(0);
+                setFollowers([]);
+                setFollowing([]);
             }
 
             setError(null);
@@ -80,7 +102,7 @@ export default function UserProfile({ auth }) {
                             <div className="text-center sm:text-left flex-1">
                                 <h1 className="text-2xl font-bold">{user.name}</h1>
                                 <p className="text-blue-100">@{user.username || user.name.toLowerCase().replace(/\s+/g, '')}</p>
-                                
+
                                 <div className="flex justify-center sm:justify-start mt-4 space-x-6">
                                     <div className="text-center">
                                         <div className="text-xl font-bold">{userRoads.length}</div>
@@ -219,7 +241,7 @@ export default function UserProfile({ auth }) {
                                                             <p className="text-sm text-gray-600 mt-1">{collection.description}</p>
                                                         )}
                                                         <p className="text-sm text-gray-500 mt-2">
-                                                            {collection.roads?.length || 0} roads • 
+                                                            {collection.roads?.length || 0} roads •
                                                             {collection.is_public ? ' Public' : ' Private'}
                                                         </p>
                                                     </div>
@@ -229,15 +251,95 @@ export default function UserProfile({ auth }) {
                                     </div>
                                 )}
 
-                                {/* Placeholder for following/followers tabs */}
-                                {(activeTab === 'following' || activeTab === 'followers') && (
-                                    <div className="text-center py-8 bg-gray-50 rounded border">
-                                        <FaUsers className="mx-auto text-4xl text-gray-400 mb-2" />
-                                        <p className="text-gray-600">
-                                            {activeTab === 'following' 
-                                                ? 'Following list will be implemented soon' 
-                                                : 'Followers list will be implemented soon'}
-                                        </p>
+                                {/* Following tab */}
+                                {activeTab === 'following' && (
+                                    <div className="space-y-4">
+                                        {following.length === 0 ? (
+                                            <div className="text-center py-8 bg-gray-50 rounded border">
+                                                <FaUserFriends className="mx-auto text-4xl text-gray-400 mb-2" />
+                                                <p className="text-gray-600">You aren't following anyone yet</p>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    Follow other users to see their content in your feed
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                {following.map(followedUser => (
+                                                    <div
+                                                        key={followedUser.id}
+                                                        className="border rounded-lg p-4 hover:bg-gray-50"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <ProfilePicture user={followedUser} size="md" />
+                                                            <div className="ml-3">
+                                                                <h4 className="font-medium">{followedUser.name}</h4>
+                                                                <p className="text-sm text-gray-600">
+                                                                    @{followedUser.username || followedUser.name?.toLowerCase().replace(/\s+/g, '') || 'user'}
+                                                                </p>
+                                                                {followedUser.saved_roads_count > 0 && (
+                                                                    <p className="text-xs text-gray-500 mt-1">
+                                                                        {followedUser.saved_roads_count} public roads
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => window.location.href = `/map?user=${followedUser.id}`}
+                                                                className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+                                                                title="View user's roads on map"
+                                                            >
+                                                                <FaExternalLinkAlt />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Followers tab */}
+                                {activeTab === 'followers' && (
+                                    <div className="space-y-4">
+                                        {followers.length === 0 ? (
+                                            <div className="text-center py-8 bg-gray-50 rounded border">
+                                                <FaUsers className="mx-auto text-4xl text-gray-400 mb-2" />
+                                                <p className="text-gray-600">You don't have any followers yet</p>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    When other users follow you, they'll appear here
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                                {followers.map(follower => (
+                                                    <div
+                                                        key={follower.id}
+                                                        className="border rounded-lg p-4 hover:bg-gray-50"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <ProfilePicture user={follower} size="md" />
+                                                            <div className="ml-3">
+                                                                <h4 className="font-medium">{follower.name}</h4>
+                                                                <p className="text-sm text-gray-600">
+                                                                    @{follower.username || follower.name?.toLowerCase().replace(/\s+/g, '') || 'user'}
+                                                                </p>
+                                                                {follower.saved_roads_count > 0 && (
+                                                                    <p className="text-xs text-gray-500 mt-1">
+                                                                        {follower.saved_roads_count} public roads
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                onClick={() => window.location.href = `/map?user=${follower.id}`}
+                                                                className="ml-auto text-sm text-blue-500 hover:text-blue-700"
+                                                                title="View user's roads on map"
+                                                            >
+                                                                <FaExternalLinkAlt />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </>
