@@ -14,6 +14,7 @@ class Collection extends Model
         'name',
         'description',
         'is_public',
+        'is_featured',
         'cover_image',
     ];
 

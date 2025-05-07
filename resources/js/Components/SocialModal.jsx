@@ -1262,6 +1262,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                                 tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
                                             }`}
                                             style={{ boxShadow: '0 0 0 2px currentColor' }}
+                                            title={tag.description || ''}
                                         >
                                             <FaTag className="mr-1 text-xs" />
                                             {tag.name}
@@ -1269,6 +1270,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                                 type="button"
                                                 className="ml-1 hover:text-red-600"
                                                 onClick={() => setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id))}
+                                                aria-label={`Remove ${tag.name} tag`}
                                             >
                                                 <FaTimes size={10} />
                                             </button>
@@ -1276,23 +1278,74 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                     ) : null;
                                 })}
                             </div>
-                            <div className="flex flex-wrap gap-1 border p-1 rounded-md max-h-20 overflow-y-auto">
-                                {availableTags
-                                    .filter(tag => !selectedTagIds.includes(tag.id))
-                                    .map(tag => (
-                                        <button
-                                            key={tag.id}
-                                            type="button"
-                                            className={`px-2 py-0.5 rounded-md text-xs hover:opacity-80 ${
-                                                tag.type ? `tag-${tag.type}` : 'bg-gray-100 hover:bg-gray-200'
-                                            }`}
-                                            onClick={() => setSelectedTagIds([...selectedTagIds, tag.id])}
-                                        >
-                                            <FaTag className="inline mr-1 text-xs" />
-                                            {tag.name}
-                                        </button>
-                                    ))
-                                }
+                            <div className="border p-1 rounded-md max-h-40 overflow-y-auto">
+                                {/* Group tags by category */}
+                                {(() => {
+                                    // Filter out already selected tags
+                                    const filteredTags = availableTags.filter(tag => !selectedTagIds.includes(tag.id));
+
+                                    // Group tags by category
+                                    const groupedTags = filteredTags.reduce((acc, tag) => {
+                                        const category = tag.type || 'other';
+                                        if (!acc[category]) {
+                                            acc[category] = [];
+                                        }
+                                        acc[category].push(tag);
+                                        return acc;
+                                    }, {});
+
+                                    // Define category display names and order
+                                    const categoryOrder = [
+                                        'road_characteristic',
+                                        'surface_type',
+                                        'scenery',
+                                        'experience',
+                                        'vehicle',
+                                        'other'
+                                    ];
+
+                                    const categoryNames = {
+                                        'road_characteristic': 'Road Characteristics',
+                                        'surface_type': 'Surface Types',
+                                        'scenery': 'Scenery Types',
+                                        'experience': 'Experience Types',
+                                        'vehicle': 'Vehicle Suitability',
+                                        'other': 'Other Tags'
+                                    };
+
+                                    return (
+                                        <div className="space-y-2">
+                                            {categoryOrder.map(category => {
+                                                const tags = groupedTags[category];
+                                                if (!tags || tags.length === 0) return null;
+
+                                                return (
+                                                    <div key={category} className="mb-1">
+                                                        <div className={`px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-700 uppercase tracking-wider tag-${category}`}>
+                                                            {categoryNames[category]}
+                                                        </div>
+                                                        <div className="flex flex-wrap gap-1 p-1">
+                                                            {tags.map(tag => (
+                                                                <button
+                                                                    key={tag.id}
+                                                                    type="button"
+                                                                    className={`px-2 py-0.5 rounded-md text-xs hover:opacity-80 ${
+                                                                        tag.type ? `tag-${tag.type}` : 'bg-gray-100 hover:bg-gray-200'
+                                                                    }`}
+                                                                    onClick={() => setSelectedTagIds([...selectedTagIds, tag.id])}
+                                                                    title={tag.description || ''}
+                                                                >
+                                                                    <FaTag className="inline mr-1 text-xs" />
+                                                                    {tag.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
 
@@ -1575,38 +1628,6 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     };
 
     const renderCollections = () => {
-        // Double-check authentication status
-        const token = localStorage.getItem('token');
-        const tempAuthState = localStorage.getItem('temp_auth_state');
-        const isActuallyAuthenticated = isAuthenticated || !!token || !!tempAuthState || !!window.isUserAuthenticated;
-
-        if (!isActuallyAuthenticated) {
-            return (
-                <div className="text-center py-8 bg-gray-50 rounded border">
-                    <p className="text-gray-600">You can view collections, but you need to log in to create your own collections.</p>
-                    <p className="mt-2 text-sm text-gray-500">Public collections will be displayed here.</p>
-                </div>
-            );
-        }
-
-        if (loading) {
-            return <div className="text-center py-8">Loading collections...</div>;
-        }
-
-        if (error) {
-            return (
-                <div className="text-center py-8 text-red-500">
-                    {error}
-                    <button
-                        onClick={fetchCollections}
-                        className="block mx-auto mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                    >
-                        Try Again
-                    </button>
-                </div>
-            );
-        }
-
         return (
             <div>
                 <div className="flex justify-between items-center mb-4">
@@ -1622,7 +1643,29 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                     </button>
                 </div>
 
-                {collections.length === 0 ? (
+                {!isAuthenticated ? (
+                    <div className="text-center py-8 bg-gray-50 rounded border">
+                        <p className="text-gray-600">You need to log in to create and manage your collections.</p>
+                        <a
+                            href="/login"
+                            className="mt-2 inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Log In
+                        </a>
+                    </div>
+                ) : loading ? (
+                    <div className="text-center py-8">Loading collections...</div>
+                ) : error ? (
+                    <div className="text-center py-8 text-red-500">
+                        {error}
+                        <button
+                            onClick={fetchCollections}
+                            className="block mx-auto mt-2 px-4 py-2 bg-blue-500 text-white rounded"
+                        >
+                            Try Again
+                        </button>
+                    </div>
+                ) : collections.length === 0 ? (
                     <div className="text-center py-8 bg-gray-50 rounded border">
                         <FaFolder className="mx-auto text-4xl text-gray-400 mb-2" />
                         <p className="text-gray-600">You don't have any collections yet</p>

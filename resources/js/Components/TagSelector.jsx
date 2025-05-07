@@ -23,8 +23,6 @@ export default function TagSelector({
     const [isLoading, setIsLoading] = useState(false);
     const [showTagSelector, setShowTagSelector] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [newTagName, setNewTagName] = useState('');
-    const [showNewTagForm, setShowNewTagForm] = useState(false);
     const [error, setError] = useState(null);
 
     // Fetch available tags on mount
@@ -60,38 +58,47 @@ export default function TagSelector({
         onTagsChange(updatedTags);
     };
 
+    // Custom tag creation is disabled - this function is no longer used
     const handleCreateTag = async () => {
-        if (!newTagName.trim()) return;
-
-        try {
-            setIsLoading(true);
-            const response = await axios.post('/api/tags', {
-                name: newTagName,
-                type: entityType
-            });
-
-            // Add the new tag to available tags
-            setAvailableTags([...availableTags, response.data.tag]);
-
-            // Select the new tag
-            handleAddTag(response.data.tag);
-
-            // Reset form
-            setNewTagName('');
-            setShowNewTagForm(false);
+        setError('Creating custom tags is not allowed. Please use one of the predefined tags.');
+        setTimeout(() => {
             setError(null);
-        } catch (error) {
-            console.error('Error creating tag:', error);
-            setError(error.response?.data?.message || 'Failed to create tag');
-        } finally {
-            setIsLoading(false);
-        }
+        }, 3000);
     };
 
     // Filter available tags based on search query and already selected tags
     const filteredTags = availableTags
         .filter(tag => !selectedTags.find(t => t.id === tag.id))
         .filter(tag => tag.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // Group tags by category for better organization
+    const groupedTags = filteredTags.reduce((acc, tag) => {
+        const category = tag.type || 'other';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(tag);
+        return acc;
+    }, {});
+
+    // Define category display names and order
+    const categoryOrder = [
+        'road_characteristic',
+        'surface_type',
+        'scenery',
+        'experience',
+        'vehicle',
+        'other'
+    ];
+
+    const categoryNames = {
+        'road_characteristic': 'Road Characteristics',
+        'surface_type': 'Surface Types',
+        'scenery': 'Scenery Types',
+        'experience': 'Experience Types',
+        'vehicle': 'Vehicle Suitability',
+        'other': 'Other Tags'
+    };
 
     return (
         <div className={`tag-selector ${className}`}>
@@ -104,6 +111,7 @@ export default function TagSelector({
                             tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
                         }`}
                         style={{ boxShadow: '0 0 0 2px currentColor' }}
+                        title={tag.description || ''}
                     >
                         <FaTag className="mr-1 text-xs" />
                         <span>{tag.name}</span>
@@ -111,6 +119,7 @@ export default function TagSelector({
                             <button
                                 onClick={() => handleRemoveTag(tag.id)}
                                 className="ml-1 hover:text-red-600"
+                                aria-label={`Remove ${tag.name} tag`}
                             >
                                 <FaTimes size={12} />
                             </button>
@@ -142,21 +151,33 @@ export default function TagSelector({
                         />
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-60 overflow-y-auto">
                         {isLoading ? (
                             <div className="p-2 text-center text-gray-500">Loading tags...</div>
-                        ) : filteredTags.length > 0 ? (
+                        ) : Object.keys(groupedTags).length > 0 ? (
                             <div className="py-1">
-                                {filteredTags.map(tag => (
-                                    <button
-                                        key={tag.id}
-                                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center"
-                                        onClick={() => handleAddTag(tag)}
-                                    >
-                                        <FaTag className="mr-2 text-blue-500" />
-                                        <span>{tag.name}</span>
-                                    </button>
-                                ))}
+                                {categoryOrder.map(category => {
+                                    const tags = groupedTags[category];
+                                    if (!tags || tags.length === 0) return null;
+
+                                    return (
+                                        <div key={category} className="mb-2">
+                                            <div className={`px-4 py-1 text-xs font-semibold bg-gray-100 text-gray-700 uppercase tracking-wider tag-${category}`}>
+                                                {categoryNames[category]}
+                                            </div>
+                                            {tags.map(tag => (
+                                                <button
+                                                    key={tag.id}
+                                                    className={`w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center tag-${tag.type}`}
+                                                    onClick={() => handleAddTag(tag)}
+                                                >
+                                                    <FaTag className="mr-2" />
+                                                    <span>{tag.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="p-2 text-center text-gray-500">
@@ -165,49 +186,14 @@ export default function TagSelector({
                         )}
                     </div>
 
-                    {/* Create New Tag */}
+                    {/* Error message section */}
                     <div className="p-2 border-t">
-                        {showNewTagForm ? (
-                            <div className="flex flex-col">
-                                <input
-                                    type="text"
-                                    placeholder="New tag name..."
-                                    className="w-full px-2 py-1 border rounded mb-2"
-                                    value={newTagName}
-                                    onChange={(e) => setNewTagName(e.target.value)}
-                                />
-                                <div className="flex justify-between">
-                                    <button
-                                        onClick={() => setShowNewTagForm(false)}
-                                        className="px-2 py-1 text-sm text-gray-600 hover:text-gray-800"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={handleCreateTag}
-                                        disabled={isLoading || !newTagName.trim()}
-                                        className={`px-2 py-1 text-sm rounded ${
-                                            isLoading || !newTagName.trim()
-                                                ? 'bg-blue-300 cursor-not-allowed'
-                                                : 'bg-blue-500 text-white hover:bg-blue-600'
-                                        }`}
-                                    >
-                                        {isLoading ? 'Creating...' : 'Create Tag'}
-                                    </button>
-                                </div>
-                                {error && (
-                                    <p className="text-red-500 text-xs mt-1">{error}</p>
-                                )}
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => setShowNewTagForm(true)}
-                                className="w-full text-left px-2 py-1 text-blue-600 hover:text-blue-800 flex items-center"
-                            >
-                                <FaPlus className="mr-2" />
-                                <span>Create new tag</span>
-                            </button>
+                        {error && (
+                            <p className="text-red-500 text-xs mt-1">{error}</p>
                         )}
+                        <p className="text-xs text-gray-500 mt-1">
+                            Please select from the predefined tags above.
+                        </p>
                     </div>
                 </div>
             )}

@@ -547,4 +547,66 @@ class CollectionController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get collections by country.
+     */
+    public function getCollectionsByCountry(Request $request)
+    {
+        $country = $request->input('country');
+
+        if (!$country) {
+            return response()->json(['error' => 'Country parameter is required'], 400);
+        }
+
+        $collections = Collection::where('is_public', true)
+            ->whereHas('roads', function($query) use ($country) {
+                $query->where('country', $country)
+                      ->where('is_public', true);
+            })
+            ->with(['user:id,name,username,profile_picture', 'tags', 'roads' => function($query) {
+                $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating', 'country', 'region')
+                    ->limit(3); // Just get a few roads for preview
+            }])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return response()->json($collections);
+    }
+
+    /**
+     * Get collections by tag.
+     */
+    public function getCollectionsByTag(Request $request)
+    {
+        $tagId = $request->input('tag_id');
+        $tagName = $request->input('tag_name');
+
+        if (!$tagId && !$tagName) {
+            return response()->json(['error' => 'Either tag_id or tag_name parameter is required'], 400);
+        }
+
+        $query = Collection::where('is_public', true);
+
+        if ($tagId) {
+            $query->whereHas('tags', function($q) use ($tagId) {
+                $q->where('tags.id', $tagId);
+            });
+        } else {
+            $query->whereHas('tags', function($q) use ($tagName) {
+                $q->where('tags.name', 'like', "%{$tagName}%");
+            });
+        }
+
+        $collections = $query->with(['user:id,name,username,profile_picture', 'tags', 'roads' => function($query) {
+                $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating', 'country', 'region')
+                    ->limit(3); // Just get a few roads for preview
+            }])
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return response()->json($collections);
+    }
 }

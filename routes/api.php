@@ -307,9 +307,14 @@ Route::get('/leaderboard/most-reviewed', [LeaderboardController::class, 'mostRev
 Route::get('/leaderboard/most-popular', [LeaderboardController::class, 'mostPopularRoads']);
 Route::get('/leaderboard/most-active-users', [LeaderboardController::class, 'mostActiveUsers']);
 Route::get('/leaderboard/most-followed-users', [LeaderboardController::class, 'mostFollowedUsers']);
+Route::get('/leaderboard/featured-collections', [LeaderboardController::class, 'featuredCollections']);
+Route::get('/leaderboard/popular-roads-by-country', [LeaderboardController::class, 'popularRoadsByCountry']);
+Route::get('/leaderboard/countries-with-most-roads', [LeaderboardController::class, 'countriesWithMostRoads']);
 
 // Public collections
 Route::get('/public-collections', [CollectionController::class, 'publicCollections']);
+Route::get('/collections-by-country', [CollectionController::class, 'getCollectionsByCountry']);
+Route::get('/collections-by-tag', [CollectionController::class, 'getCollectionsByTag']);
 
 // Location routes
 Route::get('/countries', [LocationController::class, 'getCountries']);

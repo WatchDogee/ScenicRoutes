@@ -3,35 +3,67 @@
   position: relative;
 }
 
-/* Tag type styling */
+/* Tag category styling */
+
+/* Road characteristics */
+.tag-road_characteristic {
+  background-color: #fce7f3 !important; /* Pink */
+  color: #9d174d !important;
+}
+
+/* Surface types */
+.tag-surface_type {
+  background-color: #e0f2fe !important; /* Light blue */
+  color: #0369a1 !important;
+}
+
+/* Scenery types */
+.tag-scenery {
+  background-color: #d1fae5 !important; /* Green */
+  color: #065f46 !important;
+}
+
+/* Experience types */
+.tag-experience {
+  background-color: #fee2e2 !important; /* Red */
+  color: #991b1b !important;
+}
+
+/* Vehicle suitability */
+.tag-vehicle {
+  background-color: #fef3c7 !important; /* Yellow */
+  color: #92400e !important;
+}
+
+/* Individual tag styling (for backward compatibility) */
 .tag-scenic {
   background-color: #d1fae5 !important;
   color: #065f46 !important;
 }
 
 .tag-motorcycle {
-  background-color: #fee2e2 !important;
-  color: #991b1b !important;
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
 }
 
 .tag-mountain {
-  background-color: #e0e7ff !important;
-  color: #3730a3 !important;
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
 }
 
 .tag-coastal {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
 }
 
 .tag-forest {
   background-color: #d1fae5 !important;
-  color: #047857 !important;
+  color: #065f46 !important;
 }
 
 .tag-desert {
-  background-color: #fef3c7 !important;
-  color: #92400e !important;
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
 }
 
 .tag-twisty {
@@ -39,19 +71,14 @@
   color: #9d174d !important;
 }
 
-.tag-beginner {
-  background-color: #d1fae5 !important;
-  color: #047857 !important;
+.tag-beginner-friendly {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
 }
 
 .tag-advanced {
   background-color: #fee2e2 !important;
   color: #991b1b !important;
-}
-
-.tag-expert {
-  background-color: #fef3c7 !important;
-  color: #92400e !important;
 }
 
 /* Tag filter section */

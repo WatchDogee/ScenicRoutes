@@ -20,9 +20,20 @@ class TagController extends Controller
 
     /**
      * Store a newly created tag in storage.
+     *
+     * Note: This method is now restricted to prevent users from creating custom tags.
+     * Only predefined tags from the PredefinedTagsSeeder can be used.
      */
     public function store(Request $request)
     {
+        // Return an error as custom tag creation is disabled
+        return response()->json([
+            'message' => 'Creating custom tags is not allowed. Please use one of the predefined tags.',
+            'errors' => ['name' => ['Custom tag creation is disabled']]
+        ], 403);
+
+        // The original implementation is commented out below
+        /*
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -46,6 +57,7 @@ class TagController extends Controller
             'message' => 'Tag created successfully',
             'tag' => $tag
         ], 201);
+        */
     }
 
     /**
