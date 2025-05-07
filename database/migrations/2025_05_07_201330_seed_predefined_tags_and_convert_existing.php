@@ -99,12 +99,18 @@ return new class extends Migration
                 ->get();
 
             // Log the number of roads found
-            DB::table('migration_log')->insert([
-                'message' => 'Found ' . $roadsWithScenicTag->count() . ' roads with Scenic tag',
-                'migration' => '2025_05_07_201330_seed_predefined_tags_and_convert_existing',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            try {
+                DB::table('migration_log')->insert([
+                    'message' => 'Found ' . $roadsWithScenicTag->count() . ' roads with Scenic tag',
+                    'migration' => '2025_05_07_201330_seed_predefined_tags_and_convert_existing',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // If the migration_log table doesn't exist, just continue without logging
+                // This is a fallback in case the migrations run out of order
+                \Log::warning('Could not log to migration_log table: ' . $e->getMessage());
+            }
         }
     }
 

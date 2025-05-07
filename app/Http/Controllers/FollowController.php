@@ -98,9 +98,15 @@ class FollowController extends Controller
         $user = Auth::user();
         $otherUser = User::findOrFail($id);
 
+        // Get follower and following counts
+        $followersCount = $otherUser->followers()->count();
+        $followingCount = $otherUser->following()->count();
+
         return response()->json([
             'following' => $user->isFollowing($otherUser->id),
-            'followed_by' => $otherUser->isFollowing($user->id)
+            'followed_by' => $otherUser->isFollowing($user->id),
+            'followers_count' => $followersCount,
+            'following_count' => $followingCount
         ]);
     }
 
