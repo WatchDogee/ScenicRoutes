@@ -13,77 +13,95 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Create migration_log table first
-        $this->createMigrationLogTable();
+        // Create all tables in a single transaction for atomicity
+        DB::connection()->getPdo()->exec('BEGIN TRANSACTION');
 
-        // Create users table (no foreign key dependencies)
-        $this->createUsersTable();
-
-        // Create saved_roads table (depends on users)
-        $this->createSavedRoadsTable();
-
-        // Create reviews table (depends on users and saved_roads)
-        $this->createReviewsTable();
-
-        // Create review_photos table (depends on reviews)
-        $this->createReviewPhotosTable();
-
-        // Create road_photos table (depends on saved_roads and users)
-        $this->createRoadPhotosTable();
-
-        // Create comments table (depends on users and saved_roads)
-        $this->createCommentsTable();
-
-        // Create points_of_interest table (depends on users)
-        $this->createPointsOfInterestTable();
-
-        // Create poi_photos table (depends on points_of_interest and users)
-        $this->createPoiPhotosTable();
-
-        // Create poi_reviews table (depends on points_of_interest and users)
-        $this->createPoiReviewsTable();
-
-        // Create user_settings table (depends on users)
-        $this->createUserSettingsTable();
-
-        // Create follows table (depends on users)
-        $this->createFollowsTable();
-
-        // Create collections table (depends on users)
-        $this->createCollectionsTable();
-
-        // Create collection_road pivot table
-        $this->createCollectionRoadTable();
-
-        // Create tags table
-        $this->createTagsTable();
-
-        // Create road_tag pivot table
-        $this->createRoadTagTable();
-
-        // Create collection_tag pivot table
-        $this->createCollectionTagTable();
-
-        // Create password_reset_tokens table (no foreign key dependencies)
-        $this->createPasswordResetTokensTable();
-
-        // Create personal_access_tokens table (polymorphic relationship)
-        $this->createPersonalAccessTokensTable();
-
-        // Create cache table
-        $this->createCacheTable();
-
-        // Create cache_locks table
-        $this->createCacheLocksTable();
-
-        // Create sessions table
-        $this->createSessionsTable();
-
-        // Seed predefined tags
-        $this->seedPredefinedTags();
-
-        // Log successful migration
-        $this->logMigration('All tables created successfully');
+        try {
+            // Create migration_log table first
+            $this->createMigrationLogTable();
+            
+            // Create users table (no foreign key dependencies)
+            $this->createUsersTable();
+            
+            // Create saved_roads table (depends on users)
+            $this->createSavedRoadsTable();
+            
+            // Create reviews table (depends on users and saved_roads)
+            $this->createReviewsTable();
+            
+            // Create review_photos table (depends on reviews)
+            $this->createReviewPhotosTable();
+            
+            // Create road_photos table (depends on saved_roads and users)
+            $this->createRoadPhotosTable();
+            
+            // Create comments table (depends on users and saved_roads)
+            $this->createCommentsTable();
+            
+            // Create points_of_interest table (depends on users)
+            $this->createPointsOfInterestTable();
+            
+            // Create poi_photos table (depends on points_of_interest and users)
+            $this->createPoiPhotosTable();
+            
+            // Create poi_reviews table (depends on points_of_interest and users)
+            $this->createPoiReviewsTable();
+            
+            // Create user_settings table (depends on users)
+            $this->createUserSettingsTable();
+            
+            // Create follows table (depends on users)
+            $this->createFollowsTable();
+            
+            // Create collections table (depends on users)
+            $this->createCollectionsTable();
+            
+            // Create collection_road pivot table
+            $this->createCollectionRoadTable();
+            
+            // Create tags table
+            $this->createTagsTable();
+            
+            // Create road_tag pivot table
+            $this->createRoadTagTable();
+            
+            // Create collection_tag pivot table
+            $this->createCollectionTagTable();
+            
+            // Create password_reset_tokens table (no foreign key dependencies)
+            $this->createPasswordResetTokensTable();
+            
+            // Create personal_access_tokens table (polymorphic relationship)
+            $this->createPersonalAccessTokensTable();
+            
+            // Create cache table
+            $this->createCacheTable();
+            
+            // Create cache_locks table
+            $this->createCacheLocksTable();
+            
+            // Create sessions table
+            $this->createSessionsTable();
+            
+            // Seed predefined tags
+            $this->seedPredefinedTags();
+            
+            // Commit the transaction
+            DB::connection()->getPdo()->exec('COMMIT');
+            
+            // Log successful migration
+            $this->logMigration('All tables created successfully');
+            
+        } catch (\Exception $e) {
+            // Rollback the transaction on error
+            DB::connection()->getPdo()->exec('ROLLBACK');
+            
+            // Log the error
+            \Log::error('Migration failed: ' . $e->getMessage());
+            
+            // Rethrow the exception
+            throw $e;
+        }
     }
 
     /**
@@ -333,7 +351,7 @@ return new class extends Migration
                 $table->foreignId('follower_id')->constrained('users')->onDelete('cascade');
                 $table->foreignId('followed_id')->constrained('users')->onDelete('cascade');
                 $table->timestamps();
-
+                
                 // Prevent duplicate follows
                 $table->unique(['follower_id', 'followed_id']);
             });
@@ -373,7 +391,7 @@ return new class extends Migration
                 $table->foreignId('saved_road_id')->constrained()->onDelete('cascade');
                 $table->integer('order')->default(0);
                 $table->timestamps();
-
+                
                 // Prevent duplicate roads in a collection
                 $table->unique(['collection_id', 'saved_road_id']);
             });
@@ -408,7 +426,7 @@ return new class extends Migration
                 $table->foreignId('road_id')->constrained('saved_roads')->onDelete('cascade');
                 $table->foreignId('tag_id')->constrained('tags')->onDelete('cascade');
                 $table->timestamps();
-
+                
                 // Prevent duplicate tags on a road
                 $table->unique(['road_id', 'tag_id']);
             });
@@ -426,7 +444,7 @@ return new class extends Migration
                 $table->foreignId('collection_id')->constrained()->onDelete('cascade');
                 $table->foreignId('tag_id')->constrained()->onDelete('cascade');
                 $table->timestamps();
-
+                
                 // Prevent duplicate tags on a collection
                 $table->unique(['collection_id', 'tag_id']);
             });
@@ -558,36 +576,34 @@ return new class extends Migration
             ],
         ];
 
-        // Create tags using Laravel's transaction handling
-        DB::transaction(function () use ($tagCategories) {
-            foreach ($tagCategories as $type => $tags) {
-                foreach ($tags as $name => $description) {
-                    // Check if tag already exists
-                    $slug = Str::slug($name);
-                    $existingTag = DB::table('tags')->where('slug', $slug)->first();
+        // Create tags
+        foreach ($tagCategories as $type => $tags) {
+            foreach ($tags as $name => $description) {
+                // Check if tag already exists
+                $slug = Str::slug($name);
+                $existingTag = DB::table('tags')->where('slug', $slug)->first();
 
-                    if (!$existingTag) {
-                        DB::table('tags')->insert([
-                            'name' => $name,
-                            'slug' => $slug,
+                if (!$existingTag) {
+                    DB::table('tags')->insert([
+                        'name' => $name,
+                        'slug' => $slug,
+                        'description' => $description,
+                        'type' => $type,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    // Update existing tag with proper type and description
+                    DB::table('tags')
+                        ->where('id', $existingTag->id)
+                        ->update([
                             'description' => $description,
                             'type' => $type,
-                            'created_at' => now(),
                             'updated_at' => now(),
                         ]);
-                    } else {
-                        // Update existing tag with proper type and description
-                        DB::table('tags')
-                            ->where('id', $existingTag->id)
-                            ->update([
-                                'description' => $description,
-                                'type' => $type,
-                                'updated_at' => now(),
-                            ]);
-                    }
                 }
             }
-        });
+        }
     }
 
     /**
