@@ -1,7 +1,11 @@
 /* Modal fixes for z-index and pointer events */
 
 /* Portal roots should be on top of everything */
-#navigation-modal-root,
+#navigation-modal-root {
+    position: relative;
+    z-index: 10000000 !important; /* Navigation modal has highest priority */
+}
+
 #rating-modal-root,
 #collection-modal-root,
 #save-to-collection-modal-root {
@@ -9,17 +13,17 @@
     z-index: 9999999 !important;
 }
 
-/* Ensure navigation modal is always on top */
+/* Ensure navigation modal is always on top of everything */
 .navigation-modal,
 .navigation-modal-overlay,
 .navigation-app-selector {
-    z-index: 9999999 !important;
+    z-index: 10000001 !important; /* Higher than rating modal */
     position: fixed !important;
     pointer-events: auto !important;
 }
 
 .navigation-modal-content {
-    z-index: 10000000 !important;
+    z-index: 10000002 !important; /* Higher than overlay */
     position: relative !important;
     pointer-events: auto !important;
 }

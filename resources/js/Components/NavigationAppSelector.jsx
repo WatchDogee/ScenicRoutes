@@ -126,10 +126,10 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
     return (
         <Portal rootId="navigation-modal-root">
             <div
-                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center navigation-modal-overlay"
                 style={{
                     pointerEvents: 'auto',
-                    zIndex: 999999,
+                    zIndex: 10000001, // Higher than rating modal
                     position: 'fixed'
                 }}
                 onClick={(e) => {
@@ -139,11 +139,11 @@ export default function NavigationAppSelector({ coordinates, roadName, onClose }
                 }}
             >
                 <div
-                    className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow relative"
+                    className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow relative navigation-modal-content"
                     style={{
                         pointerEvents: 'auto',
                         position: 'relative',
-                        zIndex: 1000000
+                        zIndex: 10000002 // Higher than overlay
                     }}
                     onClick={(e) => {
                         // Prevent clicks from propagating
