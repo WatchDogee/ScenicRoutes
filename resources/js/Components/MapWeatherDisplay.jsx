@@ -1,21 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import WeatherDisplay from './WeatherDisplay';
+import WeatherService from '../Services/WeatherService';
 
 /**
- * Component to display weather information for the current map location
+ * Enhanced component to display weather information for the current map location
+ * with additional weather details
  */
 const MapWeatherDisplay = ({ mapCenter, units = 'metric' }) => {
     const [showWeather, setShowWeather] = useState(false);
-    
+    const [expandedView, setExpandedView] = useState(false);
+    const [weather, setWeather] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     // Toggle weather display
     const toggleWeather = () => {
         setShowWeather(prev => !prev);
+        if (!showWeather && mapCenter) {
+            fetchWeatherData();
+        }
     };
-    
+
+    // Toggle expanded view
+    const toggleExpandedView = (e) => {
+        e.stopPropagation();
+        setExpandedView(prev => !prev);
+    };
+
+    // Fetch weather data directly
+    const fetchWeatherData = async () => {
+        if (!mapCenter) return;
+
+        setLoading(true);
+        setError(null);
+
+        try {
+            const weatherData = await WeatherService.getWeatherByCoordinates(
+                mapCenter.lat,
+                mapCenter.lng,
+                units
+            );
+
+            if (weatherData && weatherData.error) {
+                setError(weatherData.error);
+                setWeather(null);
+            } else {
+                setWeather(weatherData);
+                setError(null);
+            }
+        } catch (err) {
+            console.error('Error fetching weather in MapWeatherDisplay:', err);
+            setError('Failed to load weather data');
+            setWeather(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Update weather when map center changes
+    useEffect(() => {
+        if (showWeather && mapCenter) {
+            fetchWeatherData();
+        }
+    }, [mapCenter, units]);
+
     return (
         <div className="absolute top-4 right-4 z-10">
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                <button 
+                <button
                     onClick={toggleWeather}
                     className="flex items-center justify-center p-2 w-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                 >
@@ -24,14 +76,42 @@ const MapWeatherDisplay = ({ mapCenter, units = 'metric' }) => {
                     </svg>
                     <span>{showWeather ? 'Hide Weather' : 'Show Weather'}</span>
                 </button>
-                
+
                 {showWeather && mapCenter && (
                     <div className="p-2">
-                        <WeatherDisplay 
-                            lat={mapCenter.lat} 
-                            lon={mapCenter.lng} 
+                        {/* Basic weather display */}
+                        <WeatherDisplay
+                            lat={mapCenter.lat}
+                            lon={mapCenter.lng}
                             units={units}
                         />
+
+                        {/* Toggle for expanded view */}
+                        <button
+                            onClick={toggleExpandedView}
+                            className="mt-2 text-xs text-blue-600 hover:text-blue-800 flex items-center justify-center w-full"
+                        >
+                            {expandedView ? 'Show Less' : 'Show More Details'}
+                        </button>
+
+                        {/* Expanded weather details */}
+                        {expandedView && weather && (
+                            <div className="mt-2 text-sm border-t pt-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p className="text-gray-600">Humidity: {weather.humidity}%</p>
+                                        <p className="text-gray-600">Wind: {weather.wind.speed} {weather.wind.unit}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-600">Pressure: {weather.pressure} hPa</p>
+                                        <p className="text-gray-600">Visibility: {(weather.visibility / 1000).toFixed(1)} km</p>
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Location: {weather.location.name}, {weather.location.country}
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

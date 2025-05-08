@@ -68,46 +68,43 @@ class User extends Authenticatable implements MustVerifyEmail
             \Log::info('Getting profile picture URL', [
                 'disk' => $disk,
                 'path' => $this->profile_picture,
-                'exists_s3' => $disk === 's3' && config('filesystems.disks.s3.key') ? Storage::disk('s3')->exists($this->profile_picture) : 'S3 not configured',
-                'exists_public' => Storage::disk('public')->exists($this->profile_picture),
                 'app_url' => config('app.url')
             ]);
 
-            // Try multiple approaches to ensure we get a valid URL
             try {
-                // First try S3 if it's configured and set as default
+                // For local development, always use the public disk with the correct APP_URL
+                if ($disk === 'public') {
+                    // Make sure we're using the correct APP_URL
+                    $appUrl = config('app.url');
+                    if (empty($appUrl) || $appUrl === 'http://localhost') {
+                        $appUrl = 'http://localhost:8000';
+                    }
+
+                    // Construct the URL manually to ensure it's correct
+                    $url = $appUrl . '/storage/' . $this->profile_picture;
+                    \Log::info('Generated URL for public disk', ['url' => $url]);
+                    return $url;
+                }
+
+                // For S3 storage
                 if ($disk === 's3' && config('filesystems.disks.s3.key')) {
                     $url = Storage::disk('s3')->url($this->profile_picture);
                     \Log::info('Generated URL from S3 disk', ['url' => $url]);
                     return $url;
                 }
 
-                // Then check if the file exists in public disk
-                if (Storage::disk('public')->exists($this->profile_picture)) {
-                    $url = Storage::disk('public')->url($this->profile_picture);
-                    \Log::info('Generated URL from public disk', ['url' => $url]);
-                    return $url;
-                }
-
-                // If S3 is configured but not set as default, try it as a fallback
-                if (config('filesystems.disks.s3.key')) {
-                    if (Storage::disk('s3')->exists($this->profile_picture)) {
-                        $url = Storage::disk('s3')->url($this->profile_picture);
-                        \Log::info('Generated URL from S3 disk (fallback)', ['url' => $url]);
-                        return $url;
-                    }
-                }
-
-                // Last resort: use the asset helper
-                $assetUrl = asset('storage/' . $this->profile_picture);
-                \Log::info('Generated URL from asset helper', ['url' => $assetUrl]);
-                return $assetUrl;
+                // Fallback to asset helper
+                $url = asset('storage/' . $this->profile_picture);
+                \Log::info('Generated URL from asset helper', ['url' => $url]);
+                return $url;
             } catch (\Exception $e) {
                 // Log the error and fallback to asset helper
                 \Log::error('Error generating profile picture URL', [
                     'error' => $e->getMessage(),
                     'path' => $this->profile_picture
                 ]);
+
+                // Last resort fallback
                 return asset('storage/' . $this->profile_picture);
             }
         }

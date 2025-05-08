@@ -7,3 +7,23 @@
 @import 'poi.css';
 @import 'community.css';
 @import 'social.css';
+
+/* Add these styles to differentiate markers */
+.marker-icon {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-marker .marker-icon {
+    background-color: #3b82f6; /* blue-500 */
+}
+
+.community-marker .marker-icon {
+    background-color: #8b5cf6; /* purple-500 */
+}

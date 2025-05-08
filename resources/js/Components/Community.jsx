@@ -4,6 +4,52 @@ import L from 'leaflet';
 import NavigationAppSelector from './NavigationAppSelector';
 import RatingModal from './RatingModal';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
+import CollapsibleTagSelector from './CollapsibleTagSelector';
+import { FaTag, FaChevronDown, FaSearch } from 'react-icons/fa';
+
+// TagCategoryCollapsible component for displaying tags with collapsible functionality
+function TagCategoryCollapsible({ tags, onTagSelect }) {
+    const [expanded, setExpanded] = useState(false);
+    const initialVisibleCount = 5;
+    const hasMoreTags = tags.length > initialVisibleCount;
+
+    // Get visible tags based on expanded state
+    const visibleTags = expanded ? tags : tags.slice(0, initialVisibleCount);
+
+    return (
+        <div className="tag-category-collapsible">
+            <div className="flex flex-wrap gap-1">
+                {visibleTags.map(tag => (
+                    <button
+                        key={tag.id}
+                        type="button"
+                        className={`px-2 py-1 rounded text-xs ${
+                            tag.type ? `tag-${tag.type}` : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                        onClick={() => onTagSelect(tag)}
+                        title={tag.description || ''}
+                    >
+                        <FaTag className="inline mr-1 text-xs" />
+                        {tag.name}
+                    </button>
+                ))}
+
+                {hasMoreTags && (
+                    <button
+                        type="button"
+                        className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 flex items-center tag-expand-button"
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        {expanded ? 'Show Less' : `+${tags.length - initialVisibleCount} more`}
+                        <FaChevronDown
+                            className={`ml-1 text-xs transition-transform icon ${expanded ? 'expanded' : ''}`}
+                        />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Community({ auth }) {
     const { userSettings } = useContext(UserSettingsContext);
@@ -18,19 +64,63 @@ export default function Community({ auth }) {
     const [localRating, setLocalRating] = useState(0);
     const [localComment, setLocalComment] = useState('');
 
+    // Tag filtering state
+    const [availableTags, setAvailableTags] = useState([]);
+    const [selectedTagIds, setSelectedTagIds] = useState([]);
+    const [showTagFilters, setShowTagFilters] = useState(false);
+    const [loadingTags, setLoadingTags] = useState(false);
+
     useEffect(() => {
         fetchPublicRoads();
+        fetchTags();
     }, []);
+
+    // Fetch tags for filtering
+    const fetchTags = async () => {
+        setLoadingTags(true);
+        try {
+            const response = await axios.get('/api/tags');
+            setAvailableTags(response.data);
+        } catch (error) {
+            console.error('Error fetching tags:', error);
+        } finally {
+            setLoadingTags(false);
+        }
+    };
 
     const fetchPublicRoads = async (location = '') => {
         setLoading(true);
         try {
             let url = '/api/public-roads';
+            const params = new URLSearchParams();
+
             if (location) {
-                url += `?location=${encodeURIComponent(location)}&radius=${searchRadius}`;
+                params.append('location', location);
+                params.append('radius', searchRadius);
             }
+
+            // Add tag filtering
+            if (selectedTagIds.length > 0) {
+                params.append('tags', selectedTagIds.join(','));
+            }
+
+            // Add params to URL if any exist
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+
             const response = await axios.get(url);
-            setPublicRoads(response.data);
+
+            // Check if response.data is an array or an object with a roads property
+            let roadsData = response.data;
+            if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                roadsData = response.data.roads;
+            } else if (!Array.isArray(response.data)) {
+                console.error('Unexpected response format:', response.data);
+                roadsData = [];
+            }
+
+            setPublicRoads(roadsData);
         } catch (error) {
             console.error('Error fetching public roads:', error);
         } finally {
@@ -41,6 +131,70 @@ export default function Community({ auth }) {
     const handleSearch = (e) => {
         e.preventDefault();
         fetchPublicRoads(searchLocation);
+    };
+
+    // Handle tag selection changes
+    const handleTagsChange = (tags) => {
+        setSelectedTagIds(tags.map(tag => tag.id));
+        fetchPublicRoads(searchLocation);
+    };
+
+    // Clear all filters
+    const handleClearFilters = () => {
+        setSearchLocation('');
+        setSearchRadius(50);
+        setSelectedTagIds([]);
+        fetchPublicRoads('');
+    };
+
+    // Define category order and names
+    const categoryOrder = [
+        'road_characteristic',
+        'surface_type',
+        'scenery',
+        'experience',
+        'vehicle',
+        'other'
+    ];
+
+    const categoryNames = {
+        'road_characteristic': 'Road Characteristics',
+        'surface_type': 'Surface Types',
+        'scenery': 'Scenery Types',
+        'experience': 'Experience Types',
+        'vehicle': 'Vehicle Suitability',
+        'other': 'Other Tags'
+    };
+
+    // Group tags by category
+    const groupTagsByCategory = () => {
+        const filteredTags = availableTags.filter(tag => !selectedTagIds.includes(tag.id));
+        const groupedTags = filteredTags.reduce((acc, tag) => {
+            const category = tag.type || 'other';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(tag);
+            return acc;
+        }, {});
+
+        // Sort categories according to categoryOrder
+        return Object.fromEntries(
+            // First get entries from groupedTags that are in categoryOrder (in that order)
+            categoryOrder
+                .filter(category => groupedTags[category] && groupedTags[category].length > 0)
+                .map(category => [category, groupedTags[category]])
+                // Then add any remaining categories not in categoryOrder
+                .concat(
+                    Object.entries(groupedTags)
+                        .filter(([category]) => !categoryOrder.includes(category))
+                )
+        );
+    };
+
+    // Get category display name
+    const getCategoryName = (category) => {
+        return categoryNames[category] || category;
     };
 
     const handleViewDetails = async (road) => {
@@ -123,33 +277,133 @@ export default function Community({ auth }) {
         <div className="p-4">
             <h2 className="text-2xl font-bold mb-4">Community Roads</h2>
 
-            {/* Search Form */}
-            <form onSubmit={handleSearch} className="mb-6">
-                <div className="flex gap-4">
-                    <input
-                        type="text"
-                        placeholder="Search by location (e.g., Balvi)"
-                        value={searchLocation}
-                        onChange={(e) => setSearchLocation(e.target.value)}
-                        className="flex-1 p-2 border rounded"
-                    />
-                    <input
-                        type="number"
-                        value={searchRadius}
-                        onChange={(e) => setSearchRadius(e.target.value)}
-                        min="1"
-                        max="200"
-                        className="w-24 p-2 border rounded"
-                    />
-                    <span className="self-center">km</span>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                        Search
-                    </button>
-                </div>
-            </form>
+            {/* Search Form with Collapsible Tag Filter */}
+            <div className="mb-6 border rounded-lg p-4 bg-white shadow">
+                <form onSubmit={handleSearch}>
+                    <div className="flex flex-wrap gap-4 mb-3">
+                        <div className="flex-1 min-w-[200px]">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search by location (e.g., Balvi)"
+                                    value={searchLocation}
+                                    onChange={(e) => setSearchLocation(e.target.value)}
+                                    className="w-full p-2 border rounded pr-10"
+                                />
+                                <FaSearch className="absolute right-3 top-3 text-gray-400" />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="number"
+                                value={searchRadius}
+                                onChange={(e) => setSearchRadius(e.target.value)}
+                                min="1"
+                                max="200"
+                                className="w-20 p-2 border rounded"
+                            />
+                            <span className="self-center">km</span>
+                        </div>
+                        <button
+                            type="submit"
+                            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                            Search
+                        </button>
+
+                        {(searchLocation || searchRadius !== 50 || selectedTagIds.length > 0) && (
+                            <button
+                                type="button"
+                                onClick={handleClearFilters}
+                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                            >
+                                Clear Filters
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Tag Filter Toggle Button */}
+                    <div className="flex items-center">
+                        <button
+                            type="button"
+                            className="text-sm text-blue-600 hover:text-blue-800 flex items-center"
+                            onClick={() => setShowTagFilters(!showTagFilters)}
+                        >
+                            <FaTag className="mr-1 text-xs" />
+                            {showTagFilters ? 'Hide Tag Filters' : 'Show Tag Filters'}
+                            <FaChevronDown
+                                className={`ml-1 text-xs transition-transform ${showTagFilters ? 'transform rotate-180' : ''}`}
+                            />
+                        </button>
+                    </div>
+
+                    {/* Explanation text for tag filters */}
+                    {showTagFilters && (
+                        <div className="mt-1 text-xs text-gray-500">
+                            Each category of tags is collapsible. Click the "+X more" button to see all tags in a category.
+                        </div>
+                    )}
+
+                    {/* Selected Tags Display */}
+                    {selectedTagIds.length > 0 && (
+                        <div className="mt-3">
+                            <CollapsibleTagSelector
+                                selectedTags={selectedTagIds.map(id => {
+                                    const tag = availableTags.find(t => t.id === id);
+                                    return tag || { id, name: `Tag ${id}` };
+                                })}
+                                onTagsChange={handleTagsChange}
+                                initialVisibleTags={5}
+                                alwaysCollapsible={true}
+                                showCategoryHeaders={true}
+                                title="Selected Tags"
+                            />
+                        </div>
+                    )}
+
+                    {/* Collapsible Tag Filter */}
+                    {showTagFilters && (
+                        <div className="mt-3 border rounded p-3 bg-gray-50">
+                            <h3 className="text-sm font-medium mb-2">Filter by Tags</h3>
+                            {loadingTags ? (
+                                <div className="text-sm text-gray-500">Loading tags...</div>
+                            ) : (
+                                <>
+                                    {availableTags.length === 0 ? (
+                                        <div className="text-sm text-gray-500">No tags available</div>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {/* Group tags by category */}
+                                            {Object.entries(groupTagsByCategory()).map(([category, tags]) => {
+                                                if (tags.length === 0) return null;
+
+                                                return (
+                                                    <div key={category} className="mb-2">
+                                                        <div className="text-xs font-medium text-gray-700 mb-1">
+                                                            {getCategoryName(category)}
+                                                        </div>
+                                                        <div className="border rounded p-2 bg-white">
+                                                            <div className={`tag-category-${category}`}>
+                                                                <TagCategoryCollapsible
+                                                                    tags={tags}
+                                                                    onTagSelect={(tag) => {
+                                                                        const newTags = [...selectedTagIds, tag.id];
+                                                                        setSelectedTagIds(newTags);
+                                                                        fetchPublicRoads(searchLocation);
+                                                                    }}
+                                                                />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+                </form>
+            </div>
 
             {/* Roads List */}
             {loading ? (

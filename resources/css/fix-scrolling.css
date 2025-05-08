@@ -56,6 +56,39 @@ body {
     pointer-events: auto !important;
 }
 
+/* Fix for map tiles behind community bar */
+.leaflet-tile-container {
+    z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+    z-index: 1 !important;
+}
+
+.leaflet-pane {
+    z-index: 400 !important;
+}
+
+.leaflet-overlay-pane {
+    z-index: 410 !important;
+}
+
+.leaflet-marker-pane {
+    z-index: 420 !important;
+}
+
+.leaflet-tooltip-pane {
+    z-index: 430 !important;
+}
+
+.leaflet-popup-pane {
+    z-index: 440 !important;
+}
+
+.leaflet-control {
+    z-index: 800 !important;
+}
+
 /* Ensure modals are interactive */
 [role="dialog"],
 .modal,

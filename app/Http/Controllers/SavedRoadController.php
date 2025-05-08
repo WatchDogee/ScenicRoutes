@@ -207,17 +207,131 @@ class SavedRoadController extends Controller
     public function destroy($id)
     {
         try {
+            \Log::info('Attempting to delete road', [
+                'road_id' => $id,
+                'user_id' => auth()->id()
+            ]);
+
             $road = SavedRoad::where('id', $id)
                 ->where('user_id', auth()->id())
                 ->firstOrFail();
 
-            $road->reviews()->delete();
-            $road->comments()->delete();
+            \Log::info('Road found, deleting related records', [
+                'road_id' => $id,
+                'road_name' => $road->road_name
+            ]);
+
+            // Delete related records in the correct order
+            // First delete photos to avoid storage issues
+            if ($road->photos()->count() > 0) {
+                \Log::info('Deleting road photos', [
+                    'road_id' => $id,
+                    'photos_count' => $road->photos()->count()
+                ]);
+
+                // Delete each photo individually to handle storage cleanup
+                foreach ($road->photos as $photo) {
+                    try {
+                        // Delete the file from storage if it exists
+                        if (\Storage::disk('public')->exists($photo->photo_path)) {
+                            \Storage::disk('public')->delete($photo->photo_path);
+                        }
+                        $photo->delete();
+                    } catch (\Exception $photoEx) {
+                        \Log::error('Error deleting road photo', [
+                            'photo_id' => $photo->id,
+                            'error' => $photoEx->getMessage(),
+                            'trace' => $photoEx->getTraceAsString()
+                        ]);
+                        // Continue with other photos even if one fails
+                    }
+                }
+            }
+
+            // Delete reviews and their photos
+            if ($road->reviews()->count() > 0) {
+                \Log::info('Deleting road reviews', [
+                    'road_id' => $id,
+                    'reviews_count' => $road->reviews()->count()
+                ]);
+
+                // Delete each review individually to handle related photos
+                foreach ($road->reviews as $review) {
+                    try {
+                        // Delete review photos if they exist
+                        if (method_exists($review, 'photos') && $review->photos()->count() > 0) {
+                            foreach ($review->photos as $photo) {
+                                try {
+                                    if (\Storage::disk('public')->exists($photo->photo_path)) {
+                                        \Storage::disk('public')->delete($photo->photo_path);
+                                    }
+                                    $photo->delete();
+                                } catch (\Exception $photoEx) {
+                                    \Log::error('Error deleting review photo', [
+                                        'photo_id' => $photo->id,
+                                        'error' => $photoEx->getMessage()
+                                    ]);
+                                }
+                            }
+                        }
+                        $review->delete();
+                    } catch (\Exception $reviewEx) {
+                        \Log::error('Error deleting review', [
+                            'review_id' => $review->id,
+                            'error' => $reviewEx->getMessage(),
+                            'trace' => $reviewEx->getTraceAsString()
+                        ]);
+                    }
+                }
+            }
+
+            // Delete comments
+            if ($road->comments()->count() > 0) {
+                \Log::info('Deleting road comments', [
+                    'road_id' => $id,
+                    'comments_count' => $road->comments()->count()
+                ]);
+                $road->comments()->delete();
+            }
+
+            // Delete tags relationship
+            if (method_exists($road, 'tags') && $road->tags()->count() > 0) {
+                \Log::info('Detaching road tags', [
+                    'road_id' => $id,
+                    'tags_count' => $road->tags()->count()
+                ]);
+                $road->tags()->detach();
+            }
+
+            // Delete collections relationship
+            if (method_exists($road, 'collections') && $road->collections()->count() > 0) {
+                \Log::info('Detaching road from collections', [
+                    'road_id' => $id,
+                    'collections_count' => $road->collections()->count()
+                ]);
+                $road->collections()->detach();
+            }
+
+            // Finally delete the road itself
+            \Log::info('Deleting road record', ['road_id' => $id]);
             $road->delete();
 
+            \Log::info('Road deleted successfully', ['road_id' => $id]);
             return response()->json(['message' => 'Road deleted successfully.'], 200);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('Road not found or user not authorized to delete', [
+                'road_id' => $id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage()
+            ]);
+            return response()->json(['message' => 'Road not found or you do not have permission to delete it.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to delete road.'], 500);
+            \Log::error('Failed to delete road', [
+                'road_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Failed to delete road: ' . $e->getMessage()], 500);
         }
     }
 
@@ -230,22 +344,73 @@ class SavedRoadController extends Controller
             $tags = $request->input('tags');
             $debug = $request->input('debug', false);
 
+            // Get location parameters
+            $lat = $request->input('lat');
+            $lon = $request->input('lon');
+            $radius = $request->input('radius');
+
             \Log::info('Public roads search parameters', [
                 'country' => $country,
                 'region' => $region,
                 'min_rating' => $minRating,
                 'tags' => $tags,
+                'lat' => $lat,
+                'lon' => $lon,
+                'radius' => $radius,
                 'debug' => $debug
             ]);
 
             $query = SavedRoad::with(['user', 'reviews', 'tags'])
                 ->where('is_public', true);
 
-            if ($country) {
-                $query->where('country', $country);
+            // Handle location-based search
+            if ($lat && $lon && $radius) {
+                // Convert radius from km to degrees (approximate)
+                // 1 degree of latitude is approximately 111 km
+                $latRadius = $radius / 111;
+                $lonRadius = $radius / (111 * cos(deg2rad($lat)));
+
+                // Create a bounding box for initial filtering
+                $minLat = $lat - $latRadius;
+                $maxLat = $lat + $latRadius;
+                $minLon = $lon - $lonRadius;
+                $maxLon = $lon + $lonRadius;
+
+                \Log::info('Searching roads within bounding box', [
+                    'center' => [$lat, $lon],
+                    'radius_km' => $radius,
+                    'bounding_box' => [
+                        'minLat' => $minLat,
+                        'maxLat' => $maxLat,
+                        'minLon' => $minLon,
+                        'maxLon' => $maxLon
+                    ]
+                ]);
+
+                // Use a raw query to filter roads within the bounding box
+                // This is a simplified approach - for more accuracy, we'd need to calculate
+                // the actual distance between points using the Haversine formula
+                $query->whereRaw('
+                    JSON_EXTRACT(road_coordinates, "$[0][0]") BETWEEN ? AND ?
+                    AND JSON_EXTRACT(road_coordinates, "$[0][1]") BETWEEN ? AND ?
+                ', [$minLat, $maxLat, $minLon, $maxLon]);
             }
+
+            // Apply country/region filters
+            if ($country) {
+                $query->where(function($q) use ($country) {
+                    $q->where('country', $country)
+                      ->orWhereRaw('LOWER(country) = ?', [strtolower($country)])
+                      ->orWhereRaw('country LIKE ?', ["%$country%"]);
+                });
+            }
+
             if ($region) {
-                $query->where('region', $region);
+                $query->where(function($q) use ($region) {
+                    $q->where('region', $region)
+                      ->orWhereRaw('LOWER(region) = ?', [strtolower($region)])
+                      ->orWhereRaw('region LIKE ?', ["%$region%"]);
+                });
             }
             if ($minRating) {
                 $query->where('average_rating', '>=', $minRating)

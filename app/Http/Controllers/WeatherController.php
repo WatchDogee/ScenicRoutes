@@ -38,7 +38,8 @@ class WeatherController extends Controller
             \Log::info('Weather request received', [
                 'lat' => $lat,
                 'lon' => $lon,
-                'units' => $units
+                'units' => $units,
+                'authenticated' => $request->user() ? 'yes' : 'no'
             ]);
 
             $weather = $this->weatherService->getCurrentWeather($lat, $lon, $units);
@@ -50,17 +51,12 @@ class WeatherController extends Controller
                     'units' => $units
                 ]);
 
-                // Check if there's a specific error in the logs about API key
-                $recentLogs = \Illuminate\Support\Facades\File::get(storage_path('logs/laravel.log'));
-                if (strpos($recentLogs, 'Invalid API key') !== false) {
-                    return response()->json([
-                        'error' => 'OpenWeatherMap API key is invalid',
-                        'message' => 'Please update your API key in the .env file',
-                        'details' => 'See https://openweathermap.org/api to get a valid API key'
-                    ], 401);
-                }
-
-                return response()->json(['error' => 'Failed to fetch weather data'], 500);
+                // Return a more user-friendly error message
+                return response()->json([
+                    'error' => 'weather_unavailable',
+                    'message' => 'Weather data is currently unavailable',
+                    'details' => 'The weather service is temporarily unavailable. Please try again later.'
+                ], 200); // Return 200 to avoid breaking the client
             }
 
             \Log::info('Weather data returned successfully', [
@@ -86,7 +82,8 @@ class WeatherController extends Controller
         try {
             \Log::info('Road weather request received', [
                 'road_id' => $id,
-                'units' => $request->input('units', 'metric')
+                'units' => $request->input('units', 'metric'),
+                'authenticated' => $request->user() ? 'yes' : 'no'
             ]);
 
             $road = SavedRoad::findOrFail($id);
@@ -157,17 +154,14 @@ class WeatherController extends Controller
                     'lon' => $lon
                 ]);
 
-                // Check if there's a specific error in the logs about API key
-                $recentLogs = \Illuminate\Support\Facades\File::get(storage_path('logs/laravel.log'));
-                if (strpos($recentLogs, 'Invalid API key') !== false) {
-                    return response()->json([
-                        'error' => 'OpenWeatherMap API key is invalid',
-                        'message' => 'Please update your API key in the .env file',
-                        'details' => 'See https://openweathermap.org/api to get a valid API key'
-                    ], 401);
-                }
-
-                return response()->json(['error' => 'Failed to fetch weather data'], 500);
+                // Return a more user-friendly error message
+                return response()->json([
+                    'road_id' => $road->id,
+                    'road_name' => $road->road_name,
+                    'error' => 'weather_unavailable',
+                    'message' => 'Weather data is currently unavailable',
+                    'details' => 'The weather service is temporarily unavailable. Please try again later.'
+                ], 200); // Return 200 to avoid breaking the client
             }
 
             \Log::info('Weather data fetched successfully for road', [

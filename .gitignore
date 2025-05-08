@@ -48,3 +48,4 @@ fix-storage.php
 db-management.php
 captain-definition
 .gitignore
+docs/weather-integration-guide.md

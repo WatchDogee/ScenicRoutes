@@ -9,6 +9,7 @@ import Leaderboard from './Leaderboard';
 import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
+import CollapsibleTagSelector from './CollapsibleTagSelector';
 
 export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId, roadToAdd, activeTab: initialActiveTab, setActiveTab: setParentActiveTab }) {
     // Get auth state from parent component or localStorage
@@ -1275,12 +1276,13 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                                                         )}
 
                                                         {collection.tags && collection.tags.length > 0 && (
-                                                            <div className="flex flex-wrap gap-1 mt-2">
-                                                                {collection.tags.map(tag => (
-                                                                    <span key={tag.id} className="text-xs bg-gray-100 px-2 py-0.5 rounded">
-                                                                        {tag.name}
-                                                                    </span>
-                                                                ))}
+                                                            <div className="mt-2">
+                                                                <CollapsibleTagSelector
+                                                                    selectedTags={collection.tags}
+                                                                    readOnly={true}
+                                                                    entityType="collection"
+                                                                    initialVisibleTags={3}
+                                                                />
                                                             </div>
                                                         )}
 

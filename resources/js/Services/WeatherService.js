@@ -5,7 +5,7 @@ import axios from 'axios';
  */
 class WeatherService {
     /**
-     * Get weather data for specific coordinates
+     * Get current weather data for specific coordinates
      *
      * @param {number} lat - Latitude
      * @param {number} lon - Longitude
@@ -36,6 +36,37 @@ class WeatherService {
                     };
                 }
             }
+            return null;
+        }
+    }
+
+    /**
+     * Get weather forecast data for specific coordinates
+     * Note: This is a placeholder for future implementation
+     * The free tier of OpenWeatherMap API doesn't include forecast data
+     *
+     * @param {number} lat - Latitude
+     * @param {number} lon - Longitude
+     * @param {string} units - Units (metric or imperial)
+     * @param {number} days - Number of days to forecast
+     * @returns {Promise} - Promise with forecast data
+     */
+    async getWeatherForecast(lat, lon, units = 'metric', days = 5) {
+        try {
+            console.log('Fetching weather forecast for coordinates:', { lat, lon, units, days });
+            // This would be the actual API call when implemented
+            // const response = await axios.get('/api/weather/forecast', {
+            //     params: { lat, lon, units, days }
+            // });
+
+            // For now, return a placeholder message
+            return {
+                error: 'forecast_not_implemented',
+                message: 'Weather forecast feature is not yet implemented',
+                details: 'This feature will be available in a future update'
+            };
+        } catch (error) {
+            console.error('Error fetching weather forecast:', error);
             return null;
         }
     }

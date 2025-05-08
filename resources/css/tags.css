@@ -143,3 +143,56 @@
   margin-right: 0.25rem;
   font-size: 0.5rem;
 }
+
+/* Tag category collapsible styling */
+.tag-category-collapsible {
+  margin-bottom: 0.5rem;
+}
+
+.tag-category-collapsible .tag-expand-button {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-category-collapsible .tag-expand-button:hover {
+  background-color: #e5e7eb;
+}
+
+/* Filter by tags collapsible styling */
+.filter-by-tags .transform {
+  transform: rotate(180deg);
+}
+
+.filter-by-tags .transition-transform {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Make category headers clickable */
+.filter-by-tags .text-gray-700 {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.filter-by-tags .text-gray-700:hover {
+  color: #4b5563;
+}
+
+.tag-category-collapsible .tag-expand-button .icon {
+  margin-left: 0.25rem;
+  transition: transform 0.2s;
+}
+
+.tag-category-collapsible .tag-expand-button .icon.expanded {
+  transform: rotate(180deg);
+}

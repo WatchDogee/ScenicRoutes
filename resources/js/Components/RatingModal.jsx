@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import ProfilePicture from './ProfilePicture';
 import StarRating from './StarRating';
@@ -7,9 +7,12 @@ import PhotoGallery from './PhotoGallery';
 import PhotoUploader from './PhotoUploader';
 import TempPhotoUploader from './TempPhotoUploader';
 import TagSelector from './TagSelector';
+import WeatherDisplay from './WeatherDisplay';
+import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import Portal from './Portal';
 
 export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, initialRating = 0, initialComment = '' }) {
+    const { userSettings } = useContext(UserSettingsContext);
     const [rating, setRating] = useState(initialRating);
     const [comment, setComment] = useState(initialComment);
     const [roadPhotos, setRoadPhotos] = useState([]);
@@ -367,6 +370,16 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
                                 <p>Length: {(road.length / 1000).toFixed(2)} km</p>
                                 <p>Corners: {road.corner_count}</p>
                                 <p>Average Rating: {getAverageRating()}</p>
+
+                                {/* Weather information */}
+                                <div className="mt-2">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-1">Current Weather</h4>
+                                    <WeatherDisplay
+                                        roadId={road.id}
+                                        units={userSettings?.measurement_units === 'imperial' ? 'imperial' : 'metric'}
+                                        className="bg-gray-50 rounded-md"
+                                    />
+                                </div>
                             </div>
                         </div>
                         <div>

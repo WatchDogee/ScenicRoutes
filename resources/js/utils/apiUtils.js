@@ -114,7 +114,17 @@ export const deleteRoad = async (id) => {
         return response.data;
     } catch (error) {
         console.error('Error deleting road:', error);
-        throw error;
+        let errorMessage = 'Failed to delete road. Please try again.';
+        if (error.response) {
+            if (error.response.status === 404) {
+                errorMessage = 'Road not found or you don\'t have permission to delete it.';
+            } else if (error.response.data && error.response.data.message) {
+                errorMessage = error.response.data.message;
+            }
+        }
+        const enhancedError = new Error(errorMessage);
+        enhancedError.originalError = error;
+        throw enhancedError;
     }
 };
 
@@ -195,13 +205,13 @@ export const updateProfilePicture = async (file) => {
     try {
         const formData = new FormData();
         formData.append('profile_picture', file);
-        
+
         const response = await apiClient.post('/api/profile/picture', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
         });
-        
+
         return response.data;
     } catch (error) {
         console.error('Error updating profile picture:', error);

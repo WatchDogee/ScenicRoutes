@@ -5,6 +5,7 @@ import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import { withErrorBoundary } from './ErrorBoundary';
 import { FaTag } from 'react-icons/fa';
 import TagSelector from './TagSelector';
+import CollapsibleTagSelector from './CollapsibleTagSelector';
 import WeatherDisplay from './WeatherDisplay';
 
 function RoadCard({
@@ -122,11 +123,12 @@ function RoadCard({
             {/* Tags */}
             {showTags && road.tags && road.tags.length > 0 && (
                 <div className="mt-2">
-                    <TagSelector
+                    <CollapsibleTagSelector
                         selectedTags={road.tags}
                         onTagsChange={onTagsChange ? (tags) => onTagsChange(road.id, tags) : undefined}
                         entityType="road"
                         readOnly={!allowTagEdit}
+                        initialVisibleTags={3}
                     />
                 </div>
             )}

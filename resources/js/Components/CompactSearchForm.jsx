@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaSearch, FaFilter, FaTag, FaChevronDown, FaSpinner, FaTimes } from 'react-icons/fa';
+import CollapsibleTagSelector from './CollapsibleTagSelector';
 
 export default function CompactSearchForm({
     searchType,
@@ -228,36 +229,24 @@ export default function CompactSearchForm({
 
                 {/* Tags Section */}
                 {selectedTagIds.length > 0 && (
-                    <div className="flex flex-wrap gap-0.5 mb-1 border-t pt-1">
-                        <span className="text-[10px] text-gray-500 mr-1 self-center">Tags:</span>
-                        {selectedTagIds.map(tagId => {
-                            const tag = availableTags.find(t => t.id === tagId);
-                            return tag ? (
-                                <div
-                                    key={tag.id}
-                                    className={`px-1 py-0.5 rounded flex items-center text-[10px] font-medium ${
-                                        tag.type ? `tag-${tag.type}` : 'bg-blue-100 text-blue-800'
-                                    }`}
-                                    title={tag.description || ''}
-                                >
-                                    <FaTag className="mr-0.5 text-[8px]" />
-                                    {tag.name}
-                                    <button
-                                        type="button"
-                                        className="ml-0.5 hover:text-red-600"
-                                        onClick={() => setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id))}
-                                        aria-label={`Remove ${tag.name} tag`}
-                                    >
-                                        <FaTimes size={8} />
-                                    </button>
-                                </div>
-                            ) : null;
-                        })}
+                    <div className="mb-1 border-t pt-1">
+                        <span className="text-[10px] text-gray-500 mr-1">Tags:</span>
+                        <CollapsibleTagSelector
+                            selectedTags={selectedTagIds.map(tagId => {
+                                const tag = availableTags.find(t => t.id === tagId);
+                                return tag || { id: tagId, name: `Tag ${tagId}` };
+                            })}
+                            onTagsChange={(tags) => {
+                                setSelectedTagIds(tags.map(tag => tag.id));
+                            }}
+                            initialVisibleTags={5}
+                            className="mt-1"
+                        />
                     </div>
                 )}
 
-                {/* Tag Selector Toggle */}
-                <div className="flex justify-end items-center">
+                {/* Tag Selector Toggle - Moved to left side */}
+                <div className="flex justify-start items-center">
                     <button
                         type="button"
                         className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center"
@@ -270,10 +259,10 @@ export default function CompactSearchForm({
                 </div>
             </div>
 
-            {/* Tag Selector - Collapsible */}
+            {/* Tag Selector - Collapsible - Moved to left side with improved layout */}
             {showFilters && (
                 <div className="border rounded-md overflow-hidden p-1 mb-1">
-                    <div className="border rounded max-h-20 overflow-y-auto">
+                    <div className="border rounded max-h-28 overflow-y-auto">
                         {/* Group tags by category in a more compact layout */}
                         <div className="divide-y divide-gray-200">
                             {categoryOrder.map(category => {

@@ -15,7 +15,50 @@ import SaveToCollectionModal from '../Components/SaveToCollectionModal';
 import MapWeatherDisplay from '../Components/MapWeatherDisplay';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
-import { FaTag, FaTimes } from 'react-icons/fa';
+import { FaTag, FaTimes, FaChevronDown } from 'react-icons/fa';
+import CollapsibleFilterByTags from '../Components/CollapsibleFilterByTags';
+
+// TagCategoryCollapsible component for displaying tags with collapsible functionality
+function TagCategoryCollapsible({ tags, onTagSelect, selectedTagIds = [] }) {
+    const [expanded, setExpanded] = useState(false);
+    const initialVisibleCount = 5;
+    const hasMoreTags = tags.length > initialVisibleCount;
+
+    // Get visible tags based on expanded state
+    const visibleTags = expanded ? tags : tags.slice(0, initialVisibleCount);
+
+    return (
+        <div className="tag-category-collapsible">
+            <div className="flex flex-wrap gap-1">
+                {visibleTags.map(tag => (
+                    <div
+                        key={tag.id}
+                        className={`tag-filter-option tag-${tag.type || 'default'} ${
+                            selectedTagIds.includes(tag.id) ? 'selected' : ''
+                        }`}
+                        onClick={() => onTagSelect(tag)}
+                    >
+                        <FaTag className="mr-1 text-xs" />
+                        {tag.name}
+                    </div>
+                ))}
+
+                {hasMoreTags && (
+                    <button
+                        type="button"
+                        className="px-2 py-1 rounded text-xs bg-gray-100 hover:bg-gray-200 flex items-center tag-expand-button"
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        {expanded ? 'Show Less' : `+${tags.length - initialVisibleCount} more`}
+                        <FaChevronDown
+                            className={`ml-1 text-xs transition-transform icon ${expanded ? 'expanded' : ''}`}
+                        />
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Map() {
     const { userSettings } = useContext(UserSettingsContext);
@@ -215,6 +258,55 @@ export default function Map() {
         fetchTags();
     }, []);
 
+    // Define category order and names
+    const categoryOrder = [
+        'road_characteristic',
+        'surface_type',
+        'scenery',
+        'experience',
+        'vehicle',
+        'other'
+    ];
+
+    const categoryNames = {
+        'road_characteristic': 'Road Characteristics',
+        'surface_type': 'Surface Types',
+        'scenery': 'Scenery Types',
+        'experience': 'Experience Types',
+        'vehicle': 'Vehicle Suitability',
+        'other': 'Other Tags'
+    };
+
+    // Group tags by category
+    const groupTagsByCategory = () => {
+        const groupedTags = availableTags.reduce((acc, tag) => {
+            const category = tag.type || 'other';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(tag);
+            return acc;
+        }, {});
+
+        // Sort categories according to categoryOrder
+        return Object.fromEntries(
+            // First get entries from groupedTags that are in categoryOrder (in that order)
+            categoryOrder
+                .filter(category => groupedTags[category] && groupedTags[category].length > 0)
+                .map(category => [category, groupedTags[category]])
+                // Then add any remaining categories not in categoryOrder
+                .concat(
+                    Object.entries(groupedTags)
+                        .filter(([category]) => !categoryOrder.includes(category))
+                )
+        );
+    };
+
+    // Get category display name
+    const getCategoryName = (category) => {
+        return categoryNames[category] || category;
+    };
+
     const handleRadiusChange = (e) => {
         const newRadius = Number(e.target.value);
         setRadius(newRadius);
@@ -244,71 +336,96 @@ export default function Map() {
             return;
         }
 
+        // Only drop a marker if in marker drop mode
+        if (!markerDropMode) {
+            console.log('Not in marker drop mode, ignoring map click for marker placement');
+            return;
+        }
+
+        console.log('Marker drop mode is active, processing map click');
+
         const map = mapRef.current;
-        if (!map) return;
+        if (!map) {
+            console.error('Map reference is not available');
+            return;
+        }
 
         const latlng = e.latlng;
+        console.log('Map clicked at coordinates:', latlng);
 
         // Use the persistent radius reference
         const currentRadius = radiusRef.current;
 
-        // Create a custom marker icon with higher z-index if not already created
-        if (!markerIconRef.current) {
-            markerIconRef.current = L.icon({
-                iconUrl: '/images/marker-icon.png',
-                iconRetinaUrl: '/images/marker-icon-2x.png',
-                shadowUrl: '/images/marker-shadow.png',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-                shadowSize: [41, 41],
-                className: 'main-location-marker' // Custom class for styling
+        try {
+            // Create a custom marker icon with higher z-index if not already created
+            if (!markerIconRef.current) {
+                markerIconRef.current = L.icon({
+                    iconUrl: '/images/marker-icon.png',
+                    iconRetinaUrl: '/images/marker-icon-2x.png',
+                    shadowUrl: '/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34],
+                    shadowSize: [41, 41],
+                    className: 'main-location-marker' // Custom class for styling
+                });
+            }
+
+            if (markerRef.current) {
+                // Just update the position, don't recreate the marker
+                console.log('Updating existing marker position');
+                markerRef.current.setLatLng(latlng);
+            } else {
+                // Create the marker for the first time
+                console.log('Creating new marker');
+                markerRef.current = L.marker(latlng, {
+                    icon: markerIconRef.current,
+                    zIndexOffset: 1000 // Ensure marker stays on top
+                }).addTo(map);
+            }
+
+            if (radiusCircleRef.current) {
+                console.log('Updating existing radius circle');
+                radiusCircleRef.current.setLatLng(latlng).setRadius(currentRadius * 1000);
+            } else {
+                console.log('Creating new radius circle');
+                radiusCircleRef.current = L.circle(latlng, {
+                    radius: currentRadius * 1000,
+                    color: 'blue',
+                    fillColor: 'blue',
+                    fillOpacity: 0.05,
+                    zIndex: 100 // Lower than marker but still high
+                }).addTo(map);
+            }
+
+            // Log the current location for debugging
+            console.log('Map clicked at:', latlng);
+            console.log('Current location for POI search:', latlng);
+
+            // Update the current location for POI search
+            setCurrentPoiLocation({
+                lat: latlng.lat,
+                lon: latlng.lng
             });
-        }
 
-        if (markerRef.current) {
-            // Just update the position, don't recreate the marker
-            markerRef.current.setLatLng(latlng);
-        } else {
-            // Create the marker for the first time
-            markerRef.current = L.marker(latlng, {
-                icon: markerIconRef.current,
-                zIndexOffset: 1000 // Ensure marker stays on top
-            }).addTo(map);
-        }
+            // Only update the POI controls key if there's no marker yet
+            // This prevents the POI window from expanding each time a marker is dropped
+            if (!markerRef.current) {
+                setPoiControlsKey(Date.now());
+            }
 
-        if (radiusCircleRef.current) {
-            radiusCircleRef.current.setLatLng(latlng).setRadius(currentRadius * 1000);
-        } else {
-            radiusCircleRef.current = L.circle(latlng, {
-                radius: currentRadius * 1000,
-                color: 'blue',
-                fillColor: 'blue',
-                fillOpacity: 0.05,
-                zIndex: 100 // Lower than marker but still high
-            }).addTo(map);
-        }
+            // Always close any open POI details when placing a new marker
+            if (selectedPoi) {
+                setSelectedPoi(null);
+                setSelectedPoiId(null);
+            }
 
-        // Log the current location for debugging
-        console.log('Map clicked at:', latlng);
-        console.log('Current location for POI search:', latlng);
+            // Turn off marker drop mode after placing a marker
+            setMarkerDropMode(false);
 
-        // Update the current location for POI search
-        setCurrentPoiLocation({
-            lat: latlng.lat,
-            lon: latlng.lng
-        });
-
-        // Only update the POI controls key if there's no marker yet
-        // This prevents the POI window from expanding each time a marker is dropped
-        if (!markerRef.current) {
-            setPoiControlsKey(Date.now());
-        }
-
-        // Always close any open POI details when placing a new marker
-        if (selectedPoi) {
-            setSelectedPoi(null);
-            setSelectedPoiId(null);
+            console.log('Marker placed successfully');
+        } catch (error) {
+            console.error('Error placing marker:', error);
         }
     };
 
@@ -743,6 +860,7 @@ export default function Map() {
 
         const handleDelete = async (roadId) => {
             try {
+                setIsDeleting(true);
                 const response = await axios.delete(`/api/saved-roads/${roadId}`, {
                     headers: { Authorization: `Bearer ${auth.token}` }
                 });
@@ -764,7 +882,20 @@ export default function Map() {
                 }
             } catch (error) {
                 console.error("Error deleting road:", error);
-                alert("Failed to delete road. Please try again.");
+
+                // Extract the error message from the response if available
+                let errorMessage = "Failed to delete road. Please try again.";
+                if (error.response) {
+                    if (error.response.status === 404) {
+                        errorMessage = "Road not found or you don't have permission to delete it.";
+                    } else if (error.response.data && error.response.data.message) {
+                        errorMessage = error.response.data.message;
+                    }
+                }
+
+                alert(errorMessage);
+            } finally {
+                setIsDeleting(false);
             }
         };
 
@@ -911,6 +1042,8 @@ export default function Map() {
 
         const handleDeleteClick = async (e) => {
             e.stopPropagation();
+            if (isDeleting) return; // Prevent multiple clicks
+
             if (window.confirm(`Are you sure you want to delete "${road.road_name || 'Unnamed Road'}"? This action cannot be undone.`)) {
                 await handleDelete(road.id);
             }
@@ -1012,9 +1145,10 @@ export default function Map() {
                                     </button>
                                     <button
                                         onClick={handleDeleteClick}
-                                        className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                        disabled={isDeleting}
+                                        className={`px-2 py-1 text-xs ${isDeleting ? 'bg-gray-400' : 'bg-red-500 hover:bg-red-600'} text-white rounded`}
                                     >
-                                        Delete
+                                        {isDeleting ? 'Deleting...' : 'Delete'}
                                     </button>
                                 </div>
                             </div>
@@ -1087,6 +1221,9 @@ export default function Map() {
         }
     };
 
+    // State for marker drop mode
+    const [markerDropMode, setMarkerDropMode] = useState(false);
+
     // Initialize map only once
     useEffect(() => {
         const mapContainer = document.getElementById('map');
@@ -1122,7 +1259,7 @@ export default function Map() {
             console.log('Map resized');
         }, 500);
 
-        leafletMap.on('click', handleMapClick);
+        // We'll set up the click handler in a separate useEffect to ensure it has access to the current state
 
         // Add event listener for map move end to update mapCenter
         leafletMap.on('moveend', () => {
@@ -1215,6 +1352,125 @@ export default function Map() {
         };
     }, []); // Empty dependency array to ensure map is initialized only once
 
+    // Set up map click handler in a separate useEffect to ensure it has access to the current markerDropMode state
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        // Remove any existing click handlers to prevent duplicates
+        mapRef.current.off('click');
+
+        // Add the click handler with access to the current markerDropMode state
+        mapRef.current.on('click', (e) => {
+            // Check if the click is on a control element
+            if (e.originalEvent.target.closest('.poi-controls') ||
+                e.originalEvent.target.closest('.leaflet-control') ||
+                e.originalEvent.target.closest('button') ||
+                e.originalEvent.target.closest('.poi-details')) { // Also check for POI details panel
+                console.log('Click on control element, ignoring map click');
+                return;
+            }
+
+            // Only drop a marker if in marker drop mode
+            if (!markerDropMode) {
+                console.log('Not in marker drop mode, ignoring map click for marker placement');
+                return;
+            }
+
+            console.log('Marker drop mode is active, processing map click');
+
+            const map = mapRef.current;
+            if (!map) {
+                console.error('Map reference is not available');
+                return;
+            }
+
+            const latlng = e.latlng;
+            console.log('Map clicked at coordinates:', latlng);
+
+            // Use the persistent radius reference
+            const currentRadius = radiusRef.current;
+
+            try {
+                // Create a custom marker icon with higher z-index if not already created
+                if (!markerIconRef.current) {
+                    markerIconRef.current = L.icon({
+                        iconUrl: '/images/marker-icon.png',
+                        iconRetinaUrl: '/images/marker-icon-2x.png',
+                        shadowUrl: '/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41],
+                        className: 'main-location-marker' // Custom class for styling
+                    });
+                }
+
+                if (markerRef.current) {
+                    // Just update the position, don't recreate the marker
+                    console.log('Updating existing marker position');
+                    markerRef.current.setLatLng(latlng);
+                } else {
+                    // Create the marker for the first time
+                    console.log('Creating new marker');
+                    markerRef.current = L.marker(latlng, {
+                        icon: markerIconRef.current,
+                        zIndexOffset: 1000 // Ensure marker stays on top
+                    }).addTo(map);
+                }
+
+                if (radiusCircleRef.current) {
+                    console.log('Updating existing radius circle');
+                    radiusCircleRef.current.setLatLng(latlng).setRadius(currentRadius * 1000);
+                } else {
+                    console.log('Creating new radius circle');
+                    radiusCircleRef.current = L.circle(latlng, {
+                        radius: currentRadius * 1000,
+                        color: 'blue',
+                        fillColor: 'blue',
+                        fillOpacity: 0.05,
+                        zIndex: 100 // Lower than marker but still high
+                    }).addTo(map);
+                }
+
+                // Log the current location for debugging
+                console.log('Map clicked at:', latlng);
+                console.log('Current location for POI search:', latlng);
+
+                // Update the current location for POI search
+                setCurrentPoiLocation({
+                    lat: latlng.lat,
+                    lon: latlng.lng
+                });
+
+                // Only update the POI controls key if there's no marker yet
+                // This prevents the POI window from expanding each time a marker is dropped
+                if (!markerRef.current) {
+                    setPoiControlsKey(Date.now());
+                }
+
+                // Always close any open POI details when placing a new marker
+                if (selectedPoi) {
+                    setSelectedPoi(null);
+                    setSelectedPoiId(null);
+                }
+
+                // Turn off marker drop mode after placing a marker
+                setMarkerDropMode(false);
+
+                console.log('Marker placed successfully');
+            } catch (error) {
+                console.error('Error placing marker:', error);
+            }
+        });
+
+        return () => {
+            // Clean up the click handler when the component unmounts or markerDropMode changes
+            if (mapRef.current) {
+                mapRef.current.off('click');
+            }
+        };
+    }, [markerDropMode, selectedPoi]); // Re-attach the handler when markerDropMode changes
+
     useEffect(() => {
         if (showCommunity && markerRef.current) {
             const lat = markerRef.current.getLatLng().lat;
@@ -1227,16 +1483,35 @@ export default function Map() {
         try {
             setSearchError(null);
             const radius = searchType === 'town' ? Math.min(searchRadius, 20) : searchRadius;
+
+            console.log('Fetching public roads with params:', { lat, lon, radius, tags: selectedTagIds });
+
             const response = await axios.get('/api/public-roads', {
                 params: {
                     lat,
                     lon,
-                    radius
+                    radius,
+                    tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null,
+                    length_filter: lengthFilter,
+                    curviness_filter: curvinessFilter,
+                    min_rating: minRating,
+                    sort_by: sortBy
                 }
             });
 
+            // Check if response.data is an array or an object with a roads property
+            let roadsData = response.data;
+            if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                roadsData = response.data.roads;
+                console.log(`Found ${roadsData.length} roads from response`);
+            } else if (!Array.isArray(response.data)) {
+                console.error('Unexpected response format:', response.data);
+                setSearchError('Unexpected response format from server');
+                return;
+            }
+
             // Ensure average_rating is properly formatted and user data is present
-            const formattedRoads = response.data.map(road => ({
+            const formattedRoads = roadsData.map(road => ({
                 ...road,
                 average_rating: road.reviews_avg_rating ? parseFloat(road.reviews_avg_rating) : null,
                 user: road.user || { name: 'Unknown User' }
@@ -1261,20 +1536,59 @@ export default function Map() {
             const lat = providedLat || markerRef.current.getLatLng().lat;
             const lon = providedLon || markerRef.current.getLatLng().lng;
 
-            const response = await axios.get('/api/public-roads', {
-                params: {
-                    lat,
-                    lon,
-                    radius: searchRadius,
-                    length_filter: lengthFilter,
-                    curviness_filter: curvinessFilter,
-                    min_rating: minRating,
-                    sort_by: sortBy,
-                    tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null
+            // Determine search parameters based on search type
+            let searchParams = {
+                lat,
+                lon,
+                radius: searchRadius,
+                length_filter: lengthFilter,
+                curviness_filter: curvinessFilter,
+                min_rating: minRating,
+                sort_by: sortBy,
+                tags: selectedTagIds.length > 0 ? selectedTagIds.join(',') : null
+            };
+
+            // If search type is country, try to get the country name
+            if (searchType === 'country') {
+                try {
+                    // Reverse geocode to get country
+                    const geocodeResponse = await axios.get(`https://nominatim.openstreetmap.org/reverse`, {
+                        params: {
+                            lat,
+                            lon,
+                            format: 'json',
+                            addressdetails: 1,
+                            'accept-language': 'en'
+                        },
+                        withCredentials: false
+                    });
+
+                    if (geocodeResponse.data && geocodeResponse.data.address && geocodeResponse.data.address.country) {
+                        // Add country to search params
+                        searchParams.country = geocodeResponse.data.address.country;
+                        console.log(`Searching by country: ${searchParams.country}`);
+                    }
+                } catch (geocodeError) {
+                    console.error('Error getting country from coordinates:', geocodeError);
+                    // Continue with radius-based search if geocoding fails
                 }
+            }
+
+            const response = await axios.get('/api/public-roads', {
+                params: searchParams
             });
 
-            setPublicRoads(response.data);
+            // Check if response.data is an array or an object with a roads property
+            let roadsData = response.data;
+            if (response.data && response.data.roads && Array.isArray(response.data.roads)) {
+                roadsData = response.data.roads;
+            } else if (!Array.isArray(response.data)) {
+                console.error('Unexpected response format:', response.data);
+                setSearchError('Unexpected response format from server');
+                return;
+            }
+
+            setPublicRoads(roadsData);
         } catch (error) {
             console.error('Error fetching public roads:', error);
             setSearchError('Failed to fetch public roads. Please try again.');
@@ -1440,7 +1754,9 @@ export default function Map() {
         setCommunitySearchResults([]); // Clear results immediately
 
         // Store the current radius value to preserve it
-        const currentRadius = radius;
+        const currentRadius = searchType === 'city' ? 10 :
+                             searchType === 'regional' ? 50 :
+                             searchType === 'country' ? 200 : radius;
 
         // Update the map location with the preserved radius
         updateMapLocation(location, currentRadius);
@@ -1741,15 +2057,15 @@ export default function Map() {
                             mapRef.current.setView([center.lat, center.lng], 13);
 
                             // Draw the road on the map
-                            if (roadLayerRef.current) {
-                                mapRef.current.removeLayer(roadLayerRef.current);
+                            if (roadsLayerRef.current) {
+                                roadsLayerRef.current.clearLayers();
                             }
 
-                            roadLayerRef.current = L.polyline(coordinates, {
+                            L.polyline(coordinates, {
                                 color: '#3388ff',
                                 weight: 5,
                                 opacity: 0.8
-                            }).addTo(mapRef.current);
+                            }).addTo(roadsLayerRef.current);
 
                             // Fit the map to the road bounds
                             mapRef.current.fitBounds(bounds, { padding: [50, 50] });
@@ -2084,6 +2400,45 @@ export default function Map() {
                     </div>
                 )}
 
+                {/* Marker Drop Button */}
+                <div className="mb-6">
+                    <button
+                        onClick={() => {
+                            console.log('Setting marker drop mode to:', !markerDropMode);
+                            console.log('Map reference exists:', !!mapRef.current);
+                            setMarkerDropMode(!markerDropMode);
+                        }}
+                        className={`w-full p-2 rounded transition-colors mb-4 ${
+                            markerDropMode
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                    >
+                        {markerDropMode
+                            ? 'Cancel Marker Placement'
+                            : markerRef.current
+                                ? 'Move Marker Location'
+                                : 'Drop a Marker on Map'
+                        }
+                    </button>
+                    {markerRef.current && (
+                        <div className="mb-4 p-2 bg-green-100 border border-green-300 rounded text-sm">
+                            <p className="font-medium text-green-800">Marker placed at:</p>
+                            <p className="text-green-700">
+                                Lat: {markerRef.current.getLatLng().lat.toFixed(5)},
+                                Lng: {markerRef.current.getLatLng().lng.toFixed(5)}
+                            </p>
+                        </div>
+                    )}
+                    {!markerRef.current && !markerDropMode && (
+                        <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                            <p className="text-yellow-700">
+                                Please drop a marker on the map first to search for roads.
+                            </p>
+                        </div>
+                    )}
+                </div>
+
                 {/* Filters Section */}
                 <div className="mb-6">
                     <h3 className="font-semibold mb-2">Search Filters</h3>
@@ -2130,7 +2485,12 @@ export default function Map() {
                     </select>
                     <button
                         onClick={searchRoads}
-                        className="bg-green-500 text-white w-full p-2 rounded hover:bg-green-600 transition-colors"
+                        disabled={!markerRef.current}
+                        className={`w-full p-2 rounded transition-colors ${
+                            !markerRef.current
+                            ? 'bg-gray-400 text-white cursor-not-allowed'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
                     >
                         Search Roads
                     </button>
@@ -2279,13 +2639,34 @@ export default function Map() {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Search Location
                                     </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter city, region, or place..."
-                                        value={communitySearchQuery}
-                                        onChange={handleCommunitySearchChange}
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    />
+                                    <div className="flex gap-2 mb-2">
+                                        <button
+                                            onClick={() => {
+                                                console.log('Setting marker drop mode to:', !markerDropMode);
+                                                console.log('Map reference exists:', !!mapRef.current);
+                                                setMarkerDropMode(!markerDropMode);
+                                            }}
+                                            className={`px-3 py-2 rounded transition-colors ${
+                                                markerDropMode
+                                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                                            }`}
+                                        >
+                                            {markerDropMode
+                                                ? 'Cancel'
+                                                : markerRef.current
+                                                    ? 'Move Marker'
+                                                    : 'Drop Marker'
+                                            }
+                                        </button>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter city, region, or place..."
+                                            value={communitySearchQuery}
+                                            onChange={handleCommunitySearchChange}
+                                            className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </div>
                             {communitySearchResults.length > 0 && (
                                 <div className="absolute z-50 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto">
                                     {communitySearchResults.map((result, index) => (
@@ -2303,6 +2684,20 @@ export default function Map() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Marker Location Display */}
+                        {markerRef.current && (
+                            <div className="mb-4 p-2 bg-green-100 border border-green-300 rounded text-sm">
+                                <p className="font-medium text-green-800">Marker placed at:</p>
+                                <p className="text-green-700">
+                                    Lat: {markerRef.current.getLatLng().lat.toFixed(5)},
+                                    Lng: {markerRef.current.getLatLng().lng.toFixed(5)}
+                                </p>
+                                <p className="text-green-700 mt-1">
+                                    Search radius: {searchRadius} km ({searchType} search)
+                                </p>
+                            </div>
+                        )}
 
                         {/* Search Area Type */}
                         <div className="grid grid-cols-3 gap-2">
@@ -2411,30 +2806,15 @@ export default function Map() {
                             <div>
                                 <label className="block text-sm text-gray-600 mb-1">Filter by Tags</label>
                                 <div className="tag-filter-section">
-                                    <div className="tag-filter-options">
-                                        {availableTags.map(tag => (
-                                            <div
-                                                key={tag.id}
-                                                className={`tag-filter-option tag-${tag.type || 'default'} ${
-                                                    selectedTagIds.includes(tag.id) ? 'selected' : ''
-                                                }`}
-                                                onClick={() => {
-                                                    if (selectedTagIds.includes(tag.id)) {
-                                                        setSelectedTagIds(selectedTagIds.filter(id => id !== tag.id));
-                                                    } else {
-                                                        setSelectedTagIds([...selectedTagIds, tag.id]);
-                                                    }
-                                                }}
-                                            >
-                                                <FaTag className="mr-1 text-xs" />
-                                                {tag.name}
-                                            </div>
-                                        ))}
-
-                                        {availableTags.length === 0 && (
-                                            <div className="text-sm text-gray-500">No tags available</div>
-                                        )}
-                                    </div>
+                                    <CollapsibleFilterByTags
+                                        availableTags={availableTags}
+                                        selectedTagIds={selectedTagIds}
+                                        setSelectedTagIds={setSelectedTagIds}
+                                        onTagsChange={(newTagIds) => {
+                                            setSelectedTagIds(newTagIds);
+                                            // Don't trigger search here, let the user click the search button
+                                        }}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -2442,10 +2822,22 @@ export default function Map() {
                         {/* Search Button */}
                         <button
                             onClick={() => handleSearchPublicRoads(null, null)}
-                                className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                            >
+                            disabled={!markerRef.current}
+                            className={`w-full px-4 py-2 rounded-lg transition-colors ${
+                                !markerRef.current
+                                ? 'bg-gray-400 text-white cursor-not-allowed'
+                                : 'bg-blue-500 text-white hover:bg-blue-600'
+                            }`}
+                        >
                             Search Roads
-                            </button>
+                        </button>
+                        {!markerRef.current && (
+                            <div className="mt-2 p-2 bg-yellow-100 border border-yellow-300 rounded text-sm">
+                                <p className="text-yellow-700">
+                                    Please drop a marker on the map first to search for roads.
+                                </p>
+                            </div>
+                        )}
                             {searchError && (
                                 <p className="mt-2 text-sm text-red-600">{searchError}</p>
                             )}
@@ -2460,7 +2852,11 @@ export default function Map() {
 
                     {/* Public Roads List */}
                     <div className="space-y-4">
-                        {publicRoads.length === 0 ? (
+                        {!publicRoads || !Array.isArray(publicRoads) ? (
+                            <p className="text-gray-500 text-center">
+                                Loading public roads...
+                            </p>
+                        ) : publicRoads.length === 0 ? (
                             <p className="text-gray-500 text-center">
                                 No public roads found in this area. Try adjusting your search criteria.
                             </p>
@@ -2499,7 +2895,9 @@ export default function Map() {
                                             <p className="flex items-center justify-end">
                                                 <span className="text-yellow-400 mr-1">★</span>
                                                 {road.average_rating || road.reviews_avg_rating ?
-                                                    (road.average_rating || road.reviews_avg_rating).toFixed(1) :
+                                                    (typeof (road.average_rating || road.reviews_avg_rating) === 'number' ?
+                                                        (road.average_rating || road.reviews_avg_rating).toFixed(1) :
+                                                        road.average_rating || road.reviews_avg_rating) :
                                                     (road.reviews && road.reviews.length > 0 ?
                                                         (road.reviews.reduce((sum, review) => sum + review.rating, 0) / road.reviews.length).toFixed(1) :
                                                         'No ratings')

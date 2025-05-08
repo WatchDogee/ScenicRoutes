@@ -48,18 +48,39 @@ class RoadPhoto extends Model
 
         // Check if we're using S3 or local storage
         $disk = config('filesystems.default');
-        if ($disk === 's3') {
-            // For S3 storage
-            return Storage::disk('s3')->url($this->photo_path);
-        } else {
-            // For local storage
-            try {
-                // First try using Storage::disk('public')->url which is more reliable
-                return Storage::disk('public')->url($this->photo_path);
-            } catch (\Exception $e) {
-                // Fallback to Storage::url if the first method fails
-                return Storage::url($this->photo_path);
+
+        try {
+            // For local development, always use the public disk with the correct APP_URL
+            if ($disk === 'public') {
+                // Make sure we're using the correct APP_URL
+                $appUrl = config('app.url');
+                if (empty($appUrl) || $appUrl === 'http://localhost') {
+                    $appUrl = 'http://localhost:8000';
+                }
+
+                // Construct the URL manually to ensure it's correct
+                $url = $appUrl . '/storage/' . $this->photo_path;
+                \Log::info('Generated road photo URL for public disk', ['url' => $url]);
+                return $url;
             }
+
+            // For S3 storage
+            if ($disk === 's3' && config('filesystems.disks.s3.key')) {
+                $url = Storage::disk('s3')->url($this->photo_path);
+                return $url;
+            }
+
+            // Fallback to asset helper
+            return asset('storage/' . $this->photo_path);
+        } catch (\Exception $e) {
+            // Log the error and fallback to asset helper
+            \Log::error('Error generating road photo URL', [
+                'error' => $e->getMessage(),
+                'path' => $this->photo_path
+            ]);
+
+            // Last resort fallback
+            return asset('storage/' . $this->photo_path);
         }
     }
 }

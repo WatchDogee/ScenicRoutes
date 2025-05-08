@@ -339,7 +339,7 @@ Route::get('/fetch-charging-stations', [PointOfInterestController::class, 'fetch
 // Proxy route for Overpass API to avoid CORS issues
 Route::get('/overpass-proxy', [PointOfInterestController::class, 'overpassProxy']);
 
-// Weather routes
+// Weather routes - public access without authentication requirement
 Route::get('/weather', [WeatherController::class, 'getWeatherByCoordinates']);
 Route::get('/roads/{id}/weather', [WeatherController::class, 'getWeatherForRoad']);
 

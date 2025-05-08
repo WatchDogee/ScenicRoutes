@@ -17,28 +17,16 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
             try {
                 let weatherData;
 
-                // Check if we're logged in (for road weather)
-                const token = localStorage.getItem('auth_token');
-                const isLoggedIn = !!token;
-
                 if (roadId) {
                     console.log('WeatherDisplay: Fetching weather for road ID:', roadId);
-
-                    // If not logged in, we can't fetch road weather
-                    if (!isLoggedIn) {
-                        console.log('WeatherDisplay: Not logged in, skipping road weather fetch');
-                        setError('login_required');
-                        setLoading(false);
-                        return;
-                    }
 
                     // Fetch weather for a specific road
                     weatherData = await WeatherService.getWeatherForRoad(roadId, units);
                     console.log('WeatherDisplay: Road weather data received:', weatherData);
 
-                    if (weatherData && weatherData.error === 'api_key_invalid') {
-                        console.error('WeatherDisplay: API key invalid:', weatherData.message);
-                        setError('api_key_invalid');
+                    if (weatherData && weatherData.error) {
+                        console.error('WeatherDisplay: Weather error:', weatherData.message);
+                        setError(weatherData.error);
                     } else if (weatherData && weatherData.weather) {
                         setWeather(weatherData.weather);
                     } else {
@@ -51,9 +39,9 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
                     weatherData = await WeatherService.getWeatherByCoordinates(lat, lon, units);
                     console.log('WeatherDisplay: Coordinate weather data received:', weatherData);
 
-                    if (weatherData && weatherData.error === 'api_key_invalid') {
-                        console.error('WeatherDisplay: API key invalid:', weatherData.message);
-                        setError('api_key_invalid');
+                    if (weatherData && weatherData.error) {
+                        console.error('WeatherDisplay: Weather error:', weatherData.message);
+                        setError(weatherData.error);
                     } else if (weatherData) {
                         setWeather(weatherData);
                     } else {
@@ -90,13 +78,13 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
 
     if (error || !weather) {
         // Show a small error indicator instead of nothing
-        if (error === 'api_key_invalid') {
+        if (error === 'weather_unavailable') {
             return (
-                <div className={`weather-display ${className} flex items-center p-2 text-xs text-red-500`}>
+                <div className={`weather-display ${className} flex items-center p-2 text-xs text-gray-400`}>
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>API key invalid</span>
+                    <span>Weather unavailable</span>
                 </div>
             );
         } else if (error === 'login_required') {

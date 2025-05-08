@@ -69,9 +69,18 @@ export default function SavedRoads({ auth }) {
         try {
             await apiClient.delete(`/saved-roads/${roadId}`);
             setRoads(roads.filter(road => road.id !== roadId));
+            return { success: true, message: 'Road deleted successfully' };
         } catch (error) {
             console.error('Error deleting road:', error);
-            throw error;
+            let errorMessage = 'Failed to delete road. Please try again.';
+            if (error.response) {
+                if (error.response.status === 404) {
+                    errorMessage = 'Road not found or you don\'t have permission to delete it.';
+                } else if (error.response.data && error.response.data.message) {
+                    errorMessage = error.response.data.message;
+                }
+            }
+            throw new Error(errorMessage);
         }
     };
 
@@ -194,7 +203,16 @@ export default function SavedRoads({ auth }) {
                                                 View Details
                                             </button>
                                             <button
-                                                onClick={() => handleDelete(road.id)}
+                                                onClick={async () => {
+                                                    if (window.confirm(`Are you sure you want to delete "${road.road_name || 'Unnamed Road'}"? This action cannot be undone.`)) {
+                                                        try {
+                                                            await deleteRoad(road.id);
+                                                            alert("Road deleted successfully!");
+                                                        } catch (error) {
+                                                            alert(error.message);
+                                                        }
+                                                    }
+                                                }}
                                                 className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
                                             >
                                                 Delete
