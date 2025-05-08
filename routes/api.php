@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CollectionController;
+use App\Http\Controllers\CollectionReviewController;
 use App\Http\Controllers\FollowController;
 use App\Http\Controllers\GetRoadsController;
 use App\Http\Controllers\LeaderboardController;
@@ -154,6 +155,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/collections/{id}/roads', [CollectionController::class, 'addRoads']);
     Route::post('/collections/{id}/cover-image', [CollectionController::class, 'uploadCoverImage']);
     Route::delete('/collections/{id}/roads/{roadId}', [CollectionController::class, 'removeRoad']);
+
+    // Collection reviews
+    Route::post('/collections/{id}/review', [CollectionReviewController::class, 'store']);
+    Route::get('/collections/{id}/reviews', [CollectionReviewController::class, 'index']);
+    Route::delete('/collections/{id}/reviews/{reviewId}', [CollectionReviewController::class, 'destroy']);
     Route::post('/collections/{id}/reorder', [CollectionController::class, 'reorderRoads']);
     Route::post('/collections/{id}/save-public-road', [CollectionController::class, 'savePublicRoad']);
 
@@ -314,6 +320,7 @@ Route::get('/leaderboard/most-popular', [LeaderboardController::class, 'mostPopu
 Route::get('/leaderboard/most-active-users', [LeaderboardController::class, 'mostActiveUsers']);
 Route::get('/leaderboard/most-followed-users', [LeaderboardController::class, 'mostFollowedUsers']);
 Route::get('/leaderboard/featured-collections', [LeaderboardController::class, 'featuredCollections']);
+Route::get('/leaderboard/top-rated-collections', [LeaderboardController::class, 'topRatedCollections']);
 Route::get('/leaderboard/popular-roads-by-country', [LeaderboardController::class, 'popularRoadsByCountry']);
 Route::get('/leaderboard/countries-with-most-roads', [LeaderboardController::class, 'countriesWithMostRoads']);
 

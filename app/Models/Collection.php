@@ -18,6 +18,14 @@ class Collection extends Model
         'cover_image',
         'saved_count',
         'likes_count',
+        'average_rating',
+        'reviews_count',
+    ];
+
+    protected $casts = [
+        'average_rating' => 'float',
+        'is_public' => 'boolean',
+        'is_featured' => 'boolean',
     ];
 
     /**
@@ -45,5 +53,13 @@ class Collection extends Model
     public function tags()
     {
         return $this->belongsToMany(Tag::class, 'collection_tag', 'collection_id', 'tag_id');
+    }
+
+    /**
+     * Get the reviews for the collection.
+     */
+    public function reviews()
+    {
+        return $this->hasMany(CollectionReview::class);
     }
 }

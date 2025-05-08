@@ -44,7 +44,8 @@
             /* Portal roots should be on top of everything */
             #navigation-modal-root,
             #rating-modal-root,
-            #collection-modal-root {
+            #collection-modal-root,
+            #collection-rating-modal-root {
                 position: relative;
                 z-index: 9999999;
             }
@@ -70,6 +71,7 @@
         <div id="navigation-modal-root"></div>
         <div id="rating-modal-root"></div>
         <div id="collection-modal-root"></div>
+        <div id="collection-rating-modal-root"></div>
         <div id="save-to-collection-modal-root"></div>
         <div id="tag-selector-modal-root"></div>
     </body>

@@ -277,6 +277,27 @@ class LeaderboardController extends Controller
     }
 
     /**
+     * Get top-rated collections.
+     */
+    public function topRatedCollections(Request $request)
+    {
+        $limit = $request->input('limit', 10);
+
+        $collections = Collection::where('is_public', true)
+            ->whereNotNull('average_rating')
+            ->with(['user:id,name,username,profile_picture', 'tags', 'roads' => function($query) {
+                $query->select('saved_roads.id', 'road_name', 'road_coordinates', 'length', 'average_rating', 'country', 'region')
+                    ->limit(3); // Just get a few roads for preview
+            }])
+            ->withCount('reviews')
+            ->orderBy('average_rating', 'desc')
+            ->take($limit)
+            ->get();
+
+        return response()->json($collections);
+    }
+
+    /**
      * Get all leaderboard data in one request.
      */
     public function all(Request $request)
@@ -292,6 +313,7 @@ class LeaderboardController extends Controller
             'most_active_users' => $this->mostActiveUsers($request)->original,
             'most_followed_users' => $this->mostFollowedUsers($request)->original,
             'featured_collections' => $this->featuredCollections($request)->original,
+            'top_rated_collections' => $this->topRatedCollections($request)->original,
         ]);
     }
 }

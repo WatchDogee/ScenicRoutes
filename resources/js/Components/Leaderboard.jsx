@@ -11,6 +11,11 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
     const [activeTab, setActiveTab] = useState('top-rated');
     const [categoryType, setCategoryType] = useState('roads');
 
+    // State for top-rated collections
+    const [topRatedCollections, setTopRatedCollections] = useState([]);
+    const [loadingTopRatedCollections, setLoadingTopRatedCollections] = useState(true);
+    const [errorTopRatedCollections, setErrorTopRatedCollections] = useState(null);
+
     // State for popular roads by country (moved from renderPopularRoadsByCountry)
     const [popularRoadsByCountry, setPopularRoadsByCountry] = useState([]);
     const [loadingCountryRoads, setLoadingCountryRoads] = useState(true);
@@ -18,7 +23,23 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
 
     useEffect(() => {
         fetchLeaderboardData();
+        fetchTopRatedCollections();
     }, []);
+
+    const fetchTopRatedCollections = async () => {
+        try {
+            setLoadingTopRatedCollections(true);
+            const response = await axios.get('/api/leaderboard/top-rated-collections');
+            console.log('Top rated collections:', response.data);
+            setTopRatedCollections(response.data);
+            setErrorTopRatedCollections(null);
+        } catch (error) {
+            console.error('Error fetching top rated collections:', error);
+            setErrorTopRatedCollections('Failed to load top rated collections');
+        } finally {
+            setLoadingTopRatedCollections(false);
+        }
+    };
 
     // Effect for fetching popular roads by country
     useEffect(() => {
@@ -527,6 +548,107 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
         );
     };
 
+    const renderTopRatedCollections = () => {
+        if (loadingTopRatedCollections) {
+            return <p className="text-center text-gray-500 py-4">Loading top rated collections...</p>;
+        }
+
+        if (errorTopRatedCollections) {
+            return <p className="text-center text-red-500 py-4">{errorTopRatedCollections}</p>;
+        }
+
+        if (!topRatedCollections?.length) {
+            return <p className="text-center text-gray-500 py-4">No top rated collections found</p>;
+        }
+
+        return (
+            <div className="space-y-3">
+                {topRatedCollections.map((collection, index) => (
+                    <div
+                        key={collection.id}
+                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer shadow-sm"
+                        onClick={() => {
+                            try {
+                                // Dispatch event to view collection
+                                const event = new CustomEvent('viewCollection', {
+                                    detail: { collection }
+                                });
+                                window.dispatchEvent(event);
+                            } catch (error) {
+                                console.error("Error viewing collection:", error);
+                            }
+                        }}
+                    >
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center">
+                                <div className="w-10 h-10 flex items-center justify-center bg-yellow-100 text-yellow-800 rounded-full font-bold mr-3">
+                                    <FaStar />
+                                </div>
+                                <div>
+                                    <div className="font-medium text-lg">{collection.name}</div>
+                                    {collection.description && (
+                                        <p className="text-sm text-gray-600 line-clamp-2">{collection.description}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-end space-y-1">
+                                <div className="flex items-center bg-yellow-50 px-3 py-1 rounded-full">
+                                    <FaStar className="text-yellow-500" />
+                                    <span className="ml-1 text-sm font-medium">
+                                        {typeof collection.average_rating === 'number'
+                                            ? collection.average_rating.toFixed(1)
+                                            : '0.0'} ({collection.reviews_count || 0} reviews)
+                                    </span>
+                                </div>
+                                <div className="flex items-center bg-blue-50 px-3 py-1 rounded-full">
+                                    <FaRoad className="text-blue-500" />
+                                    <span className="ml-1 text-sm font-medium">{collection.roads_count || collection.roads?.length || 0} roads</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-2">
+                            {collection.tags && collection.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                    {collection.tags.slice(0, 3).map(tag => (
+                                        <span
+                                            key={tag.id}
+                                            className={`px-2 py-0.5 rounded-full text-xs ${
+                                                tag.type ? `tag-${tag.type}` : 'bg-gray-100 text-gray-800'
+                                            }`}
+                                        >
+                                            {tag.name}
+                                        </span>
+                                    ))}
+                                    {collection.tags.length > 3 && (
+                                        <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-800">
+                                            +{collection.tags.length - 3} more
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            {collection.user && (
+                                <div
+                                    className="flex items-center cursor-pointer hover:bg-blue-50 p-1 rounded"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onViewUser && onViewUser(collection.user);
+                                    }}
+                                >
+                                    <ProfilePicture user={collection.user} size="xs" />
+                                    <span className="ml-2 text-sm text-blue-600 font-medium">
+                                        {collection.user.name || 'Unknown User'}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     const renderMostFollowedUsers = () => {
         if (!leaderboardData?.most_followed_users?.length) {
             return <p className="text-center text-gray-500 py-4">No followed users found</p>;
@@ -852,6 +974,11 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
 
         switch (activeTab) {
             case 'top-rated':
+                if (categoryType === 'roads') {
+                    return renderTopRatedRoads();
+                } else if (categoryType === 'collections') {
+                    return renderTopRatedCollections();
+                }
                 return renderTopRatedRoads();
             case 'most-reviewed':
                 return renderMostReviewedRoads();
@@ -961,7 +1088,8 @@ export default function Leaderboard({ onViewRoad, onViewUser, onViewRoadDetails 
             { id: 'popular-roads-by-country', icon: <FaGlobe className="inline mr-1" />, label: 'By Country' }
         ],
         collections: [
-            { id: 'featured-collections', icon: <FaFolder className="inline mr-1" />, label: 'Popular Collections' }
+            { id: 'top-rated', icon: <FaStar className="inline mr-1" />, label: 'Top Rated' },
+            { id: 'featured-collections', icon: <FaFolder className="inline mr-1" />, label: 'Featured Collections' }
         ],
         users: [
             { id: 'most-active', icon: <FaRoad className="inline mr-1" />, label: 'Most Active' },

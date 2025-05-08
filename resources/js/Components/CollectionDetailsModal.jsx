@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaTimes, FaFolder, FaRoad, FaUser, FaPlus, FaCamera, FaImage, FaTag } from 'react-icons/fa';
+import { FaTimes, FaFolder, FaRoad, FaUser, FaPlus, FaCamera, FaImage, FaTag, FaStar } from 'react-icons/fa';
 import Portal from './Portal';
 import RoadCard from './RoadCard';
 import TagSelector from './TagSelector';
+import StarRating from './StarRating';
+import CollectionRatingModal from './CollectionRatingModal';
 
 export default function CollectionDetailsModal({ isOpen, onClose, collectionId, onCollectionUpdated }) {
     const [collection, setCollection] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
+    const [showRatingModal, setShowRatingModal] = useState(false);
     const [editData, setEditData] = useState({
         name: '',
         description: '',
@@ -203,6 +206,25 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
             detail: { road }
         });
         window.dispatchEvent(event);
+    };
+
+    const handleRateCollection = () => {
+        setShowRatingModal(true);
+    };
+
+    const handleSubmitReview = (rating, comment, updatedCollection) => {
+        console.log('Review submitted:', { rating, comment });
+        setShowRatingModal(false);
+
+        // Update the collection with the new rating data
+        if (updatedCollection) {
+            setCollection(updatedCollection);
+
+            // Call the parent's onCollectionUpdated if provided
+            if (onCollectionUpdated) {
+                onCollectionUpdated(updatedCollection);
+            }
+        }
     };
 
     const handleCoverImageChange = (e) => {
@@ -552,6 +574,22 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                                                     <FaRoad className="mr-1" />
                                                     <span>{collection.roads?.length || 0} roads</span>
                                                 </div>
+                                                {collection.average_rating ? (
+                                                    <div className="flex items-center mt-1">
+                                                        <StarRating rating={typeof collection.average_rating === 'number' ? collection.average_rating : 0} readOnly size="sm" />
+                                                        <span className="ml-1 text-sm text-gray-600">
+                                                            ({collection.reviews_count || 0} reviews)
+                                                        </span>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                            <div className="ml-auto">
+                                                <button
+                                                    onClick={handleRateCollection}
+                                                    className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 flex items-center"
+                                                >
+                                                    <FaStar className="mr-1" /> Rate
+                                                </button>
                                             </div>
                                         </div>
 
@@ -852,6 +890,17 @@ export default function CollectionDetailsModal({ isOpen, onClose, collectionId, 
                     </div>
                 </div>
             </div>
+
+            {/* Collection Rating Modal */}
+            {showRatingModal && collection && (
+                <CollectionRatingModal
+                    isOpen={showRatingModal}
+                    onClose={() => setShowRatingModal(false)}
+                    onSubmit={handleSubmitReview}
+                    collection={collection}
+                    auth={{ user: { id: currentUserId } }}
+                />
+            )}
         </Portal>
     );
 }
