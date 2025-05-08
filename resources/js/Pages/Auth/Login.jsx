@@ -205,7 +205,7 @@ export default function Login({ status }) {
                                 </label>
 
                                 <a
-                                    href="/forgot-password-direct"
+                                    href="/recover-password"
                                     className="text-sm text-blue-500 hover:text-blue-700"
                                 >
                                     Forgot password?
@@ -232,10 +232,10 @@ export default function Login({ status }) {
                                     <div>
                                         <button
                                             type="button"
-                                            onClick={() => window.location.href = '/forgot-password-direct'}
+                                            onClick={() => window.location.href = '/recover-password'}
                                             className="text-sm text-blue-500 hover:text-blue-700 mt-2"
                                         >
-                                            Forgot your password? Use direct reset
+                                            Forgot your password? Use standalone recovery
                                         </button>
                                     </div>
                                 </div>

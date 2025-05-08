@@ -154,6 +154,11 @@ Route::get('/forgot-password-direct', function () {
     return Inertia::render('Auth/ForgotPasswordPage');
 })->name('password.request.direct');
 
+// Add a standalone password recovery page that bypasses CSRF
+Route::get('/recover-password', function () {
+    return Inertia::render('Auth/StandalonePasswordRecovery');
+})->name('password.recover');
+
 Route::get('/reset-password/{token}', function (Request $request, $token) {
     return Inertia::render('Auth/ResetPasswordPage', [
         'token' => $token,

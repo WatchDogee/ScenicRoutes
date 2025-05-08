@@ -6,16 +6,19 @@ use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 // Routes that work for both logged in and logged out users
-Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
-    ->name('password.request');
+// Use Inertia directly to render the standalone password recovery page
+Route::get('forgot-password', function () {
+    return Inertia::render('Auth/StandalonePasswordRecovery');
+})->name('password.request');
 
-Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
+// Keep the original route name but use the API controller
+Route::post('forgot-password', [\App\Http\Controllers\AuthController::class, 'forgotPassword'])
     ->name('password.email');
 
 Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
