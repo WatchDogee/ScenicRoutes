@@ -33,6 +33,16 @@ export default function Settings({ auth }) {
     const [settingsMessage, setSettingsMessage] = useState({ type: '', text: '' });
 
     useEffect(() => {
+        // Add settings-page class to body for scrolling
+        document.body.classList.add('settings-page');
+
+        // Apply direct styles to ensure scrolling works
+        document.body.style.overflow = 'scroll';
+        document.body.style.height = 'auto';
+        document.body.style.minHeight = '100vh';
+        document.documentElement.style.overflow = 'auto';
+        document.documentElement.style.height = 'auto';
+
         // Fetch user data when component mounts (only if not already provided via auth prop)
         const fetchUserData = async () => {
             // If we already have user data from the auth prop, just fetch settings
@@ -69,6 +79,16 @@ export default function Settings({ auth }) {
         };
 
         fetchUserData();
+
+        // Cleanup function to remove the class and styles when component unmounts
+        return () => {
+            document.body.classList.remove('settings-page');
+            document.body.style.overflow = '';
+            document.body.style.height = '';
+            document.body.style.minHeight = '';
+            document.documentElement.style.overflow = '';
+            document.documentElement.style.height = '';
+        };
     }, [auth]);
 
     /**
@@ -325,7 +345,7 @@ export default function Settings({ auth }) {
         >
             <Head title="Settings" />
 
-            <div className="py-12">
+            <div className="py-12 min-h-screen">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
@@ -387,7 +407,7 @@ export default function Settings({ auth }) {
                                     </Tab>
                                 </Tab.List>
 
-                                <Tab.Panels>
+                                <Tab.Panels className="overflow-visible">
                                     {/* Profile Tab */}
                                     <Tab.Panel className="rounded-xl bg-white p-3">
                                         {message.text && (

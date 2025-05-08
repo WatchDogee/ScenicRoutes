@@ -26,6 +26,20 @@
                 position: relative;
             }
 
+            /* Allow scrolling on settings page */
+            body.settings-page {
+                overflow-y: scroll !important;
+                height: auto !important;
+                min-height: 100vh !important;
+                position: static !important;
+            }
+
+            body.settings-page #app {
+                min-height: 100vh;
+                height: auto !important;
+                overflow: visible !important;
+            }
+
             /* Only allow scrolling in specific containers */
             .scrollable-container {
                 overflow-y: auto;

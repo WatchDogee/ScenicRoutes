@@ -1,14 +1,24 @@
 import React from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
 export default function MapAuthenticatedLayout({ children, header }) {
+    const { component } = usePage();
+
+    // Check if we're on the settings page
+    const isSettingsPage = component === 'Settings';
+
+    // Apply appropriate classes based on the current page
+    const containerClasses = isSettingsPage
+        ? "min-h-screen bg-gray-100 settings-container"
+        : "min-h-screen bg-gray-100";
+
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className={containerClasses}>
             <Head>
                 <title>ScenicRoutes</title>
             </Head>
 
-            <main>
+            <main className={isSettingsPage ? "settings-main" : ""}>
                 {header && (
                     <header className="bg-white shadow">
                         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -21,4 +31,4 @@ export default function MapAuthenticatedLayout({ children, header }) {
             </main>
         </div>
     );
-} 
+}

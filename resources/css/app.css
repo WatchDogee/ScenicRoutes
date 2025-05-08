@@ -8,6 +8,7 @@
 @import 'community.css';
 @import 'social.css';
 @import 'range-input.css';
+@import 'settings.css';
 
 /* Add these styles to differentiate markers */
 .marker-icon {
