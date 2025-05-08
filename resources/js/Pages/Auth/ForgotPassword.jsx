@@ -35,8 +35,13 @@ export default function ForgotPassword({ status }) {
             });
     }, []);
 
-    const submit = (e) => {
+    const submit = async (e) => {
         e.preventDefault();
+
+        // Make sure we have a fresh CSRF token before submitting
+        if (window.refreshCSRFToken) {
+            await window.refreshCSRFToken();
+        }
 
         post(route('password.email')); // This is correct - using the Laravel route
     };

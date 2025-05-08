@@ -205,7 +205,7 @@ export default function Login({ status }) {
                                 </label>
 
                                 <a
-                                    href="/forgot-password"
+                                    href="/forgot-password-direct"
                                     className="text-sm text-blue-500 hover:text-blue-700"
                                 >
                                     Forgot password?
@@ -232,10 +232,10 @@ export default function Login({ status }) {
                                     <div>
                                         <button
                                             type="button"
-                                            onClick={() => setShowForgotPassword(true)}
+                                            onClick={() => window.location.href = '/forgot-password-direct'}
                                             className="text-sm text-blue-500 hover:text-blue-700 mt-2"
                                         >
-                                            Forgot your password? Reset it here
+                                            Forgot your password? Use direct reset
                                         </button>
                                     </div>
                                 </div>

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { FaTag, FaChevronDown } from 'react-icons/fa';
+import { FaTag, FaChevronDown, FaFilter } from 'react-icons/fa';
 import TagCategoryCollapsible from './TagCategoryCollapsible';
 
 /**
  * CollapsibleFilterByTags component for displaying tag filters with collapsible functionality
- * 
+ *
  * @param {Object} props
  * @param {Array} props.availableTags - Array of all available tags
  * @param {Array} props.selectedTagIds - Array of selected tag IDs
@@ -19,6 +19,9 @@ export default function CollapsibleFilterByTags({
     onTagsChange,
     className = ''
 }) {
+    // State for overall expanded status (default to collapsed)
+    const [isExpanded, setIsExpanded] = useState(false);
+
     // State for each category's expanded status
     const [expandedCategories, setExpandedCategories] = useState({});
 
@@ -68,45 +71,72 @@ export default function CollapsibleFilterByTags({
         }
     };
 
+    // Toggle the entire filter section
+    const toggleFilterSection = () => {
+        setIsExpanded(!isExpanded);
+    };
+
     return (
         <div className={`filter-by-tags ${className}`}>
-            <h3 className="text-sm font-medium mb-2">Filter by Tags</h3>
-            
-            {availableTags.length === 0 ? (
-                <div className="text-sm text-gray-500">No tags available</div>
-            ) : (
-                <div className="space-y-2">
-                    {/* Group tags by category */}
-                    {Object.entries(groupTagsByCategory()).map(([category, tags]) => {
-                        if (tags.length === 0) return null;
-                        
-                        const isExpanded = expandedCategories[category] !== false; // Default to expanded
-                        
-                        return (
-                            <div key={category} className="mb-2">
-                                <div 
-                                    className="text-xs font-medium text-gray-700 mb-1 flex justify-between items-center cursor-pointer"
-                                    onClick={() => toggleCategory(category)}
-                                >
-                                    <span>{getCategoryName(category)}</span>
-                                    <FaChevronDown
-                                        className={`ml-1 text-xs transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
-                                    />
-                                </div>
-                                
-                                {isExpanded && (
-                                    <div className="border rounded p-2 bg-white">
-                                        <div className={`tag-category-${category}`}>
-                                            <TagCategoryCollapsible
-                                                tags={tags}
-                                                onTagSelect={handleTagSelect}
-                                            />
-                                        </div>
+            {/* Main header with toggle button */}
+            <div
+                className="flex justify-between items-center cursor-pointer p-2 bg-gray-100 rounded-md mb-2"
+                onClick={toggleFilterSection}
+            >
+                <h3 className="text-sm font-medium flex items-center">
+                    <FaFilter className="mr-2 text-gray-600" />
+                    Filter by Tags {selectedTagIds.length > 0 && `(${selectedTagIds.length} selected)`}
+                </h3>
+                <FaChevronDown
+                    className={`text-xs transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
+                />
+            </div>
+
+            {/* Collapsible content */}
+            {isExpanded && (
+                availableTags.length === 0 ? (
+                    <div className="text-sm text-gray-500 p-2">No tags available</div>
+                ) : (
+                    <div className="space-y-2 p-2 border rounded-md bg-gray-50">
+                        {/* Group tags by category */}
+                        {Object.entries(groupTagsByCategory()).map(([category, tags]) => {
+                            if (tags.length === 0) return null;
+
+                            const isExpanded = expandedCategories[category] !== false; // Default to expanded
+
+                            return (
+                                <div key={category} className="mb-2">
+                                    <div
+                                        className="text-xs font-medium text-gray-700 mb-1 flex justify-between items-center cursor-pointer p-1 hover:bg-gray-100 rounded"
+                                        onClick={() => toggleCategory(category)}
+                                    >
+                                        <span>{getCategoryName(category)}</span>
+                                        <FaChevronDown
+                                            className={`ml-1 text-xs transition-transform ${isExpanded ? 'transform rotate-180' : ''}`}
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
+
+                                    {isExpanded && (
+                                        <div className="border rounded p-2 bg-white">
+                                            <div className={`tag-category-${category}`}>
+                                                <TagCategoryCollapsible
+                                                    tags={tags}
+                                                    onTagSelect={handleTagSelect}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )
+            )}
+
+            {/* Show selected tags count when collapsed */}
+            {!isExpanded && selectedTagIds.length > 0 && (
+                <div className="text-xs text-blue-600 font-medium pl-2">
+                    {selectedTagIds.length} tag{selectedTagIds.length !== 1 ? 's' : ''} selected
                 </div>
             )}
         </div>

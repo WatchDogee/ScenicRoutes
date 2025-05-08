@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout', 'register', 'profile/*'],
+    'paths' => ['*'],  // Allow CORS for all paths
     'allowed_methods' => ['*'],
     'allowed_origins' => ['*'],  // Allow all origins in production for flexibility
     'allowed_origins_patterns' => [],

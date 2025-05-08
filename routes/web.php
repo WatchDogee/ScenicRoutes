@@ -149,7 +149,10 @@ Route::middleware('auth')->group(function () {
 });
 
 // Password reset routes that work for both logged in and logged out users
-// This route is now handled by the PasswordResetLinkController in auth.php
+// Add a direct route to the ForgotPasswordPage component
+Route::get('/forgot-password-direct', function () {
+    return Inertia::render('Auth/ForgotPasswordPage');
+})->name('password.request.direct');
 
 Route::get('/reset-password/{token}', function (Request $request, $token) {
     return Inertia::render('Auth/ResetPasswordPage', [

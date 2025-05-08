@@ -680,35 +680,94 @@ export default function Map() {
         try {
             console.log("Attempting login with:", loginForm);
 
-            // First get a CSRF token
-            await axios.get('/sanctum/csrf-cookie');
+            // Ensure we have a fresh CSRF token
+            if (window.refreshCSRFToken) {
+                const success = await window.refreshCSRFToken();
+                if (!success) {
+                    console.warn('Failed to refresh CSRF token, but will try to continue anyway');
+                }
+            }
 
-            // Use the form data directly - send as login field to ensure username login works
-            const response = await axios.post('/api/login', {
-                login: loginForm.login, // Send as login field, not email
-                password: loginForm.password
-            }, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                },
-                withCredentials: true
-            });
+            // Try multiple approaches to login
+            let loginSuccess = false;
+            let userData = null;
+            let authToken = null;
+            let errorMessage = null;
 
-            console.log("Login response:", response.data);
+            // First try: Direct form submission (most reliable)
+            try {
+                const formData = new FormData();
+                formData.append('login', loginForm.login);
+                formData.append('password', loginForm.password);
 
-            if (response.data && response.data.user && response.data.token) {
-                const { user, token } = response.data;
-                localStorage.setItem('token', token);
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-                setAuth({ user, token });
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.user && data.token) {
+                        loginSuccess = true;
+                        userData = data.user;
+                        authToken = data.token;
+                    } else {
+                        errorMessage = data.message || 'Login successful but user data is missing';
+                    }
+                } else {
+                    const errorData = await response.json();
+                    errorMessage = errorData.message || `Login failed with status ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+            } catch (formError) {
+                console.warn('Form submission login failed, trying axios:', formError);
+
+                // Second try: Axios with JSON
+                try {
+                    const response = await axios.post('/api/login', {
+                        login: loginForm.login,
+                        password: loginForm.password
+                    }, {
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        withCredentials: true
+                    });
+
+                    console.log("Login response:", response.data);
+
+                    if (response.data && response.data.user && response.data.token) {
+                        loginSuccess = true;
+                        userData = response.data.user;
+                        authToken = response.data.token;
+                    } else {
+                        errorMessage = response.data.message || 'Login successful but user data is missing';
+                    }
+                } catch (axiosError) {
+                    console.error("Axios login failed:", axiosError);
+                    errorMessage = axiosError.response?.data?.message || axiosError.message || 'Login failed';
+                    throw axiosError;
+                }
+            }
+
+            // If login was successful with any method
+            if (loginSuccess && userData && authToken) {
+                localStorage.setItem('token', authToken);
+                axios.defaults.headers.common['Authorization'] = `Bearer ${authToken}`;
+                setAuth({ user: userData, token: authToken });
                 setLoginForm({ login: '', password: '' });
 
                 // Load saved roads immediately after login
                 try {
                     console.log("Fetching saved roads after login...");
                     const roadsResponse = await axios.get('/api/saved-roads', {
-                        headers: { Authorization: `Bearer ${token}` }
+                        headers: { Authorization: `Bearer ${authToken}` }
                     });
                     console.log("Fetched saved roads:", roadsResponse.data);
                     setSavedRoads(roadsResponse.data);
@@ -718,6 +777,8 @@ export default function Map() {
 
                 // Stay on the map page, no need to redirect
                 alert("Successfully logged in!");
+            } else {
+                throw new Error(errorMessage || 'Login failed for unknown reason');
             }
         } catch (error) {
             console.error("Login error:", error);
@@ -2804,7 +2865,6 @@ export default function Map() {
 
                             {/* Tags Filter */}
                             <div>
-                                <label className="block text-sm text-gray-600 mb-1">Filter by Tags</label>
                                 <div className="tag-filter-section">
                                     <CollapsibleFilterByTags
                                         availableTags={availableTags}

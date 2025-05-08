@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import ForgotPassword from '@/Components/ForgotPassword';
+import DirectForgotPassword from '@/Components/DirectForgotPassword';
 import axios from 'axios';
 
 export default function ForgotPasswordPage() {
@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
 
             <div className="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
                 <div className="w-full sm:max-w-md mt-6 px-6 py-4 bg-white shadow-md overflow-hidden sm:rounded-lg">
-                    <ForgotPassword
+                    <DirectForgotPassword
                         onSwitchToLogin={() => window.location.href = route('login')}
                     />
 

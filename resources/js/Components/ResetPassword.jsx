@@ -24,43 +24,88 @@ export default function ResetPassword({ token, email, onSuccess, onClose }) {
         setError('');
 
         try {
-            // First, get a CSRF token
-            await axios.get('/sanctum/csrf-cookie');
+            // Use a direct form submission with no CSRF token (we've excluded this route from CSRF protection)
+            const resetFormData = new FormData();
+            resetFormData.append('token', formData.token);
+            resetFormData.append('email', formData.email);
+            resetFormData.append('password', formData.password);
+            resetFormData.append('password_confirmation', formData.password_confirmation);
 
-            // Then make the request to the API endpoint
-            const response = await axios.post('/api/reset-password', formData, {
+            // Use a simple fetch request with no CSRF token
+            const response = await fetch('/reset-password', {
+                method: 'POST',
+                body: resetFormData,
                 headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                withCredentials: true
+                credentials: 'same-origin'
             });
 
-            setMessage(response.data.message || 'Password has been reset successfully!');
+            if (response.ok) {
+                setMessage('Password has been reset successfully!');
 
-            // If the response includes a token, store it in localStorage for automatic login
-            if (response.data.token) {
-                localStorage.setItem('token', response.data.token);
+                // Clear form
+                setFormData(prev => ({
+                    ...prev,
+                    password: '',
+                    password_confirmation: ''
+                }));
 
-                // Set axios default authorization header
-                axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+                // Redirect to map page after successful password reset
+                setTimeout(() => {
+                    window.location.href = '/map';
+                }, 1500);
+            } else {
+                // If the direct approach fails, try the API route
+                try {
+                    const apiResponse = await fetch('/api/reset-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify(formData),
+                        credentials: 'same-origin'
+                    });
 
-                // Also store user data if available
-                if (response.data.user) {
-                    localStorage.setItem('user', JSON.stringify(response.data.user));
+                    if (apiResponse.ok) {
+                        const data = await apiResponse.json();
+                        setMessage(data.message || 'Password has been reset successfully!');
+
+                        // If the response includes a token, store it in localStorage for automatic login
+                        if (data.token) {
+                            localStorage.setItem('token', data.token);
+
+                            // Set axios default authorization header
+                            axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+
+                            // Also store user data if available
+                            if (data.user) {
+                                localStorage.setItem('user', JSON.stringify(data.user));
+                            }
+                        }
+
+                        // Clear form
+                        setFormData(prev => ({
+                            ...prev,
+                            password: '',
+                            password_confirmation: ''
+                        }));
+
+                        // Redirect to map page
+                        setTimeout(() => {
+                            window.location.href = '/map';
+                        }, 1500);
+                    } else {
+                        throw new Error('API request failed');
+                    }
+                } catch (apiError) {
+                    console.error('API request failed:', apiError);
+                    throw apiError;
                 }
             }
-
-            // Clear form
-            setFormData(prev => ({
-                ...prev,
-                password: '',
-                password_confirmation: ''
-            }));
-
-            // Redirect immediately to map page
-            window.location.href = '/map';
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to reset password. Please try again.');
             console.error('Error resetting password:', err);

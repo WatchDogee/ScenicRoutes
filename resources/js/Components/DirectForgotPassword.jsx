@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export default function ForgotPassword({ onClose, onSwitchToLogin }) {
+export default function DirectForgotPassword({ onClose, onSwitchToLogin }) {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState('');
@@ -37,15 +37,10 @@ export default function ForgotPassword({ onClose, onSwitchToLogin }) {
         setError('');
 
         try {
-            // Make sure we have a fresh CSRF token
-            if (window.refreshCSRFToken) {
-                await window.refreshCSRFToken();
-            }
-
-            // Use axios with CSRF token
-            const response = await axios.post('/forgot-password', { email });
-
-            if (response.status === 200 || response.status === 202) {
+            // Use the API endpoint directly which doesn't require CSRF token
+            const response = await axios.post('/api/forgot-password', { email });
+            
+            if (response.status === 200) {
                 setMessage(response.data.message || 'Password reset link sent to your email!');
                 setEmail(''); // Clear the form
             } else {
@@ -53,21 +48,7 @@ export default function ForgotPassword({ onClose, onSwitchToLogin }) {
             }
         } catch (error) {
             console.error('Error:', error);
-
-            // Try the API route as fallback
-            try {
-                const apiResponse = await axios.post('/api/forgot-password', { email });
-
-                if (apiResponse.status === 200 || apiResponse.status === 202) {
-                    setMessage(apiResponse.data.message || 'Password reset link sent to your email!');
-                    setEmail(''); // Clear the form
-                } else {
-                    throw new Error('API request failed');
-                }
-            } catch (apiError) {
-                console.error('API error:', apiError);
-                setError(apiError.response?.data?.message || apiError.message || 'Failed to send reset link. Please try again.');
-            }
+            setError(error.response?.data?.message || error.message || 'Failed to send reset link. Please try again.');
         } finally {
             setIsLoading(false);
         }
