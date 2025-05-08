@@ -27,7 +27,7 @@ class WeatherService
      *
      * @var int
      */
-    protected $cacheDuration = 60; // 1 hour
+    protected $cacheDuration = 30; // 30 minutes
 
     /**
      * Create a new service instance.
@@ -75,7 +75,7 @@ class WeatherService
             if (empty($this->apiKey) || $this->apiKey === '237f9c50425060ad469fb28f0e1488e2') {
                 // Return a mock weather data for development
                 Log::warning('Using mock weather data because API key is not set or is using the default value');
-                return $this->getMockWeatherData($units);
+                return $this->getMockWeatherData($units, $lat, $lon);
             }
 
             // Log API request details
@@ -111,7 +111,7 @@ class WeatherService
                 ]);
 
                 // Return mock data instead of null
-                return $this->getMockWeatherData($units);
+                return $this->getMockWeatherData($units, $lat, $lon);
             }
 
             $data = $response->json();
@@ -125,6 +125,13 @@ class WeatherService
             // Cache the results
             Cache::put($cacheKey, $weatherData, $this->cacheDuration);
 
+            // Track cache keys for later clearing
+            $cacheKeys = Cache::get('weather_cache_keys', []);
+            if (!in_array($cacheKey, $cacheKeys)) {
+                $cacheKeys[] = $cacheKey;
+                Cache::put('weather_cache_keys', $cacheKeys, 60 * 24); // Store for 24 hours
+            }
+
             return $weatherData;
         } catch (\Exception $e) {
             Log::error('Exception when fetching weather data: ' . $e->getMessage(), [
@@ -136,7 +143,7 @@ class WeatherService
             ]);
 
             // Return mock data instead of null
-            return $this->getMockWeatherData($units);
+            return $this->getMockWeatherData($units, $lat, $lon);
         }
     }
 
@@ -144,40 +151,96 @@ class WeatherService
      * Get mock weather data for development
      *
      * @param string $units Units (metric, imperial, standard)
+     * @param float $lat Latitude (optional)
+     * @param float $lon Longitude (optional)
      * @return array Mock weather data
      */
-    protected function getMockWeatherData($units = 'metric')
+    protected function getMockWeatherData($units = 'metric', $lat = null, $lon = null)
     {
         $tempUnit = $units === 'imperial' ? '°F' : '°C';
         $speedUnit = $units === 'imperial' ? 'mph' : 'm/s';
-        $temp = $units === 'imperial' ? 72 : 22;
+
+        // Default temperature for unknown locations
+        $temp = $units === 'imperial' ? 50 : 10;
+        $weatherMain = 'Clouds';
+        $weatherDesc = 'scattered clouds';
+        $weatherIcon = '03d';
+        $locationName = 'Development Location';
+        $country = 'DEV';
+
+        // If we have coordinates, try to provide more realistic data
+        if ($lat !== null && $lon !== null) {
+            // Determine location name based on coordinates (very rough approximation)
+            if ($lat > 56 && $lat < 58 && $lon > 26 && $lon < 28) {
+                $locationName = 'Balvi';
+                $country = 'LV';
+
+                // Current season-appropriate temperature for Balvi, Latvia
+                $month = (int)date('m');
+
+                // Winter (December to February)
+                if ($month >= 12 || $month <= 2) {
+                    $temp = $units === 'imperial' ? rand(14, 32) : rand(-10, 0);
+                    $weatherMain = 'Snow';
+                    $weatherDesc = 'light snow';
+                    $weatherIcon = '13d';
+                }
+                // Spring (March to May)
+                else if ($month >= 3 && $month <= 5) {
+                    $temp = $units === 'imperial' ? rand(41, 59) : rand(5, 15);
+                    $weatherMain = 'Clouds';
+                    $weatherDesc = 'broken clouds';
+                    $weatherIcon = '04d';
+                }
+                // Summer (June to August)
+                else if ($month >= 6 && $month <= 8) {
+                    $temp = $units === 'imperial' ? rand(59, 77) : rand(15, 25);
+                    $weatherMain = 'Clear';
+                    $weatherDesc = 'clear sky';
+                    $weatherIcon = '01d';
+                }
+                // Fall (September to November)
+                else {
+                    $temp = $units === 'imperial' ? rand(32, 50) : rand(0, 10);
+                    $weatherMain = 'Rain';
+                    $weatherDesc = 'light rain';
+                    $weatherIcon = '10d';
+                }
+            }
+            // Add more location-specific conditions as needed
+        }
+
+        // Add some randomness to make it more realistic
+        $feelsLike = $temp - rand(0, 3);
+        $minTemp = $temp - rand(2, 5);
+        $maxTemp = $temp + rand(1, 4);
 
         return [
             'temperature' => [
                 'current' => $temp,
-                'feels_like' => $temp - 2,
-                'min' => $temp - 5,
-                'max' => $temp + 5,
+                'feels_like' => $feelsLike,
+                'min' => $minTemp,
+                'max' => $maxTemp,
                 'unit' => $tempUnit
             ],
             'weather' => [
-                'main' => 'Clear',
-                'description' => 'clear sky',
-                'icon' => '01d'
+                'main' => $weatherMain,
+                'description' => $weatherDesc,
+                'icon' => $weatherIcon
             ],
             'wind' => [
-                'speed' => 5,
+                'speed' => rand(2, 8),
                 'unit' => $speedUnit,
-                'direction' => 180
+                'direction' => rand(0, 359)
             ],
-            'humidity' => 65,
-            'pressure' => 1013,
-            'visibility' => 10000,
-            'clouds' => 0,
+            'humidity' => rand(50, 90),
+            'pressure' => rand(1000, 1025),
+            'visibility' => rand(7000, 10000),
+            'clouds' => rand(0, 100),
             'timestamp' => time(),
             'location' => [
-                'name' => 'Development Location',
-                'country' => 'DEV'
+                'name' => $locationName,
+                'country' => $country
             ]
         ];
     }
@@ -234,5 +297,43 @@ class WeatherService
     public function getWeatherIconUrl($iconCode, $size = '2x')
     {
         return "https://openweathermap.org/img/wn/{$iconCode}@{$size}.png";
+    }
+
+    /**
+     * Clear weather cache for a specific location
+     *
+     * @param float $lat Latitude
+     * @param float $lon Longitude
+     * @param string $units Units (metric, imperial, standard)
+     * @return bool True if cache was cleared
+     */
+    public function clearWeatherCache($lat, $lon, $units = 'metric')
+    {
+        $cacheKey = "weather_{$lat}_{$lon}_{$units}";
+        Log::info('Clearing weather cache', [
+            'lat' => $lat,
+            'lon' => $lon,
+            'units' => $units,
+            'cache_key' => $cacheKey
+        ]);
+        return Cache::forget($cacheKey);
+    }
+
+    /**
+     * Clear all weather cache
+     *
+     * @return bool True if cache was cleared
+     */
+    public function clearAllWeatherCache()
+    {
+        Log::info('Clearing all weather cache');
+        // This is a simple approach that works with file and database cache
+        // For more complex cache systems, you might need a different approach
+        $keys = Cache::get('weather_cache_keys', []);
+        foreach ($keys as $key) {
+            Cache::forget($key);
+        }
+        Cache::forget('weather_cache_keys');
+        return true;
     }
 }

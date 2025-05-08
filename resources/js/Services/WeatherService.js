@@ -142,6 +142,43 @@ class WeatherService {
         return weather.weather.description.charAt(0).toUpperCase() +
                weather.weather.description.slice(1);
     }
+
+    /**
+     * Clear weather cache for a specific location
+     *
+     * @param {number} lat - Latitude
+     * @param {number} lon - Longitude
+     * @param {string} units - Units (metric or imperial)
+     * @returns {Promise} - Promise with result
+     */
+    async clearWeatherCache(lat, lon, units = 'metric') {
+        try {
+            console.log('Clearing weather cache for coordinates:', { lat, lon, units });
+            const response = await axios.post('/api/weather/clear-cache', { lat, lon, units });
+            console.log('Weather cache cleared:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error clearing weather cache:', error);
+            return { success: false, message: 'Failed to clear weather cache' };
+        }
+    }
+
+    /**
+     * Clear all weather cache
+     *
+     * @returns {Promise} - Promise with result
+     */
+    async clearAllWeatherCache() {
+        try {
+            console.log('Clearing all weather cache');
+            const response = await axios.post('/api/weather/clear-cache', { all: true });
+            console.log('All weather cache cleared:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Error clearing all weather cache:', error);
+            return { success: false, message: 'Failed to clear all weather cache' };
+        }
+    }
 }
 
 export default new WeatherService();

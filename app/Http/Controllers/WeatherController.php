@@ -75,6 +75,65 @@ class WeatherController extends Controller
     }
 
     /**
+     * Clear weather cache for a specific location
+     */
+    public function clearWeatherCache(Request $request)
+    {
+        try {
+            $request->validate([
+                'lat' => 'nullable|numeric',
+                'lon' => 'nullable|numeric',
+                'units' => 'nullable|string|in:metric,imperial,standard'
+            ]);
+
+            $lat = $request->input('lat');
+            $lon = $request->input('lon');
+            $units = $request->input('units', 'metric');
+            $all = $request->input('all', false);
+
+            \Log::info('Weather cache clear request received', [
+                'lat' => $lat,
+                'lon' => $lon,
+                'units' => $units,
+                'all' => $all,
+                'authenticated' => $request->user() ? 'yes' : 'no'
+            ]);
+
+            if ($all) {
+                $result = $this->weatherService->clearAllWeatherCache();
+                return response()->json([
+                    'success' => $result,
+                    'message' => 'All weather cache cleared'
+                ]);
+            } else if ($lat && $lon) {
+                $result = $this->weatherService->clearWeatherCache($lat, $lon, $units);
+                return response()->json([
+                    'success' => $result,
+                    'message' => 'Weather cache cleared for location',
+                    'location' => [
+                        'lat' => $lat,
+                        'lon' => $lon,
+                        'units' => $units
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Missing parameters. Provide lat/lon or all=true'
+                ], 400);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error clearing weather cache: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to clear weather cache: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get weather for a saved road
      */
     public function getWeatherForRoad(Request $request, $id)
@@ -172,7 +231,11 @@ class WeatherController extends Controller
             return response()->json([
                 'road_id' => $road->id,
                 'road_name' => $road->road_name,
-                'weather' => $weather
+                'weather' => $weather,
+                'coordinates' => [
+                    'lat' => $lat,
+                    'lon' => $lon
+                ]
             ]);
         } catch (\Exception $e) {
             \Log::error('Exception in getWeatherForRoad: ' . $e->getMessage(), [

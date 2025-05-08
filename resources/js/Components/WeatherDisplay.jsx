@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import WeatherService from '../Services/WeatherService';
 
 /**
@@ -9,59 +9,85 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        const fetchWeather = async () => {
-            setLoading(true);
-            setError(null);
+    const [refreshing, setRefreshing] = useState(false);
 
-            try {
-                let weatherData;
+    const fetchWeather = useCallback(async (skipCache = false) => {
+        setLoading(true);
+        setError(null);
 
+        try {
+            let weatherData;
+
+            // If skipCache is true, clear the weather cache first
+            if (skipCache) {
+                setRefreshing(true);
                 if (roadId) {
-                    console.log('WeatherDisplay: Fetching weather for road ID:', roadId);
-
-                    // Fetch weather for a specific road
-                    weatherData = await WeatherService.getWeatherForRoad(roadId, units);
-                    console.log('WeatherDisplay: Road weather data received:', weatherData);
-
-                    if (weatherData && weatherData.error) {
-                        console.error('WeatherDisplay: Weather error:', weatherData.message);
-                        setError(weatherData.error);
-                    } else if (weatherData && weatherData.weather) {
-                        setWeather(weatherData.weather);
-                    } else {
-                        console.error('WeatherDisplay: Invalid road weather data format:', weatherData);
-                        setError('Invalid weather data format');
+                    // For road weather, we need to get the coordinates first
+                    const roadData = await WeatherService.getWeatherForRoad(roadId, units);
+                    if (roadData && roadData.coordinates) {
+                        await WeatherService.clearWeatherCache(
+                            roadData.coordinates.lat,
+                            roadData.coordinates.lon,
+                            units
+                        );
                     }
                 } else if (lat && lon) {
-                    console.log('WeatherDisplay: Fetching weather for coordinates:', { lat, lon });
-                    // Fetch weather for specific coordinates
-                    weatherData = await WeatherService.getWeatherByCoordinates(lat, lon, units);
-                    console.log('WeatherDisplay: Coordinate weather data received:', weatherData);
-
-                    if (weatherData && weatherData.error) {
-                        console.error('WeatherDisplay: Weather error:', weatherData.message);
-                        setError(weatherData.error);
-                    } else if (weatherData) {
-                        setWeather(weatherData);
-                    } else {
-                        console.error('WeatherDisplay: No weather data received for coordinates');
-                        setError('Failed to load weather data');
-                    }
-                } else {
-                    console.error('WeatherDisplay: No location provided');
-                    setError('No location provided for weather');
+                    await WeatherService.clearWeatherCache(lat, lon, units);
                 }
-            } catch (err) {
-                console.error('WeatherDisplay: Error fetching weather:', err);
-                setError('Failed to load weather data: ' + (err.message || 'Unknown error'));
-            } finally {
-                setLoading(false);
             }
-        };
 
-        fetchWeather();
+            if (roadId) {
+                console.log('WeatherDisplay: Fetching weather for road ID:', roadId);
+
+                // Fetch weather for a specific road
+                weatherData = await WeatherService.getWeatherForRoad(roadId, units);
+                console.log('WeatherDisplay: Road weather data received:', weatherData);
+
+                if (weatherData && weatherData.error) {
+                    console.error('WeatherDisplay: Weather error:', weatherData.message);
+                    setError(weatherData.error);
+                } else if (weatherData && weatherData.weather) {
+                    setWeather(weatherData.weather);
+                } else {
+                    console.error('WeatherDisplay: Invalid road weather data format:', weatherData);
+                    setError('Invalid weather data format');
+                }
+            } else if (lat && lon) {
+                console.log('WeatherDisplay: Fetching weather for coordinates:', { lat, lon });
+                // Fetch weather for specific coordinates
+                weatherData = await WeatherService.getWeatherByCoordinates(lat, lon, units);
+                console.log('WeatherDisplay: Coordinate weather data received:', weatherData);
+
+                if (weatherData && weatherData.error) {
+                    console.error('WeatherDisplay: Weather error:', weatherData.message);
+                    setError(weatherData.error);
+                } else if (weatherData) {
+                    setWeather(weatherData);
+                } else {
+                    console.error('WeatherDisplay: No weather data received for coordinates');
+                    setError('Failed to load weather data');
+                }
+            } else {
+                console.error('WeatherDisplay: No location provided');
+                setError('No location provided for weather');
+            }
+        } catch (err) {
+            console.error('WeatherDisplay: Error fetching weather:', err);
+            setError('Failed to load weather data: ' + (err.message || 'Unknown error'));
+        } finally {
+            setLoading(false);
+            setRefreshing(false);
+        }
     }, [roadId, lat, lon, units]);
+
+    // Refresh weather data (clear cache and fetch fresh data)
+    const refreshWeather = useCallback(() => {
+        fetchWeather(true);
+    }, [fetchWeather]);
+
+    useEffect(() => {
+        fetchWeather();
+    }, [fetchWeather]);
 
     if (loading) {
         return (
@@ -114,7 +140,7 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
     const description = weather.weather.description;
 
     return (
-        <div className={`weather-display ${className} flex items-center p-2 rounded-md bg-gray-50`}>
+        <div className={`weather-display ${className} flex items-center p-2 rounded-md bg-gray-50 relative group`}>
             <img
                 src={iconUrl}
                 alt={description}
@@ -125,6 +151,31 @@ const WeatherDisplay = ({ roadId, lat, lon, units = 'metric', className = '' }) 
                 <div className="font-semibold">{temp}{tempUnit}</div>
                 <div className="text-xs text-gray-600 capitalize">{description}</div>
             </div>
+
+            {/* Refresh button - only visible on hover or when refreshing */}
+            <button
+                onClick={refreshWeather}
+                disabled={refreshing}
+                className={`absolute top-1 right-1 p-1 rounded-full
+                    ${refreshing ? 'opacity-100 bg-blue-100' : 'opacity-0 bg-gray-100 group-hover:opacity-100'}
+                    transition-opacity duration-200 text-xs`}
+                title="Refresh weather data"
+            >
+                <svg
+                    className={`w-3 h-3 ${refreshing ? 'animate-spin text-blue-500' : 'text-gray-500'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                </svg>
+            </button>
         </div>
     );
 };

@@ -342,6 +342,7 @@ Route::get('/overpass-proxy', [PointOfInterestController::class, 'overpassProxy'
 // Weather routes - public access without authentication requirement
 Route::get('/weather', [WeatherController::class, 'getWeatherByCoordinates']);
 Route::get('/roads/{id}/weather', [WeatherController::class, 'getWeatherForRoad']);
+Route::post('/weather/clear-cache', [WeatherController::class, 'clearWeatherCache']);
 
 // Protected POI routes
 Route::middleware('auth:sanctum')->group(function () {
