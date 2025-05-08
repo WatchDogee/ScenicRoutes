@@ -315,6 +315,10 @@ export default function Map() {
         if (radiusCircleRef.current) {
             radiusCircleRef.current.setRadius(newRadius * 1000);
         }
+
+        // Update the range progress CSS variable
+        const percentage = ((newRadius - 1) / (50 - 1)) * 100;
+        e.target.style.setProperty('--range-progress', `${percentage}%`);
     };
 
     // Store the marker icon and radius as refs to persist them between renders
@@ -2514,13 +2518,13 @@ export default function Map() {
                         onChange={handleRadiusChange}
                         onMouseDown={(e) => e.stopPropagation()}
                         onTouchStart={(e) => e.stopPropagation()}
-                        className="w-full mb-4 cursor-pointer"
-                        style={{
-                            appearance: 'none',
-                            height: '8px',
-                            borderRadius: '4px',
-                            background: 'linear-gradient(to right, #3b82f6, #60a5fa)',
-                            outline: 'none'
+                        className="w-full mb-4 cursor-pointer blue-range"
+                        ref={(el) => {
+                            if (el) {
+                                // Set the CSS variable for the range progress
+                                const percentage = ((radius - 1) / (50 - 1)) * 100;
+                                el.style.setProperty('--range-progress', `${percentage}%`);
+                            }
                         }}
                     />
                     <label className="block mb-1">Road Type</label>

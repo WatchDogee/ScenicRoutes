@@ -597,8 +597,21 @@ export default function Settings({ auth }) {
                                                     max="50"
                                                     step="5"
                                                     value={userSettings.default_search_radius}
-                                                    onChange={(e) => handleSettingChange('default_search_radius', parseInt(e.target.value))}
-                                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                                                    onChange={(e) => {
+                                                        const newValue = parseInt(e.target.value);
+                                                        handleSettingChange('default_search_radius', newValue);
+                                                        // Update the range progress CSS variable
+                                                        const percentage = ((newValue - 5) / (50 - 5)) * 100;
+                                                        e.target.style.setProperty('--range-progress', `${percentage}%`);
+                                                    }}
+                                                    className="w-full h-2 rounded-lg cursor-pointer blue-range"
+                                                    ref={(el) => {
+                                                        if (el) {
+                                                            // Set the CSS variable for the range progress
+                                                            const percentage = ((userSettings.default_search_radius - 5) / (50 - 5)) * 100;
+                                                            el.style.setProperty('--range-progress', `${percentage}%`);
+                                                        }
+                                                    }}
                                                 />
                                                 <p className="text-sm text-gray-500 mt-1">
                                                     Set the default search radius when looking for roads.
