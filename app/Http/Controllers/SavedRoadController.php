@@ -412,17 +412,24 @@ class SavedRoadController extends Controller
                       ->orWhereRaw('region LIKE ?', ["%$region%"]);
                 });
             }
+            
             if ($minRating) {
                 $query->where('average_rating', '>=', $minRating)
                       ->whereNotNull('average_rating')
                       ->where('average_rating', '>', 0);
             }
+            
+            // Fix for tag filtering
             if ($tags) {
+                \Log::info('Filtering by tags', ['tags' => $tags]);
+                
+                // Handle both array and comma-separated string formats
                 $tagArray = is_array($tags) ? $tags : explode(',', $tags);
+                
+                // Using whereHas to filter roads that have the specified tags
                 $query->whereHas('tags', function ($q) use ($tagArray) {
-                    $q->whereIn('id', $tagArray)
-                      ->orWhereIn('name', $tagArray);
-                });
+                    $q->whereIn('tags.id', $tagArray);
+                }, '=', count($tagArray)); // Ensure all specified tags are matched
             }
 
             $roads = $query->get();
