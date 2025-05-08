@@ -178,10 +178,30 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
     // Fetch available tags for search filtering
     const fetchAvailableTags = async () => {
         try {
-            const response = await axios.get('/api/tags');
-            setAvailableTags(response.data);
+            // Try to fetch tags from the API
+            try {
+                const response = await axios.get('/api/tags');
+                setAvailableTags(response.data);
+            } catch (apiError) {
+                console.error('Error fetching tags:', apiError);
+
+                // Use default tags if API fails
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('Using default tags for development');
+                    setAvailableTags([
+                        { id: 1, name: 'Scenic', type: 'scenery' },
+                        { id: 2, name: 'Mountain', type: 'scenery' },
+                        { id: 3, name: 'Coastal', type: 'scenery' },
+                        { id: 4, name: 'Twisty', type: 'road_characteristic' },
+                        { id: 5, name: 'Smooth', type: 'surface' },
+                        { id: 6, name: 'Challenging', type: 'experience' },
+                        { id: 7, name: 'Motorcycle', type: 'vehicle' },
+                        { id: 8, name: 'Car', type: 'vehicle' }
+                    ]);
+                }
+            }
         } catch (error) {
-            console.error('Error fetching tags:', error);
+            console.error('Error in tag handling:', error);
             setSearchError('Failed to load tags for filtering');
         }
     };

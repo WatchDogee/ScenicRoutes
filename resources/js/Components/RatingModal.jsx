@@ -190,12 +190,18 @@ export default function RatingModal({ isOpen, onClose, onSubmit, road, auth, ini
     };
 
     const getAverageRating = () => {
-        if (road.average_rating || road.reviews_avg_rating) {
-            return `${(road.average_rating || road.reviews_avg_rating).toFixed(1)} ★`;
+        // Check if average_rating or reviews_avg_rating exists and is a number
+        const rating = road.average_rating || road.reviews_avg_rating;
+        if (rating !== undefined && rating !== null && !isNaN(parseFloat(rating))) {
+            return `${parseFloat(rating).toFixed(1)} ★`;
         }
 
-        if (road.reviews && road.reviews.length > 0) {
-            const sum = road.reviews.reduce((total, review) => total + review.rating, 0);
+        // Calculate from reviews if available
+        if (road.reviews && Array.isArray(road.reviews) && road.reviews.length > 0) {
+            const sum = road.reviews.reduce((total, review) => {
+                const reviewRating = parseFloat(review.rating);
+                return total + (isNaN(reviewRating) ? 0 : reviewRating);
+            }, 0);
             return `${(sum / road.reviews.length).toFixed(1)} ★`;
         }
 

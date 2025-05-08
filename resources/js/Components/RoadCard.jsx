@@ -5,6 +5,7 @@ import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import { withErrorBoundary } from './ErrorBoundary';
 import { FaTag } from 'react-icons/fa';
 import TagSelector from './TagSelector';
+import WeatherDisplay from './WeatherDisplay';
 
 function RoadCard({
     road,
@@ -18,7 +19,8 @@ function RoadCard({
     className = '',
     showPrivacyStatus = false,
     showTags = true,
-    allowTagEdit = false
+    allowTagEdit = false,
+    showWeather = true
 }) {
     const { userSettings } = useContext(UserSettingsContext);
     const formatLength = (meters) => {
@@ -65,7 +67,16 @@ function RoadCard({
 
     return (
         <div className={`border rounded-lg p-4 bg-white hover:bg-gray-50 transition-colors ${className}`}>
-            <h3 className="font-semibold text-lg">{road.road_name}</h3>
+            <div className="flex justify-between items-start">
+                <h3 className="font-semibold text-lg">{road.road_name}</h3>
+                {showWeather && road.id && (
+                    <WeatherDisplay
+                        roadId={road.id}
+                        units={userSettings?.measurement_units === 'imperial' ? 'imperial' : 'metric'}
+                        className="ml-2"
+                    />
+                )}
+            </div>
 
             {showUser && road.user && (
                 <div className="flex items-center mt-2 space-x-2">

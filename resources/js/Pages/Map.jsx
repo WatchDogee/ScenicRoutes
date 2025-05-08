@@ -12,6 +12,7 @@ import SocialModal from '../Components/SocialModal';
 import SelfProfileModal from '../Components/SelfProfileModal';
 import StarRating from '../Components/StarRating';
 import SaveToCollectionModal from '../Components/SaveToCollectionModal';
+import MapWeatherDisplay from '../Components/MapWeatherDisplay';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
 import { FaTag, FaTimes } from 'react-icons/fa';
@@ -95,6 +96,7 @@ export default function Map() {
     const [selectedTagIds, setSelectedTagIds] = useState([]);
     const [roadToAddToCollection, setRoadToAddToCollection] = useState(null);
     const [activeTab, setActiveTab] = useState('leaderboard');
+    const [mapCenter, setMapCenter] = useState({ lat: 57.1, lng: 27.1 });
     // Local state for settings that need to be tracked in this component
     const [localSettings, setLocalSettings] = useState({
         default_search_radius: 10,
@@ -1121,6 +1123,12 @@ export default function Map() {
         }, 500);
 
         leafletMap.on('click', handleMapClick);
+
+        // Add event listener for map move end to update mapCenter
+        leafletMap.on('moveend', () => {
+            const center = leafletMap.getCenter();
+            setMapCenter({ lat: center.lat, lng: center.lng });
+        });
 
         // Add event listener for POI popup clicks
         leafletMap.on('popupopen', (e) => {
@@ -2209,6 +2217,12 @@ export default function Map() {
                 >
                     Social Hub
                 </button>
+
+                {/* Weather Display */}
+                <MapWeatherDisplay
+                    mapCenter={mapCenter}
+                    units={userSettings?.measurement_units === 'imperial' ? 'imperial' : 'metric'}
+                />
 
                 {/* POI Controls - positioned below the sidebar toggle button */}
                 <div

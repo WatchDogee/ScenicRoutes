@@ -78,6 +78,45 @@ class SavedRoadController extends Controller
         }
     }
 
+    /**
+     * Public version of index method for non-authenticated users
+     * Returns only public roads
+     */
+    public function publicIndex()
+    {
+        try {
+            \Log::info('Fetching public roads for non-authenticated user');
+
+            // Get only public roads
+            $roads = SavedRoad::where('is_public', true)
+                ->with([
+                    'user:id,name,profile_picture',
+                    'reviews.user:id,name,profile_picture',
+                    'reviews.photos',
+                    'photos',
+                    'tags'
+                ])
+                ->withCount('reviews')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            \Log::info('Public roads fetched successfully', [
+                'count' => $roads->count()
+            ]);
+
+            return response()->json($roads);
+        } catch (\Exception $e) {
+            \Log::error('Error fetching public roads: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'error' => 'Failed to fetch public roads',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([

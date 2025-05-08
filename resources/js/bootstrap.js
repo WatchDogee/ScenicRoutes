@@ -32,6 +32,20 @@ axios.interceptors.request.use(config => {
 axios.get('/sanctum/csrf-cookie')
     .then(() => {
         console.log('CSRF cookie set');
+
+        // Get CSRF token from cookie after it's set
+        const token = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('XSRF-TOKEN'))
+            ?.split('=')[1];
+
+        if (token) {
+            // Set the token in axios defaults
+            axios.defaults.headers.common['X-XSRF-TOKEN'] = decodeURIComponent(token);
+            console.log('CSRF token set in axios defaults');
+        } else {
+            console.warn('CSRF token not found in cookies after /sanctum/csrf-cookie request');
+        }
     })
     .catch(error => {
         console.error('Error setting CSRF cookie:', error);

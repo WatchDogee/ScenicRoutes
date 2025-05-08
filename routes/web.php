@@ -30,6 +30,11 @@ Route::get('/elevation-debug', function () {
     return Inertia::render('ElevationDebug');
 })->name('elevation.debug');
 
+// Weather test route
+Route::get('/weather-test', function () {
+    return Inertia::render('WeatherTest');
+})->name('weather.test');
+
 // Test routes for modal testing
 Route::get('/test-modal', function () {
     return Inertia::render('TestModal');

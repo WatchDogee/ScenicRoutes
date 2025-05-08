@@ -8,6 +8,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\PointOfInterestController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SavedRoadController;
+use App\Http\Controllers\WeatherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
@@ -170,6 +171,11 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public routes
 Route::get('/public-roads', [SavedRoadController::class, 'publicRoads']);
 Route::get('/public-roads/{id}', [SavedRoadController::class, 'showPublic']);
+Route::get('/saved-roads', [SavedRoadController::class, 'publicIndex']);
+
+// Public tag routes
+Route::get('/tags', [\App\Http\Controllers\TagController::class, 'index']);
+Route::get('/tags/{id}', [\App\Http\Controllers\TagController::class, 'show']);
 
 // Debug endpoint to check all roads
 Route::get('/debug/roads', function() {
@@ -333,6 +339,10 @@ Route::get('/fetch-charging-stations', [PointOfInterestController::class, 'fetch
 // Proxy route for Overpass API to avoid CORS issues
 Route::get('/overpass-proxy', [PointOfInterestController::class, 'overpassProxy']);
 
+// Weather routes
+Route::get('/weather', [WeatherController::class, 'getWeatherByCoordinates']);
+Route::get('/roads/{id}/weather', [WeatherController::class, 'getWeatherForRoad']);
+
 // Protected POI routes
 Route::middleware('auth:sanctum')->group(function () {
     // CRUD operations
@@ -347,10 +357,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Import POIs to database
     Route::post('/import-pois', [PointOfInterestController::class, 'importPois']);
 
-    // Tag routes
-    Route::get('/tags', [\App\Http\Controllers\TagController::class, 'index']);
+    // Protected tag routes
     Route::post('/tags', [\App\Http\Controllers\TagController::class, 'store']);
-    Route::get('/tags/{id}', [\App\Http\Controllers\TagController::class, 'show']);
     Route::put('/tags/{id}', [\App\Http\Controllers\TagController::class, 'update']);
     Route::delete('/tags/{id}', [\App\Http\Controllers\TagController::class, 'destroy']);
 
