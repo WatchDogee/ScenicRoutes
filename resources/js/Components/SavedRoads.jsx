@@ -30,7 +30,9 @@ export default function SavedRoads({ auth }) {
     const fetchSavedRoads = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/saved-roads');
+            // Use the authenticated endpoint to get only the user's saved roads
+            const response = await apiClient.get('/api/saved-roads');
+            console.log('Fetched user saved roads:', response.data);
             setRoads(response.data);
             setError(null);
         } catch (error) {
@@ -47,8 +49,12 @@ export default function SavedRoads({ auth }) {
 
     const fetchPublicRoads = async () => {
         try {
-            const response = await apiClient.get('/public-roads');
-            setPublicRoads(response.data);
+            // Use the public roads endpoint to get all public roads
+            const response = await apiClient.get('/api/public-roads');
+            // Check if the response has a roads property (newer API format)
+            const roads = response.data.roads ? response.data.roads : response.data;
+            console.log('Fetched public roads:', roads);
+            setPublicRoads(roads);
         } catch (error) {
             console.error('Error fetching public roads:', error);
         }

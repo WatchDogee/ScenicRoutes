@@ -171,7 +171,7 @@ Route::middleware('auth:sanctum')->group(function () {
 // Public routes
 Route::get('/public-roads', [SavedRoadController::class, 'publicRoads']);
 Route::get('/public-roads/{id}', [SavedRoadController::class, 'showPublic']);
-Route::get('/saved-roads', [SavedRoadController::class, 'publicIndex']);
+Route::get('/public-saved-roads', [SavedRoadController::class, 'publicIndex']);
 
 // Public tag routes
 Route::get('/tags', [\App\Http\Controllers\TagController::class, 'index']);

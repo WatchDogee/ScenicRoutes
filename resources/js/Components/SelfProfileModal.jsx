@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { FaTimes, FaRoad, FaUsers, FaUserFriends, FaStar, FaComment, FaImage, FaCheck, FaGlobe, FaLock } from 'react-icons/fa';
+import { FaTimes, FaRoad, FaUsers, FaUserFriends, FaStar, FaComment, FaImage, FaCheck, FaGlobe, FaLock, FaTag } from 'react-icons/fa';
 import ProfilePicture from './ProfilePicture';
 import RoadCard from './RoadCard';
 import ErrorBoundary from './ErrorBoundary';
 import Portal from './Portal';
+import TagSelectorModal from './TagSelectorModal';
+import CollapsibleTagSelector from './CollapsibleTagSelector';
 
 export default function SelfProfileModal({ isOpen, onClose, auth }) {
     const [user, setUser] = useState(auth?.user || null);
@@ -20,6 +22,7 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
     const [error, setError] = useState(null);
     const [editingRoad, setEditingRoad] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showTagSelectorModal, setShowTagSelectorModal] = useState(false);
 
     useEffect(() => {
         if (isOpen && auth?.user) {
@@ -549,7 +552,8 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                             formData.append('photo', fileInput.files[0]);
                                         }
 
-                                        // Update the road
+                                        // First update the basic road information
+                                        console.log('Sending request to update road with ID:', editingRoad.id);
                                         const response = await axios.post(`/api/saved-roads/${editingRoad.id}`, formData, {
                                             headers: {
                                                 'Content-Type': 'multipart/form-data',
@@ -558,10 +562,37 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                             }
                                         });
 
-                                        // Update the road in the state
-                                        setUserRoads(userRoads.map(road =>
-                                            road.id === editingRoad.id ? response.data.road : road
-                                        ));
+                                        console.log('Response from server:', response.data);
+
+                                        // Now handle tags separately using the dedicated endpoint
+                                        if (editingRoad.tags && editingRoad.tags.length > 0) {
+                                            // Convert tags to tag IDs array
+                                            const tagIds = editingRoad.tags.map(tag => tag.id);
+                                            console.log('Adding tags to road:', tagIds);
+
+                                            // Use the dedicated endpoint for adding tags
+                                            const tagsResponse = await axios.post(`/api/saved-roads/${editingRoad.id}/tags`, {
+                                                tags: tagIds
+                                            }, {
+                                                headers: {
+                                                    'Authorization': `Bearer ${auth.token}`
+                                                }
+                                            });
+
+                                            console.log('Tags update response:', tagsResponse.data);
+                                            console.log('Updated road with tags:', tagsResponse.data.road);
+
+                                            // Update the road in the state with the tags response
+                                            setUserRoads(userRoads.map(road =>
+                                                road.id === editingRoad.id ? tagsResponse.data.road : road
+                                            ));
+                                        } else {
+                                            console.log('No tags to add to road');
+                                            // If no tags, use the original response
+                                            setUserRoads(userRoads.map(road =>
+                                                road.id === editingRoad.id ? response.data.road : road
+                                            ));
+                                        }
 
                                         setShowEditModal(false);
                                         setEditingRoad(null);
@@ -630,6 +661,39 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                                         </p>
                                     </div>
 
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                                            Tags
+                                        </label>
+                                        <div className="border rounded p-3 bg-gray-50">
+                                            {editingRoad.tags && editingRoad.tags.length > 0 ? (
+                                                <CollapsibleTagSelector
+                                                    selectedTags={editingRoad.tags}
+                                                    onTagsChange={(tags) => setEditingRoad({...editingRoad, tags})}
+                                                    entityType="road"
+                                                    readOnly={false}
+                                                    initialVisibleTags={5}
+                                                />
+                                            ) : (
+                                                <p className="text-sm text-gray-500">No tags selected</p>
+                                            )}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    console.log('Opening tag selector modal...');
+                                                    setShowTagSelectorModal(true);
+                                                    console.log('showTagSelectorModal set to:', true);
+                                                }}
+                                                className="mt-2 inline-flex items-center px-3 py-1 border border-blue-500 text-blue-500 rounded-md text-sm hover:bg-blue-50"
+                                            >
+                                                <FaTag className="mr-1" /> Manage Tags
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Add tags to help others find your road
+                                        </p>
+                                    </div>
+
                                     <div className="mb-6">
                                         <label className="flex items-center">
                                             <input
@@ -680,6 +744,31 @@ export default function SelfProfileModal({ isOpen, onClose, auth }) {
                         </div>
                     </div>
                 </Portal>
+            )}
+
+            {/* Tag Selector Modal */}
+            {console.log('SelfProfileModal: showTagSelectorModal =', showTagSelectorModal, 'editingRoad =', editingRoad)}
+            {showTagSelectorModal && editingRoad ? (
+                <>
+                    {console.log('SelfProfileModal: Rendering TagSelectorModal')}
+                    <TagSelectorModal
+                        isOpen={showTagSelectorModal}
+                        onClose={() => {
+                            console.log('Closing tag selector modal');
+                            setShowTagSelectorModal(false);
+                        }}
+                        selectedTags={editingRoad.tags || []}
+                        onTagsChange={(tags) => {
+                            console.log('Tags changed in modal:', tags);
+                            setEditingRoad({...editingRoad, tags});
+                            console.log('Updated editingRoad:', {...editingRoad, tags});
+                            // Don't close the modal to allow multiple tag selections
+                        }}
+                        entityType="road"
+                    />
+                </>
+            ) : (
+                console.log('SelfProfileModal: Not rendering TagSelectorModal')
             )}
         </Portal>
     );

@@ -71,5 +71,6 @@
         <div id="rating-modal-root"></div>
         <div id="collection-modal-root"></div>
         <div id="save-to-collection-modal-root"></div>
+        <div id="tag-selector-modal-root"></div>
     </body>
 </html>

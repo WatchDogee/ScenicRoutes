@@ -825,12 +825,13 @@ class SavedRoadController extends Controller
                 'corner_count' => 'nullable|integer',
                 'length' => 'nullable|numeric',
                 'is_public' => 'nullable|boolean',
-                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120'
+                'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+                'tags' => 'nullable|string'
             ]);
 
             // Only update fields that are actually present in the request
             $updateData = array_filter($validatedData, function ($value, $key) {
-                return $value !== null && $key !== 'photo';
+                return $value !== null && $key !== 'photo' && $key !== 'tags';
             }, ARRAY_FILTER_USE_BOTH);
 
             // Handle boolean conversion for is_public
@@ -839,6 +840,58 @@ class SavedRoadController extends Controller
             }
 
             $road->update($updateData);
+
+            // Handle tags if provided
+            if ($request->has('tags')) {
+                try {
+                    \Log::info('Tags received in request', [
+                        'road_id' => $road->id,
+                        'tags_raw' => $request->tags
+                    ]);
+
+                    $tagIds = json_decode($request->tags, true);
+
+                    \Log::info('Tags after JSON decode', [
+                        'road_id' => $road->id,
+                        'decoded_tags' => $tagIds,
+                        'is_array' => is_array($tagIds)
+                    ]);
+
+                    if (is_array($tagIds)) {
+                        \Log::info('Updating road tags', [
+                            'road_id' => $road->id,
+                            'tag_ids' => $tagIds
+                        ]);
+
+                        // Sync tags with the road
+                        $road->tags()->sync($tagIds);
+
+                        // Verify tags were synced
+                        $syncedTags = $road->tags()->pluck('id')->toArray();
+                        \Log::info('Tags after sync', [
+                            'road_id' => $road->id,
+                            'synced_tag_ids' => $syncedTags
+                        ]);
+                    } else {
+                        \Log::warning('Invalid tags format', [
+                            'road_id' => $road->id,
+                            'tags' => $request->tags
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error updating road tags: ' . $e->getMessage(), [
+                        'road_id' => $road->id,
+                        'trace' => $e->getTraceAsString()
+                    ]);
+                    // Continue without failing the whole request
+                }
+            } else {
+                \Log::info('No tags provided in request', [
+                    'road_id' => $road->id,
+                    'request_has_tags' => $request->has('tags'),
+                    'all_request_keys' => array_keys($request->all())
+                ]);
+            }
 
             // Handle photo upload if provided
             if ($request->hasFile('photo')) {
@@ -876,7 +929,8 @@ class SavedRoadController extends Controller
                 'reviews.user:id,name,profile_picture',
                 'reviews.photos',
                 'comments.user:id,name,profile_picture',
-                'photos'
+                'photos',
+                'tags'
             ]);
 
             return response()->json([
