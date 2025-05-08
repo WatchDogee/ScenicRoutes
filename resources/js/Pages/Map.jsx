@@ -61,7 +61,7 @@ function TagCategoryCollapsible({ tags, onTagSelect, selectedTagIds = [] }) {
 }
 
 export default function Map() {
-    const { userSettings } = useContext(UserSettingsContext);
+    const { userSettings, loadUserSettings } = useContext(UserSettingsContext);
     const mapRef = useRef(null);
     const markerRef = useRef(null);
     const radiusCircleRef = useRef(null);
@@ -145,6 +145,7 @@ export default function Map() {
         default_search_radius: 10,
         default_search_type: 'town',
         show_community_by_default: false,
+        default_map_view: 'standard',
     });
 
     // Initialize auth state from localStorage and check for login_required parameter
@@ -180,6 +181,13 @@ export default function Map() {
                 setAuth({ user: null, token: null });
             });
         }
+    }, []); // Run only once on component mount
+
+    // Refresh user settings when component mounts
+    useEffect(() => {
+        // Refresh settings from the server to ensure we have the latest
+        console.log('Map component mounted, refreshing user settings...');
+        loadUserSettings();
     }, []); // Run only once on component mount
 
     // Effect for loading saved roads when auth state changes
@@ -226,6 +234,9 @@ export default function Map() {
             // Apply settings to the UI
             setRadius(userSettings.default_search_radius);
             setSearchType(userSettings.default_search_type);
+
+            // Always apply the show_community_by_default setting from user preferences
+            console.log('Setting showCommunity from userSettings:', userSettings.show_community_by_default);
             setShowCommunity(userSettings.show_community_by_default);
 
             // Update local settings
@@ -233,6 +244,7 @@ export default function Map() {
                 default_search_radius: userSettings.default_search_radius,
                 default_search_type: userSettings.default_search_type,
                 show_community_by_default: userSettings.show_community_by_default,
+                default_map_view: userSettings.default_map_view,
             });
 
             // Apply theme if needed
@@ -240,6 +252,22 @@ export default function Map() {
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
+            }
+
+            // Apply map view if map is already initialized
+            if (mapRef.current && window.mapTileLayers) {
+                const mapView = userSettings.default_map_view || 'standard';
+                console.log('Updating map view to:', mapView);
+
+                // Remove all tile layers first
+                Object.values(window.mapTileLayers).forEach(layer => {
+                    if (mapRef.current.hasLayer(layer)) {
+                        mapRef.current.removeLayer(layer);
+                    }
+                });
+
+                // Add the selected tile layer
+                window.mapTileLayers[mapView].addTo(mapRef.current);
             }
         }
     }, [userSettings]); // Reload when userSettings changes
@@ -1310,13 +1338,85 @@ export default function Map() {
         // Add zoom control to the bottom-right corner
         L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors',
-            maxZoom: 19,
-            updateWhenIdle: true,
-            updateWhenZooming: false,
-            updateInterval: 250,
-        }).addTo(leafletMap);
+        // Create references to store tile layers
+        const tileLayers = {
+            standard: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                updateInterval: 250,
+            }),
+            terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenTopoMap contributors',
+                maxZoom: 17,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                updateInterval: 250,
+            }),
+            satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+                maxZoom: 19,
+                updateWhenIdle: true,
+                updateWhenZooming: false,
+                updateInterval: 250,
+            })
+        };
+
+        // Get the default map view from user settings or use 'standard' as fallback
+        const defaultMapView = userSettings?.default_map_view || 'standard';
+        console.log('Applying map view from settings:', defaultMapView);
+
+        // Add the selected tile layer to the map
+        tileLayers[defaultMapView].addTo(leafletMap);
+
+        // Store the tile layers in a ref for later access
+        window.mapTileLayers = tileLayers;
+
+        // Add layer control to switch between map types
+        const baseMaps = {
+            "Standard": tileLayers.standard,
+            "Terrain": tileLayers.terrain,
+            "Satellite": tileLayers.satellite
+        };
+
+        // Create a mapping from layer to setting value
+        const layerToSetting = {
+            [tileLayers.standard._leaflet_id]: 'standard',
+            [tileLayers.terrain._leaflet_id]: 'terrain',
+            [tileLayers.satellite._leaflet_id]: 'satellite'
+        };
+
+        // Add layer control
+        L.control.layers(baseMaps, {}, { position: 'bottomleft' }).addTo(leafletMap);
+
+        // Add event listener for baselayerchange to save the selected map view
+        leafletMap.on('baselayerchange', function(e) {
+            const selectedMapView = layerToSetting[e.layer._leaflet_id];
+            if (selectedMapView) {
+                console.log('Map view changed to:', selectedMapView);
+
+                // Update local settings
+                setLocalSettings(prev => ({
+                    ...prev,
+                    default_map_view: selectedMapView
+                }));
+
+                // Save the setting to the server if user is logged in
+                if (auth.token) {
+                    axios.post('/api/settings', {
+                        key: 'default_map_view',
+                        value: selectedMapView
+                    }, {
+                        headers: { Authorization: `Bearer ${auth.token}` }
+                    }).then(() => {
+                        console.log('Map view preference saved successfully');
+                    }).catch(error => {
+                        console.error('Error saving map view preference:', error);
+                    });
+                }
+            }
+        });
 
         // Force a resize event after map initialization
         setTimeout(() => {
@@ -2612,7 +2712,23 @@ export default function Map() {
                 <button
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
-                        setShowCommunity(!showCommunity);
+                        const newValue = !showCommunity;
+                        setShowCommunity(newValue);
+
+                        // Save the setting to the server if user is logged in
+                        if (auth.token) {
+                            console.log('Saving show_community_by_default setting:', newValue);
+                            axios.post('/api/settings', {
+                                key: 'show_community_by_default',
+                                value: newValue
+                            }, {
+                                headers: { Authorization: `Bearer ${auth.token}` }
+                            }).then(() => {
+                                console.log('Community panel preference saved successfully');
+                            }).catch(error => {
+                                console.error('Error saving community panel preference:', error);
+                            });
+                        }
                     }}
                     className="absolute top-4 right-4 px-4 py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition-colors font-semibold"
                     style={{

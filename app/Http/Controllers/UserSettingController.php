@@ -20,18 +20,44 @@ class UserSettingController extends Controller
     {
         try {
             $user = $request->user();
-            $settings = $user->settings()->get()->pluck('value', 'key')->toArray();
+            $settings = $user->settings()->get();
+
+            // Convert to associative array with proper type casting
+            $settingsArray = [];
+            foreach ($settings as $setting) {
+                $value = $setting->value;
+
+                // Handle boolean values
+                if ($value === 'true') {
+                    $value = true;
+                } elseif ($value === 'false') {
+                    $value = false;
+                }
+
+                // Handle numeric values
+                if (is_numeric($value) && !is_bool($value)) {
+                    $value = $value + 0; // Convert to int or float
+                }
+
+                $settingsArray[$setting->key] = $value;
+            }
 
             // Add default values for settings that don't exist yet
             $defaultSettings = $this->getDefaultSettings();
             foreach ($defaultSettings as $key => $value) {
-                if (!isset($settings[$key])) {
-                    $settings[$key] = $value;
+                if (!isset($settingsArray[$key])) {
+                    $settingsArray[$key] = $value;
                 }
             }
 
+            // Log the settings being returned for debugging
+            Log::info('Returning user settings', [
+                'user_id' => $user->id,
+                'settings' => $settingsArray
+            ]);
+
             return response()->json([
-                'settings' => $settings
+                'settings' => $settingsArray
             ]);
         } catch (\Exception $e) {
             Log::error('Error fetching user settings: ' . $e->getMessage());
@@ -92,10 +118,38 @@ class UserSettingController extends Controller
             $user = $request->user();
             $updatedSettings = [];
 
+            // Log the incoming settings for debugging
+            Log::info('Updating multiple settings', [
+                'user_id' => $user->id,
+                'settings' => $validated['settings']
+            ]);
+
             foreach ($validated['settings'] as $key => $value) {
+                // Process boolean values
+                if ($value === 'true' || $value === true) {
+                    $value = true;
+                } elseif ($value === 'false' || $value === false) {
+                    $value = false;
+                }
+
                 $setting = $user->setSetting($key, $value);
-                $updatedSettings[$key] = $value;
+
+                // Get the actual saved value with proper type casting
+                $savedValue = $setting->value;
+                if ($savedValue === 'true') {
+                    $savedValue = true;
+                } elseif ($savedValue === 'false') {
+                    $savedValue = false;
+                }
+
+                $updatedSettings[$key] = $savedValue;
             }
+
+            // Log the updated settings for verification
+            Log::info('Settings updated', [
+                'user_id' => $user->id,
+                'updated_settings' => $updatedSettings
+            ]);
 
             return response()->json([
                 'message' => 'Settings updated successfully',

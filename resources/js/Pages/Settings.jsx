@@ -98,6 +98,18 @@ export default function Settings({ auth }) {
         try {
             setSettingsLoading(true);
             const response = await apiClient.get('/settings');
+            console.log('Fetched settings from server:', response.data.settings);
+
+            // Check specifically for the show_community_by_default setting
+            if (response.data.settings && 'show_community_by_default' in response.data.settings) {
+                console.log('show_community_by_default value:', response.data.settings.show_community_by_default);
+                // Convert to boolean if it's a string
+                if (typeof response.data.settings.show_community_by_default === 'string') {
+                    response.data.settings.show_community_by_default =
+                        response.data.settings.show_community_by_default === 'true';
+                }
+            }
+
             setUserSettings(response.data.settings);
         } catch (error) {
             console.error('Error fetching user settings:', error);
@@ -131,6 +143,16 @@ export default function Settings({ auth }) {
      * Handle changes to settings form inputs
      */
     const handleSettingChange = (key, value) => {
+        console.log(`Setting ${key} changed to:`, value);
+
+        // Ensure boolean values are properly handled
+        if (typeof value === 'boolean') {
+            console.log(`${key} is a boolean value:`, value);
+        } else if (value === 'true' || value === 'false') {
+            value = value === 'true';
+            console.log(`${key} converted to boolean:`, value);
+        }
+
         setUserSettings(prev => ({
             ...prev,
             [key]: value
@@ -171,7 +193,18 @@ export default function Settings({ auth }) {
     const saveAllSettings = async () => {
         try {
             setSettingsLoading(true);
-            await apiClient.post('/settings/batch', { settings: userSettings });
+            console.log('Saving settings:', userSettings);
+
+            const response = await apiClient.post('/settings/batch', { settings: userSettings });
+
+            // If the response includes updated settings, use those
+            if (response.data && response.data.settings) {
+                setUserSettings(response.data.settings);
+                console.log('Settings updated from response:', response.data.settings);
+            }
+
+            // Refresh settings from the server to ensure we have the latest values
+            await fetchUserSettings();
 
             setSettingsMessage({
                 type: 'success',

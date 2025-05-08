@@ -17,22 +17,31 @@ export const UserSettingsProvider = ({ children }) => {
         default_navigation_app: 'google_maps',
     });
 
-    // Load user settings from the API when the component mounts
-    useEffect(() => {
+    // Function to load user settings from the API
+    const loadUserSettings = async () => {
         const token = localStorage.getItem('token');
         if (token) {
-            axios.get('/api/settings', {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            .then(response => {
+            try {
+                console.log('Loading user settings from API...');
+                const response = await axios.get('/api/settings', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
                 if (response.data && response.data.settings) {
+                    console.log('User settings loaded:', response.data.settings);
                     setUserSettings(response.data.settings);
+                    return response.data.settings;
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error loading user settings:', error);
-            });
+            }
         }
+        return null;
+    };
+
+    // Load user settings from the API when the component mounts
+    useEffect(() => {
+        loadUserSettings();
     }, []);
 
     // Function to update user settings
@@ -54,7 +63,7 @@ export const UserSettingsProvider = ({ children }) => {
     };
 
     return (
-        <UserSettingsContext.Provider value={{ userSettings, updateUserSettings }}>
+        <UserSettingsContext.Provider value={{ userSettings, updateUserSettings, loadUserSettings }}>
             {children}
         </UserSettingsContext.Provider>
     );

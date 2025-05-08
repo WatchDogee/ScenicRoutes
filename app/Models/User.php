@@ -174,10 +174,33 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function setSetting($key, $value)
     {
+        // Log the setting being saved for debugging
+        \Log::info('Setting user setting', [
+            'user_id' => $this->id,
+            'key' => $key,
+            'value' => $value,
+            'value_type' => gettype($value)
+        ]);
+
+        // Handle boolean values explicitly
+        if ($value === 'true' || $value === true) {
+            $value = true;
+        } elseif ($value === 'false' || $value === false) {
+            $value = false;
+        }
+
         $setting = $this->settings()->updateOrCreate(
             ['key' => $key],
             ['value' => $value]
         );
+
+        // Log the saved setting for verification
+        \Log::info('Setting saved', [
+            'setting_id' => $setting->id,
+            'key' => $setting->key,
+            'value' => $setting->value,
+            'value_type' => gettype($setting->value)
+        ]);
 
         return $setting;
     }
