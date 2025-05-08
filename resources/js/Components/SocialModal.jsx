@@ -10,6 +10,7 @@ import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
 import CollapsibleTagSelector from './CollapsibleTagSelector';
+import EnhancedCollections from './EnhancedCollections';
 
 export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDetails, selectedCollectionId: initialCollectionId, roadToAdd, activeTab: initialActiveTab, setActiveTab: setParentActiveTab }) {
     // Get auth state from parent component or localStorage
@@ -1311,108 +1312,14 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
 
     const renderCollections = () => {
         return (
-            <div>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Your Collections</h3>
-                    <button
-                        onClick={() => {
-                            console.log('Opening collection modal');
-                            setShowCollectionModal(true);
-                        }}
-                        className="flex items-center px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                        <FaPlus className="mr-1" /> New Collection
-                    </button>
-                </div>
-
-                {!isAuthenticated ? (
-                    <div className="text-center py-8 bg-gray-50 rounded border">
-                        <p className="text-gray-600">You need to log in to create and manage your collections.</p>
-                        <a
-                            href="/login"
-                            className="mt-2 inline-block px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Log In
-                        </a>
-                    </div>
-                ) : loading ? (
-                    <div className="text-center py-8">Loading collections...</div>
-                ) : error ? (
-                    <div className="text-center py-8 text-red-500">
-                        {error}
-                        <button
-                            onClick={fetchCollections}
-                            className="block mx-auto mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                        >
-                            Try Again
-                        </button>
-                    </div>
-                ) : collections.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded border">
-                        <FaFolder className="mx-auto text-4xl text-gray-400 mb-2" />
-                        <p className="text-gray-600">You don't have any collections yet</p>
-                        <p className="text-sm text-gray-500 mt-1">
-                            Create a collection to organize your favorite roads
-                        </p>
-                        <button
-                            onClick={() => {
-                                console.log('Opening collection modal from empty state');
-                                setShowCollectionModal(true);
-                            }}
-                            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Create Collection
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {collections.map(collection => (
-                            <div key={collection.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                                <div className="flex items-center">
-                                    {collection.cover_image ? (
-                                        <img
-                                            src={`/storage/${collection.cover_image}`}
-                                            alt={collection.name}
-                                            className="w-12 h-12 object-cover rounded"
-                                        />
-                                    ) : (
-                                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                                            <FaFolder className="text-gray-400" />
-                                        </div>
-                                    )}
-                                    <div className="ml-3">
-                                        <h4 className="font-medium">{collection.name}</h4>
-                                        <p className="text-sm text-gray-600">
-                                            {collection.roads?.length || 0} roads
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {collection.description && (
-                                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                        {collection.description}
-                                    </p>
-                                )}
-
-                                <div className="flex justify-between mt-2">
-                                    <span className="text-xs text-gray-500">
-                                        {collection.is_public ? 'Public' : 'Private'}
-                                    </span>
-                                    <button
-                                        onClick={() => {
-                                            setSelectedCollectionId(collection.id);
-                                            setShowCollectionDetailsModal(true);
-                                        }}
-                                        className="text-sm text-blue-500 hover:text-blue-700"
-                                    >
-                                        View Details
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+            <EnhancedCollections
+                onViewCollection={(collection) => {
+                    setSelectedCollectionId(collection.id);
+                    setShowCollectionDetailsModal(true);
+                }}
+                onViewUser={handleViewUser}
+                authState={authState}
+            />
         );
     };
 

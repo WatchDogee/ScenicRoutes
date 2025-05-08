@@ -6,6 +6,7 @@ import Leaderboard from './Leaderboard';
 import UserProfileModal from './UserProfileModal';
 import RoadCard from './RoadCard';
 import ProfilePicture from './ProfilePicture';
+import EnhancedCollections from './EnhancedCollections';
 
 export default function SocialFeatures({ onViewRoad }) {
     // Temporary auth state until we fix the context
@@ -108,104 +109,10 @@ export default function SocialFeatures({ onViewRoad }) {
         setShowUserProfileModal(true);
     };
 
-    const renderCollections = () => {
-        if (!isAuthenticated || !user) {
-            return (
-                <div className="text-center py-8 text-gray-500">
-                    <p>You can view collections, but you need to log in to create your own collections.</p>
-                    <p className="mt-2">Public collections will be displayed here.</p>
-                </div>
-            );
-        }
-
-        if (loading) {
-            return <div className="text-center py-8">Loading collections...</div>;
-        }
-
-        if (error) {
-            return (
-                <div className="text-center py-8 text-red-500">
-                    {error}
-                    <button
-                        onClick={fetchCollections}
-                        className="block mx-auto mt-2 px-4 py-2 bg-blue-500 text-white rounded"
-                    >
-                        Try Again
-                    </button>
-                </div>
-            );
-        }
-
-        return (
-            <div>
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Your Collections</h3>
-                    <button
-                        onClick={() => setShowCollectionModal(true)}
-                        className="flex items-center px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                        <FaPlus className="mr-1" /> New Collection
-                    </button>
-                </div>
-
-                {collections.length === 0 ? (
-                    <div className="text-center py-8 bg-gray-50 rounded border">
-                        <FaFolder className="mx-auto text-4xl text-gray-400 mb-2" />
-                        <p className="text-gray-600">You haven't created any collections yet</p>
-                        <button
-                            onClick={() => setShowCollectionModal(true)}
-                            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                        >
-                            Create Your First Collection
-                        </button>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {collections.map(collection => (
-                            <div key={collection.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                                <div className="flex items-center mb-2">
-                                    {collection.cover_image ? (
-                                        <img
-                                            src={`/storage/${collection.cover_image}`}
-                                            alt={collection.name}
-                                            className="w-12 h-12 object-cover rounded"
-                                        />
-                                    ) : (
-                                        <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                                            <FaFolder className="text-gray-400" />
-                                        </div>
-                                    )}
-                                    <div className="ml-3">
-                                        <h4 className="font-medium">{collection.name}</h4>
-                                        <p className="text-sm text-gray-600">
-                                            {collection.roads?.length || 0} roads
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {collection.description && (
-                                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
-                                        {collection.description}
-                                    </p>
-                                )}
-
-                                <div className="flex justify-between mt-2">
-                                    <span className="text-xs text-gray-500">
-                                        {collection.is_public ? 'Public' : 'Private'}
-                                    </span>
-                                    <button
-                                        onClick={() => {/* View collection details */}}
-                                        className="text-sm text-blue-500 hover:text-blue-700"
-                                    >
-                                        View Details
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
+    // We'll use the EnhancedCollections component instead of rendering collections directly
+    const handleViewCollection = (collection) => {
+        // This would be implemented to handle viewing a collection
+        console.log('View collection:', collection);
     };
 
     const renderFollowing = () => {
@@ -411,7 +318,13 @@ export default function SocialFeatures({ onViewRoad }) {
                     />
                 )}
 
-                {activeTab === 'collections' && renderCollections()}
+                {activeTab === 'collections' && (
+                    <EnhancedCollections
+                        onViewCollection={handleViewCollection}
+                        onViewUser={handleViewUser}
+                        authState={authState}
+                    />
+                )}
 
                 {activeTab === 'following' && renderFollowing()}
 
