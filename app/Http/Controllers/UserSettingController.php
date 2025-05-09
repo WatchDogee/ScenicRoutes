@@ -173,7 +173,7 @@ class UserSettingController extends Controller
     {
         return [
             'measurement_units' => 'metric', // metric or imperial
-            'default_map_view' => 'terrain', // terrain, satellite, or standard
+            'default_map_view' => 'standard', // terrain, satellite, or standard
             'show_community_by_default' => false,
             'default_search_radius' => 10, // in km
             'default_search_type' => 'town', // town, region, or country
