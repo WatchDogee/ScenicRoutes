@@ -24,6 +24,26 @@ const CustomRoadDrawer = ({
         map.addLayer(drawnItems);
         drawnItemsRef.current = drawnItems;
 
+        // Add event listeners for map movement to ensure polyline stays visible
+        const handleMapMoveEvent = () => {
+            if (currentPolyline && drawnItemsRef.current) {
+                // Re-add the polyline to ensure it's visible after map movement
+                if (!drawnItemsRef.current.hasLayer(currentPolyline)) {
+                    drawnItemsRef.current.addLayer(currentPolyline);
+                }
+
+                // Force redraw of the feature group
+                if (drawnItemsRef.current.bringToFront) {
+                    drawnItemsRef.current.bringToFront();
+                }
+            }
+        };
+
+        // Add event listeners for various map movement events
+        map.on('moveend', handleMapMoveEvent);
+        map.on('zoomend', handleMapMoveEvent);
+        map.on('dragend', handleMapMoveEvent);
+
         // Initialize the draw control and pass it the FeatureGroup of editable layers
         const drawControl = new L.Control.Draw({
             position: 'topleft', // Position the control on the top left
@@ -46,12 +66,39 @@ const CustomRoadDrawer = ({
                         start: 'Click to start drawing road',
                         cont: 'Click to continue drawing road',
                         end: 'Double-click to finish'
-                    }
+                    },
+                    // Disable all confirmation dialogs and popups
+                    zIndexOffset: 2000,
+                    completeOnDoubleClick: true,
+                    showLengthPopup: false,
+                    repeatMode: false,
+                    allowIntersection: true,
+                    drawError: {
+                        color: '#e1e100',
+                        message: ''
+                    },
+                    icon: new L.DivIcon({
+                        iconSize: new L.Point(8, 8),
+                        className: 'leaflet-div-icon leaflet-editing-icon'
+                    })
                 }
             },
             edit: {
                 featureGroup: drawnItems,
-                remove: true
+                remove: true,
+                poly: {
+                    allowIntersection: true
+                },
+                // Disable edit confirmation popups
+                edit: {
+                    selectedPathOptions: {
+                        dashArray: '10, 10',
+                        fill: true,
+                        fillColor: '#fe57a1',
+                        fillOpacity: 0.1,
+                        maintainColor: false
+                    }
+                }
             }
         });
 
@@ -69,24 +116,10 @@ const CustomRoadDrawer = ({
             // Calculate road metrics
             const roadMetrics = calculateRoadMetrics(coordinates);
 
-            // Show a confirmation dialog before proceeding
-            const confirmSave = window.confirm("Road drawing complete. Would you like to save this road?");
+            // Instead of showing a browser popup, we'll let the user save from the drawing mode window
+            console.log('Road drawing complete. Use the Save Road button to save.');
 
-            if (confirmSave) {
-                // Get elevation data
-                getElevationData(coordinates).then(elevationData => {
-                    // Combine road metrics with elevation data
-                    const roadData = {
-                        ...roadMetrics,
-                        ...elevationData,
-                        coordinates
-                    };
-
-                    // Pass the road data to the parent component
-                    onRoadDrawn(roadData);
-                });
-            }
-            // If user cancels, keep the drawing on the map but don't open the save dialog
+            // No automatic save dialog - user will use the Save Road button in the drawing mode window
         });
 
         // Handle the edited event
@@ -126,6 +159,10 @@ const CustomRoadDrawer = ({
             map.off(L.Draw.Event.CREATED);
             map.off(L.Draw.Event.EDITED);
             map.off(L.Draw.Event.DELETED);
+            // Remove the map movement event listeners
+            map.off('moveend');
+            map.off('zoomend');
+            map.off('dragend');
             if (drawnItemsRef.current) {
                 map.removeLayer(drawnItemsRef.current);
             }
@@ -517,7 +554,7 @@ const CustomRoadDrawer = ({
         <div className="custom-road-drawer">
             {/* Drawing Instructions */}
             {isDrawingMode && (
-                <div className="fixed top-28 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-3 rounded-lg shadow-xl z-[1200] text-center">
+                <div className="fixed top-0 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 p-3 rounded-b-lg shadow-xl z-[1200] text-center">
                     <p className="font-bold text-lg">Drawing Mode Active</p>
                     <p className="text-sm">Click on the map to start drawing your road. Click to add points, double-click to finish.</p>
                     <div className="mt-2 flex justify-center gap-2">
@@ -530,40 +567,38 @@ const CustomRoadDrawer = ({
                         <button
                             onClick={() => {
                                 if (currentPolyline) {
-                                    const confirmSave = window.confirm("Would you like to save this road?");
-                                    if (confirmSave) {
-                                        const coordinates = currentPolyline.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
-                                        const roadMetrics = calculateRoadMetrics(coordinates);
+                                    // No confirmation dialog - directly save the road
+                                    const coordinates = currentPolyline.getLatLngs().map(latlng => [latlng.lat, latlng.lng]);
+                                    const roadMetrics = calculateRoadMetrics(coordinates);
 
-                                        // Ensure sidebar is visible before proceeding
-                                        const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
-                                        if (sidebar) {
-                                            sidebar.style.visibility = 'visible';
-                                            sidebar.style.opacity = '1';
-                                            sidebar.style.zIndex = '2000';
-                                            sidebar.style.display = 'flex';
-                                            sidebar.style.pointerEvents = 'auto';
-                                        }
-
-                                        // Ensure sidebar toggle button is visible
-                                        const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
-                                        if (sidebarToggleButton) {
-                                            sidebarToggleButton.style.visibility = 'visible';
-                                            sidebarToggleButton.style.opacity = '1';
-                                            sidebarToggleButton.style.zIndex = '3000';
-                                            sidebarToggleButton.style.display = 'block';
-                                            sidebarToggleButton.style.pointerEvents = 'auto';
-                                        }
-
-                                        getElevationData(coordinates).then(elevationData => {
-                                            const roadData = {
-                                                ...roadMetrics,
-                                                ...elevationData,
-                                                coordinates
-                                            };
-                                            onRoadDrawn(roadData);
-                                        });
+                                    // Ensure sidebar is visible before proceeding
+                                    const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+                                    if (sidebar) {
+                                        sidebar.style.visibility = 'visible';
+                                        sidebar.style.opacity = '1';
+                                        sidebar.style.zIndex = '2000';
+                                        sidebar.style.display = 'flex';
+                                        sidebar.style.pointerEvents = 'auto';
                                     }
+
+                                    // Ensure sidebar toggle button is visible
+                                    const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+                                    if (sidebarToggleButton) {
+                                        sidebarToggleButton.style.visibility = 'visible';
+                                        sidebarToggleButton.style.opacity = '1';
+                                        sidebarToggleButton.style.zIndex = '3000';
+                                        sidebarToggleButton.style.display = 'block';
+                                        sidebarToggleButton.style.pointerEvents = 'auto';
+                                    }
+
+                                    getElevationData(coordinates).then(elevationData => {
+                                        const roadData = {
+                                            ...roadMetrics,
+                                            ...elevationData,
+                                            coordinates
+                                        };
+                                        onRoadDrawn(roadData);
+                                    });
                                 } else {
                                     alert("No road has been drawn yet. Draw a road first.");
                                 }

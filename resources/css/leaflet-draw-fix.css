@@ -82,12 +82,15 @@
 /* Fix for map buttons */
 .absolute.top-4.left-4,
 .absolute.top-4.right-4,
-.absolute.top-16.right-4 {
+.absolute.top-16.right-4,
+.absolute.top-32.left-12,
+.absolute.top-44.left-12 {
   z-index: 1500 !important;
 }
 
 /* Fix for POI controls */
-.absolute.top-20.left-4 {
+.absolute.top-20.left-4,
+.absolute.top-44.left-12 {
   z-index: 1500 !important;
 }
 
@@ -118,6 +121,23 @@
 .drawing-mode .leaflet-draw-draw-polyline {
   background-color: #e6f2ff !important;
   border: 1px solid #3388ff !important;
+}
+
+/* Ensure polylines are always visible in drawing mode */
+.drawing-mode .leaflet-interactive {
+  z-index: 1000 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  stroke-opacity: 1 !important;
+}
+
+/* Ensure the feature group containing polylines is visible */
+.drawing-mode .leaflet-overlay-pane path.leaflet-interactive {
+  stroke-opacity: 1 !important;
+  fill-opacity: 0.2 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
 /* Fix for map disappearing */
@@ -230,6 +250,16 @@
   padding: 5px 10px !important;
   font-weight: bold !important;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hide any confirmation dialogs from Leaflet.Draw */
+.leaflet-draw-actions,
+.leaflet-draw-actions a,
+.leaflet-draw-actions li {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Additional fixes for map turning white in drawing mode */

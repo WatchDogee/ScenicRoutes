@@ -3665,13 +3665,13 @@ export default function Map() {
                 visibility: 'visible',
                 opacity: 1
             }}>
-                {/* Sidebar toggle button - positioned at the top */}
+                {/* Sidebar toggle button - positioned below drawing controls when in drawing mode */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
                         toggleSidebar();
                     }}
-                    className={`absolute top-4 ${isDrawingMode ? 'left-40' : 'left-4'} px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 font-semibold transition-all duration-300`}
+                    className={`absolute ${isDrawingMode ? 'top-32 left-12' : 'top-4 left-4'} px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 font-semibold transition-all duration-300`}
                     style={{
                         zIndex: 1500,
                         border: '2px solid white',
@@ -3738,9 +3738,9 @@ export default function Map() {
                     units={userSettings?.measurement_units === 'imperial' ? 'imperial' : 'metric'}
                 />
 
-                {/* POI Controls - positioned below the sidebar toggle button */}
+                {/* POI Controls - positioned below the drawing controls when in drawing mode */}
                 <div
-                    className={`absolute top-20 ${isDrawingMode ? 'left-40' : 'left-4'} max-w-[250px] transition-all duration-300`}
+                    className={`absolute ${isDrawingMode ? 'top-44 left-12' : 'top-20 left-4'} max-w-[250px] transition-all duration-300`}
                     style={{ zIndex: 1500, pointerEvents: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                 >
