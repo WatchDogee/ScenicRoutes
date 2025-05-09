@@ -8,7 +8,7 @@ export const UserSettingsContext = createContext();
 export const UserSettingsProvider = ({ children }) => {
     const [userSettings, setUserSettings] = useState({
         measurement_units: 'metric',
-        default_map_view: 'terrain',
+        default_map_view: 'standard',
         show_community_by_default: false,
         default_search_radius: 10,
         default_search_type: 'town',

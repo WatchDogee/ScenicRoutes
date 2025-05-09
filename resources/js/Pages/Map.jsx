@@ -140,6 +140,7 @@ export default function Map() {
     const [roadToAddToCollection, setRoadToAddToCollection] = useState(null);
     const [activeTab, setActiveTab] = useState('leaderboard');
     const [mapCenter, setMapCenter] = useState({ lat: 57.1, lng: 27.1 });
+    const [markerDropMode, setMarkerDropMode] = useState(false);
     // Local state for settings that need to be tracked in this component
     const [localSettings, setLocalSettings] = useState({
         default_search_radius: 10,
@@ -566,6 +567,12 @@ export default function Map() {
 
                 if (isUrban && twistinessData.twistiness <= 0.007) return;
 
+                // Filter by road length if a specific length filter is selected
+                const lengthInKm = roadLength / 1000;
+                if (lengthFilter === "short" && (lengthInKm < 2 || lengthInKm >= 5)) return;
+                if (lengthFilter === "medium" && (lengthInKm < 5 || lengthInKm >= 15)) return;
+                if (lengthFilter === "long" && lengthInKm < 15) return;
+
                 roadSegments.push({
                     id: way.id,
                     name: way.tags.name || "Unnamed Road",
@@ -720,6 +727,8 @@ export default function Map() {
             // Process roads for display
             const newRoads = [];
             connectedRoads.forEach(road => {
+                // Filter connected roads if that filter is selected
+                if (lengthFilter === "connected" && !road.is_connected) return;
                 const coordinates = road.geometry.map(point => [point.lat, point.lon]);
                 const name = road.name;
 
@@ -748,19 +757,20 @@ export default function Map() {
                     : `${distanceInKm.toFixed(2)} km`;
 
                 // Get elevation data if available
-                const elevationGain = road.elevation_gain ?
+                // Use null check instead of truthy check to handle 0 values correctly
+                const elevationGain = road.elevation_gain !== undefined && road.elevation_gain !== null ?
                     userSettings.measurement_units === 'imperial' ?
                         `${Math.round(road.elevation_gain * 3.28084)} ft` :
                         `${Math.round(road.elevation_gain)} m` :
                     'N/A';
 
-                const elevationLoss = road.elevation_loss ?
+                const elevationLoss = road.elevation_loss !== undefined && road.elevation_loss !== null ?
                     userSettings.measurement_units === 'imperial' ?
                         `${Math.round(road.elevation_loss * 3.28084)} ft` :
                         `${Math.round(road.elevation_loss)} m` :
                     'N/A';
 
-                const maxElevation = road.max_elevation ?
+                const maxElevation = road.max_elevation !== undefined && road.max_elevation !== null ?
                     userSettings.measurement_units === 'imperial' ?
                         `${Math.round(road.max_elevation * 3.28084)} ft` :
                         `${Math.round(road.max_elevation)} m` :
@@ -1229,7 +1239,7 @@ export default function Map() {
         };
 
         const formatElevation = (meters) => {
-            if (!meters && meters !== 0) return 'N/A';
+            if (meters === undefined || meters === null) return 'N/A';
             if (userSettings.measurement_units === 'imperial') {
                 return Math.round(meters * 3.28084) + ' ft';
             }
@@ -1503,8 +1513,7 @@ export default function Map() {
         }
     };
 
-    // State for marker drop mode
-    const [markerDropMode, setMarkerDropMode] = useState(false);
+    // Marker drop mode state is defined at the top level
 
     // Initialize map only once
     useEffect(() => {
@@ -1552,9 +1561,9 @@ export default function Map() {
             })
         };
 
-        // Get the default map view from user settings or use 'standard' as fallback
-        const defaultMapView = userSettings?.default_map_view || 'standard';
-        console.log('Applying map view from settings:', defaultMapView);
+        // Always use 'standard' as the default map view
+        const defaultMapView = 'standard';
+        console.log('Applying standard map view');
 
         // Add the selected tile layer to the map
         tileLayers[defaultMapView].addTo(leafletMap);
@@ -1579,31 +1588,20 @@ export default function Map() {
         // Add layer control
         L.control.layers(baseMaps, {}, { position: 'bottomleft' }).addTo(leafletMap);
 
-        // Add event listener for baselayerchange to save the selected map view
+        // Add event listener for baselayerchange but don't save the preference
         leafletMap.on('baselayerchange', function(e) {
             const selectedMapView = layerToSetting[e.layer._leaflet_id];
             if (selectedMapView) {
                 console.log('Map view changed to:', selectedMapView);
 
-                // Update local settings
+                // Update local settings temporarily (for this session only)
                 setLocalSettings(prev => ({
                     ...prev,
                     default_map_view: selectedMapView
                 }));
 
-                // Save the setting to the server if user is logged in
-                if (auth.token) {
-                    axios.post('/api/settings', {
-                        key: 'default_map_view',
-                        value: selectedMapView
-                    }, {
-                        headers: { Authorization: `Bearer ${auth.token}` }
-                    }).then(() => {
-                        console.log('Map view preference saved successfully');
-                    }).catch(error => {
-                        console.error('Error saving map view preference:', error);
-                    });
-                }
+                // We don't save the setting to the server anymore
+                // The map will always default to 'standard' on page load
             }
         });
 
@@ -2837,6 +2835,17 @@ export default function Map() {
                         <option value="moderate">Moderately Curved</option>
                         <option value="mellow">Mellow</option>
                     </select>
+                    <label className="block mb-1">Road Length</label>
+                    <select
+                        value={lengthFilter}
+                        onChange={(e) => setLengthFilter(e.target.value)}
+                        className="w-full mb-2 p-2 border rounded"
+                    >
+                        <option value="all">All Lengths</option>
+                        <option value="short">Short (2-5km)</option>
+                        <option value="medium">Medium (5-15km)</option>
+                        <option value="long">Long (over 15km)</option>
+                    </select>
                     <button
                         onClick={searchRoads}
                         disabled={!markerRef.current}
@@ -3125,9 +3134,10 @@ export default function Map() {
                                     onChange={(e) => setLengthFilter(e.target.value)}
                                 >
                                     <option value="all">All Lengths</option>
-                                    <option value="short">Short (less than 5km)</option>
+                                    <option value="short">Short (2-5km)</option>
                                     <option value="medium">Medium (5-15km)</option>
                                     <option value="long">Long (over 15km)</option>
+                                    <option value="connected">Connected Roads</option>
                             </select>
                         </div>
 
