@@ -9,6 +9,171 @@
 @import 'social.css';
 @import 'range-input.css';
 @import 'settings.css';
+@import 'leaflet-draw-fix.css';
+@import 'drawing-mode-fix.css'; /* Critical fix for map tiles in drawing mode */
+@import 'map-tiles-fix.css'; /* Critical fix for map tiles visibility */
+@import 'sidebar-fix.css'; /* Critical fix for sidebar visibility */
+@import 'sidebar-always-visible.css'; /* CRITICAL fix for sidebar visibility after drawing mode */
+@import 'fix-sidebar-width.css'; /* CRITICAL fix for sidebar width issues */
+
+/* CRITICAL FIX FOR WHITE/GRAY MAP ISSUE */
+/* Base map styles */
+#map {
+  background-color: #f0f0f0 !important;
+  z-index: 0 !important;
+}
+
+/* Critical fix for map tiles visibility */
+.leaflet-tile-container img,
+.leaflet-tile-pane img,
+.leaflet-tile img,
+.map-tiles img,
+.leaflet-layer img {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  display: block !important;
+  background: none !important;
+}
+
+/* Force map tiles to be visible */
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  display: block !important;
+  width: 256px !important; /* Standard tile size */
+  height: 256px !important; /* Standard tile size */
+  min-width: 256px !important; /* Ensure minimum width */
+  min-height: 256px !important; /* Ensure minimum height */
+  object-fit: fill !important; /* Ensure the image fills the container */
+}
+
+/* Force all map tiles to be visible */
+.map-tiles {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+}
+
+/* Ensure all Leaflet elements are visible */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-map-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane,
+.leaflet-tooltip-pane,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure map tiles are always visible */
+.leaflet-tile-container {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure map panes are properly stacked */
+.leaflet-map-pane {
+  z-index: 0 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-objects-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 6 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 7 !important;
+}
+
+/* Fix for drawing mode - CRITICAL */
+.drawing-mode .leaflet-tile,
+.drawing-mode .leaflet-tile-container,
+.drawing-mode .leaflet-tile-pane,
+.drawing-mode .leaflet-map-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: auto !important;
+}
+
+/* Fix for dark mode - ensure map tiles are not affected by dark mode */
+.dark .leaflet-tile,
+.dark .leaflet-tile-container,
+.dark .leaflet-tile-pane,
+.dark .leaflet-map-pane,
+.dark .leaflet-overlay-pane,
+.dark .leaflet-marker-pane,
+.dark .leaflet-shadow-pane,
+.dark .leaflet-popup-pane,
+.dark .leaflet-tooltip-pane,
+.dark .leaflet-zoom-box,
+.dark .leaflet-image-layer,
+.dark .leaflet-layer {
+  filter: none !important;
+}
+
+.dark .leaflet-tile img,
+.dark .leaflet-tile-container img,
+.dark .leaflet-tile-pane img {
+  filter: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 
 /* Add these styles to differentiate markers */
 .marker-icon {

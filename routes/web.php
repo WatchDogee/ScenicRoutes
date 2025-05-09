@@ -187,4 +187,22 @@ Route::get('/debug', function () {
     ]);
 });
 
+// Test route to check cookie functionality
+Route::get('/test-cookie', function () {
+    // Set a test cookie
+    $response = response()->json([
+        'message' => 'Test cookie set',
+        'time' => now()->toDateTimeString(),
+        'cookies' => request()->cookies->all(),
+    ]);
+
+    // Add a test cookie with various settings
+    $response->cookie('test_cookie', 'test_value', 60, '/', null, false, false, false, 'none');
+
+    // Also set a session value
+    session(['test_session' => 'test_value_' . now()->timestamp]);
+
+    return $response;
+});
+
 require __DIR__.'/auth.php';

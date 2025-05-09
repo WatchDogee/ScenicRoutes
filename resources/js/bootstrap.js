@@ -18,13 +18,31 @@ window.axios.defaults.baseURL = getBaseUrl();
 // Function to get CSRF token from cookie with better error handling
 const getCSRFToken = () => {
     try {
+        if (!document.cookie) {
+            console.warn('No cookies available');
+            return null;
+        }
+
         const cookies = document.cookie.split(';');
+        console.log('All cookies:', cookies);
+
         for (let cookie of cookies) {
             const [name, value] = cookie.trim().split('=');
             if (name === 'XSRF-TOKEN') {
-                return decodeURIComponent(value);
+                const decodedValue = decodeURIComponent(value);
+                console.log('Found XSRF-TOKEN:', decodedValue.substring(0, 10) + '...');
+                return decodedValue;
             }
         }
+
+        // Also check for laravel_session cookie as a sanity check
+        const hasLaravelSession = cookies.some(cookie => cookie.trim().startsWith('laravel_session='));
+        if (hasLaravelSession) {
+            console.log('Laravel session cookie found, but no XSRF-TOKEN');
+        } else {
+            console.warn('Laravel session cookie not found');
+        }
+
         return null;
     } catch (error) {
         console.error('Error getting CSRF token from cookie:', error);
@@ -78,6 +96,9 @@ const refreshCSRFToken = async () => {
         // Clear any existing CSRF token from headers
         delete axios.defaults.headers.common['X-XSRF-TOKEN'];
 
+        // Log the current cookies before making the request
+        console.log('Cookies before CSRF request:', document.cookie);
+
         // Make a direct fetch request to get a fresh CSRF token
         // This avoids using axios which might have interceptors that could cause issues
         const response = await fetch('/sanctum/csrf-cookie', {
@@ -85,14 +106,19 @@ const refreshCSRFToken = async () => {
             credentials: 'include',
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+                'X-Requested-With': 'XMLHttpRequest',
+                'Origin': window.location.origin
+            },
+            mode: 'cors'
         });
 
-        console.log('CSRF cookie request completed');
+        console.log('CSRF cookie request completed with status:', response.status);
 
-        // Wait longer for cookies to be set (1000ms instead of 500ms)
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait longer for cookies to be set (1500ms instead of 1000ms)
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Log cookies after the initial wait
+        console.log('Cookies after initial wait:', document.cookie);
 
         // Get the token from cookies
         const token = getCSRFToken();
@@ -100,22 +126,46 @@ const refreshCSRFToken = async () => {
         if (token) {
             // Set the token in axios defaults
             axios.defaults.headers.common['X-XSRF-TOKEN'] = token;
-            console.log('CSRF token refreshed successfully');
+            console.log('CSRF token refreshed successfully:', token);
             return true;
         } else {
             // Try one more time with an even longer delay
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            console.log('Token not found, waiting longer...');
+            await new Promise(resolve => setTimeout(resolve, 3000));
+
+            // Log cookies after the longer wait
+            console.log('Cookies after extended wait:', document.cookie);
+
             const retryToken = getCSRFToken();
 
             if (retryToken) {
                 axios.defaults.headers.common['X-XSRF-TOKEN'] = retryToken;
-                console.log('CSRF token refreshed successfully on retry');
+                console.log('CSRF token refreshed successfully on retry:', retryToken);
+                return true;
+            }
+
+            // Try a direct request to the root path to ensure cookies are set
+            console.log('Still no token, trying a direct request to root path...');
+            await fetch('/', {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            const lastChanceToken = getCSRFToken();
+
+            if (lastChanceToken) {
+                axios.defaults.headers.common['X-XSRF-TOKEN'] = lastChanceToken;
+                console.log('CSRF token obtained after root request:', lastChanceToken);
                 return true;
             }
 
             // Log more detailed information about cookies
-            console.warn('CSRF token not found in cookies after refresh attempt');
+            console.warn('CSRF token not found in cookies after all attempts');
             console.log('Available cookies:', document.cookie);
+
+            // Check if SameSite cookie issues might be the problem
+            console.log('This might be a SameSite cookie issue. Check your session.php configuration.');
             return false;
         }
     } catch (error) {

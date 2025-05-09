@@ -275,3 +275,50 @@ export const isInUrbanArea = (road) => {
 
     return false;
 };
+
+/**
+ * Calculate road metrics for a custom drawn road
+ * @param {Array} coordinates - Array of [lat, lng] coordinates
+ * @returns {Object} - Object containing road metrics (length, twistiness, corner_count)
+ */
+export const calculateRoadMetrics = (coordinates) => {
+    // Convert coordinates to the format expected by other functions
+    const geometry = coordinates.map(coord => ({ lat: coord[0], lon: coord[1] }));
+
+    // Calculate road length
+    let totalDistance = 0;
+    for (let i = 1; i < geometry.length; i++) {
+        totalDistance += calculateDistance(
+            geometry[i - 1].lat, geometry[i - 1].lon,
+            geometry[i].lat, geometry[i].lon
+        );
+    }
+    const lengthInMeters = totalDistance * 1000; // Convert to meters
+
+    // Calculate twistiness and corner count
+    let totalAngle = 0;
+    let cornerCount = 0;
+
+    for (let i = 1; i < geometry.length - 1; i++) {
+        const prev = geometry[i - 1];
+        const curr = geometry[i];
+        const next = geometry[i + 1];
+
+        const angle1 = Math.atan2(curr.lat - prev.lat, curr.lon - prev.lon);
+        const angle2 = Math.atan2(next.lat - curr.lat, next.lon - curr.lon);
+        let angle = Math.abs(angle2 - angle1);
+
+        if (angle > Math.PI) angle = 2 * Math.PI - angle;
+        if (angle > 0.087) cornerCount++; // ~5 degrees
+
+        totalAngle += angle;
+    }
+
+    const twistiness = totalDistance > 0 ? totalAngle / totalDistance : 0;
+
+    return {
+        length: lengthInMeters,
+        twistiness: twistiness,
+        corner_count: cornerCount
+    };
+};

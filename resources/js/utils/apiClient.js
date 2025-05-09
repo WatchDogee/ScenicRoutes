@@ -25,19 +25,62 @@ if (token) {
 apiClient.interceptors.request.use(
     async (config) => {
         // Get CSRF token from cookie
-        let token = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('XSRF-TOKEN'))
-            ?.split('=')[1];
+        let token = null;
+
+        // Log all cookies for debugging
+        console.log('All cookies in apiClient:', document.cookie);
+
+        if (document.cookie) {
+            const tokenCookie = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('XSRF-TOKEN'));
+
+            if (tokenCookie) {
+                token = tokenCookie.split('=')[1];
+                console.log('Found XSRF-TOKEN in cookie:', token.substring(0, 10) + '...');
+            } else {
+                console.log('No XSRF-TOKEN found in cookies');
+            }
+        } else {
+            console.log('No cookies available in apiClient');
+        }
 
         if (!token) {
             // If no CSRF token, try to get one
             try {
-                await axios.get('/sanctum/csrf-cookie');
-                token = document.cookie
-                    .split('; ')
-                    .find(row => row.startsWith('XSRF-TOKEN'))
-                    ?.split('=')[1];
+                console.log('Requesting new CSRF token');
+
+                // Use fetch with explicit CORS mode and credentials
+                const response = await fetch('/sanctum/csrf-cookie', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors'
+                });
+
+                console.log('CSRF cookie response status:', response.status);
+
+                // Wait for cookies to be set
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                console.log('Cookies after CSRF request:', document.cookie);
+
+                if (document.cookie) {
+                    const newTokenCookie = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('XSRF-TOKEN'));
+
+                    if (newTokenCookie) {
+                        token = newTokenCookie.split('=')[1];
+                        console.log('Found new XSRF-TOKEN:', token.substring(0, 10) + '...');
+                    } else {
+                        console.log('No XSRF-TOKEN found after request');
+                    }
+                }
             } catch (error) {
                 console.error('Failed to get CSRF token:', error);
             }
@@ -81,23 +124,64 @@ apiClient.interceptors.response.use(
             originalRequest._retry = true;
 
             try {
-                // Try to refresh the CSRF token
-                await axios.get('/sanctum/csrf-cookie');
+                console.log('Trying to refresh CSRF token after error:', error.response?.status);
+
+                // Try to refresh the CSRF token using fetch instead of axios
+                const response = await fetch('/sanctum/csrf-cookie', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Origin': window.location.origin
+                    },
+                    mode: 'cors'
+                });
+
+                console.log('CSRF refresh response status:', response.status);
+
+                // Wait for cookies to be set
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                console.log('Cookies after CSRF refresh:', document.cookie);
+
+                // Get the new token
+                let newToken = null;
+                if (document.cookie) {
+                    const tokenCookie = document.cookie
+                        .split('; ')
+                        .find(row => row.startsWith('XSRF-TOKEN'));
+
+                    if (tokenCookie) {
+                        newToken = tokenCookie.split('=')[1];
+                        console.log('Found new XSRF-TOKEN after refresh:', newToken.substring(0, 10) + '...');
+
+                        // Update the original request with the new token
+                        originalRequest.headers['X-XSRF-TOKEN'] = decodeURIComponent(newToken);
+                    }
+                }
 
                 // Check if we have a valid auth token
                 const authToken = localStorage.getItem('token');
                 if (!authToken) {
-                    window.location.href = '/login';
+                    console.log('No auth token found, redirecting to login');
+                    // Don't redirect for now, just log the issue
+                    // window.location.href = '/login';
                     return Promise.reject(error);
                 }
 
+                // Update auth token in the original request
+                originalRequest.headers['Authorization'] = `Bearer ${authToken}`;
+
                 // Retry the original request
+                console.log('Retrying original request with new tokens');
                 return apiClient(originalRequest);
             } catch (refreshError) {
                 console.error('Failed to refresh tokens:', refreshError);
-                localStorage.removeItem('token');
-                delete apiClient.defaults.headers.common['Authorization'];
-                window.location.href = '/login';
+                // Don't remove token or redirect for now, just log the issue
+                // localStorage.removeItem('token');
+                // delete apiClient.defaults.headers.common['Authorization'];
+                // window.location.href = '/login';
                 return Promise.reject(refreshError);
             }
         }

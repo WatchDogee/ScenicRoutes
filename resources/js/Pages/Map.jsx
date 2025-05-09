@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
+// Import Leaflet Draw directly from node_modules to ensure it's properly loaded
+import 'leaflet-draw/dist/leaflet.draw';
 import axios from 'axios';
 import NavigationAppSelector from '../Components/NavigationAppSelector';
 import PhotoGallery from '../Components/PhotoGallery';
@@ -13,9 +16,11 @@ import SelfProfileModal from '../Components/SelfProfileModal';
 import StarRating from '../Components/StarRating';
 import SaveToCollectionModal from '../Components/SaveToCollectionModal';
 import MapWeatherDisplay from '../Components/MapWeatherDisplay';
+import CustomRoadDrawer from '../Components/CustomRoadDrawer';
+import SaveRoadModal from '../Components/SaveRoadModal';
 import { UserSettingsContext } from '../Contexts/UserSettingsContext';
 import usePointsOfInterest from '../Hooks/usePointsOfInterest';
-import { FaTag, FaTimes, FaChevronDown } from 'react-icons/fa';
+import { FaTag, FaTimes, FaChevronDown, FaPencilAlt, FaDrawPolygon } from 'react-icons/fa';
 import CollapsibleFilterByTags from '../Components/CollapsibleFilterByTags';
 
 // TagCategoryCollapsible component for displaying tags with collapsible functionality
@@ -141,6 +146,11 @@ export default function Map() {
     const [activeTab, setActiveTab] = useState('leaderboard');
     const [mapCenter, setMapCenter] = useState({ lat: 57.1, lng: 27.1 });
     const [markerDropMode, setMarkerDropMode] = useState(false);
+    const [isDrawingMode, setIsDrawingMode] = useState(false);
+    const [drawnRoadData, setDrawnRoadData] = useState(null);
+    const [showSaveRoadModal, setShowSaveRoadModal] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
     // Local state for settings that need to be tracked in this component
     const [localSettings, setLocalSettings] = useState({
         default_search_radius: 10,
@@ -1513,6 +1523,611 @@ export default function Map() {
         }
     };
 
+    // Handle road drawing mode toggle with improved handling to prevent white map
+    const toggleDrawingMode = () => {
+        // If we're already in drawing mode, exit it
+        if (isDrawingMode) {
+            console.log('🔄 [MAP] Exiting drawing mode - START');
+            try {
+                // Remove the drawing-mode class from the map container
+                const mapContainer = document.getElementById('map');
+                if (mapContainer) {
+                    console.log('🔄 [MAP] Removing drawing-mode class from map container');
+                    mapContainer.classList.remove('drawing-mode');
+
+                    // Reset map container styles
+                    mapContainer.style.visibility = 'visible';
+                    mapContainer.style.opacity = '1';
+                    mapContainer.style.display = 'block';
+                    mapContainer.style.position = 'relative';
+                    mapContainer.style.overflow = 'visible';
+                    mapContainer.style.width = '100%';
+                    mapContainer.style.height = '100%';
+                    mapContainer.style.minWidth = '100%';
+                    mapContainer.style.minHeight = '100%';
+                    mapContainer.style.zIndex = '0';
+                    mapContainer.style.backgroundColor = '#f0f0f0';
+
+                    // CRITICAL FIX: Ensure sidebar is visible with multiple approaches
+                    // 1. Direct DOM manipulation
+                    const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+                    if (sidebar) {
+                        console.log('🔄 [MAP] Making sidebar visible via direct DOM manipulation');
+                        sidebar.style.visibility = 'visible';
+                        sidebar.style.opacity = '1';
+                        sidebar.style.zIndex = '2000';
+                        sidebar.style.display = 'flex';
+                        sidebar.style.pointerEvents = 'auto';
+                        sidebar.style.width = sidebarCollapsed ? '4rem' : '20rem'; // 16px or 80px
+
+                        // Force repaint
+                        sidebar.style.display = 'none';
+                        void sidebar.offsetHeight; // Force reflow
+                        sidebar.style.display = 'flex';
+                    }
+
+                    // 2. Try alternate selector for sidebar
+                    const altSidebar = document.querySelector(sidebarCollapsed ? '.w-16' : '.w-80');
+                    if (altSidebar) {
+                        console.log('🔄 [MAP] Making sidebar visible via alternate selector');
+                        altSidebar.style.visibility = 'visible';
+                        altSidebar.style.opacity = '1';
+                        altSidebar.style.zIndex = '2000';
+                        altSidebar.style.display = 'flex';
+                        altSidebar.style.pointerEvents = 'auto';
+                    }
+
+                    // 3. Ensure sidebar toggle button is visible
+                    const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+                    if (sidebarToggleButton) {
+                        console.log('🔄 [MAP] Making sidebar toggle button visible');
+                        sidebarToggleButton.style.visibility = 'visible';
+                        sidebarToggleButton.style.opacity = '1';
+                        sidebarToggleButton.style.zIndex = '3000';
+                        sidebarToggleButton.style.display = 'block';
+                        sidebarToggleButton.style.pointerEvents = 'auto';
+
+                        // Force repaint
+                        sidebarToggleButton.style.display = 'none';
+                        void sidebarToggleButton.offsetHeight; // Force reflow
+                        sidebarToggleButton.style.display = 'block';
+                    }
+
+                    // 4. Add a class to the body to help with CSS targeting
+                    document.body.classList.remove('drawing-mode');
+                    document.body.classList.add('sidebar-visible');
+
+                    // 5. Fix parent container width
+                    const parentContainer = document.querySelector('.flex.h-screen.relative');
+                    if (parentContainer) {
+                        console.log('🔄 [MAP] Fixing parent container styles');
+                        parentContainer.style.display = 'flex';
+                        parentContainer.style.minHeight = '100vh';
+                        parentContainer.style.position = 'relative';
+                    }
+
+                    // 6. Fix sidebar width directly
+                    const sidebarWidth = sidebarCollapsed ? '4rem' : '20rem';
+                    const sidebarContainer = document.querySelector(sidebarCollapsed ? '.w-16' : '.w-80');
+                    if (sidebarContainer) {
+                        console.log('🔄 [MAP] Fixing sidebar container width to', sidebarWidth);
+                        sidebarContainer.style.minWidth = sidebarWidth;
+                        sidebarContainer.style.width = sidebarWidth;
+                        sidebarContainer.style.flexBasis = sidebarWidth;
+                        sidebarContainer.style.flexShrink = '0';
+                        sidebarContainer.style.flexGrow = '0';
+                        sidebarContainer.style.display = 'flex';
+
+                        // Force repaint
+                        sidebarContainer.style.display = 'none';
+                        void sidebarContainer.offsetHeight; // Force reflow
+                        sidebarContainer.style.display = 'flex';
+                    }
+                } else {
+                    console.warn('⚠️ [MAP] Map container not found when trying to remove drawing-mode class');
+                }
+
+                // Clear any existing polylines
+                if (mapRef.current) {
+                    console.log('🔄 [MAP] Clearing existing polylines');
+                    let polylineCount = 0;
+                    mapRef.current.eachLayer(layer => {
+                        if (layer instanceof L.Polyline && !(layer instanceof L.Polygon)) {
+                            mapRef.current.removeLayer(layer);
+                            polylineCount++;
+                        }
+                    });
+                    console.log(`🔄 [MAP] Removed ${polylineCount} polylines`);
+                } else {
+                    console.warn('⚠️ [MAP] Map reference not available when trying to clear polylines');
+                }
+
+                // Find and remove any remaining draw controls from the DOM
+                console.log('🔄 [MAP] Searching for leftover drawing controls in DOM');
+                const drawControls = document.querySelectorAll('.leaflet-draw');
+                console.log(`🔄 [MAP] Found ${drawControls.length} leftover drawing controls`);
+                drawControls.forEach((el, index) => {
+                    console.log(`🔄 [MAP] Removing leftover drawing control #${index+1}`);
+                    el.remove();
+                });
+
+                // Find and remove any remaining draw toolbars from the DOM
+                console.log('🔄 [MAP] Searching for leftover drawing toolbars in DOM');
+                const drawToolbars = document.querySelectorAll('.leaflet-draw-toolbar');
+                console.log(`🔄 [MAP] Found ${drawToolbars.length} leftover drawing toolbars`);
+                drawToolbars.forEach((el, index) => {
+                    console.log(`🔄 [MAP] Removing leftover drawing toolbar #${index+1}`);
+                    el.remove();
+                });
+
+                // Also check for any other drawing-related elements
+                console.log('🔄 [MAP] Searching for other drawing-related elements');
+                const drawRelated = document.querySelectorAll('.leaflet-draw-section, .leaflet-draw-actions');
+                console.log(`🔄 [MAP] Found ${drawRelated.length} other drawing-related elements`);
+                drawRelated.forEach((el, index) => {
+                    console.log(`🔄 [MAP] Removing drawing-related element #${index+1}: ${el.className}`);
+                    el.remove();
+                });
+
+                // Reset the map tiles to ensure they're visible
+                if (window.mapTileLayers && mapRef.current) {
+                    const currentView = localSettings.default_map_view || 'standard';
+                    const currentLayer = window.mapTileLayers[currentView];
+                    console.log(`🔄 [MAP] Resetting tile layers after exiting drawing mode, using view: ${currentView}`);
+
+                    // Log current map layers
+                    console.log('🔄 [MAP] Current map layers before reset:');
+                    let layerCount = 0;
+                    mapRef.current.eachLayer(layer => {
+                        layerCount++;
+                        console.log(`🔄 [MAP] Layer #${layerCount}: ${layer.constructor.name}, visible: ${mapRef.current.hasLayer(layer)}`);
+                    });
+
+                    // Remove all tile layers first
+                    console.log('🔄 [MAP] Removing all tile layers');
+                    let removedCount = 0;
+                    Object.entries(window.mapTileLayers).forEach(([key, layer]) => {
+                        if (mapRef.current.hasLayer(layer)) {
+                            console.log(`🔄 [MAP] Removing tile layer: ${key}`);
+                            mapRef.current.removeLayer(layer);
+                            removedCount++;
+                        } else {
+                            console.log(`🔄 [MAP] Tile layer not on map: ${key}`);
+                        }
+                    });
+                    console.log(`🔄 [MAP] Removed ${removedCount} tile layers`);
+
+                    // Add the selected tile layer back
+                    console.log(`🔄 [MAP] Adding back the selected tile layer: ${currentView}`);
+                    currentLayer.addTo(mapRef.current);
+                    console.log(`🔄 [MAP] Setting z-index to 100 and opacity to 1 for tile layer: ${currentView}`);
+                    currentLayer.setZIndex(100);
+                    currentLayer.setOpacity(1);
+
+                    // Force redraw of the current layer
+                    console.log(`🔄 [MAP] Forcing redraw of tile layer: ${currentView}`);
+                    currentLayer.redraw();
+
+                    // Log tile layer properties
+                    console.log(`🔄 [MAP] Tile layer properties: z-index=${currentLayer.options.zIndex}, opacity=${currentLayer.options.opacity}`);
+                } else {
+                    console.warn('⚠️ [MAP] Map tiles or map reference not available when trying to reset tiles');
+                }
+
+                // Force redraw of all map layers
+                if (mapRef.current) {
+                    console.log('🔄 [MAP] Forcing redraw of all map layers');
+                    let tileLayerCount = 0;
+                    mapRef.current.eachLayer(layer => {
+                        if (layer instanceof L.TileLayer) {
+                            tileLayerCount++;
+                            console.log(`🔄 [MAP] Setting opacity to 1 for tile layer #${tileLayerCount}`);
+                            layer.setOpacity(1);
+                            console.log(`🔄 [MAP] Forcing redraw of tile layer #${tileLayerCount}`);
+                            layer.redraw();
+                        }
+                    });
+                    console.log(`🔄 [MAP] Processed ${tileLayerCount} tile layers`);
+
+                    // Invalidate the map size to force a complete redraw
+                    console.log('🔄 [MAP] Invalidating map size to force complete redraw');
+                    mapRef.current.invalidateSize({ animate: false, pan: false, debounceMoveend: false });
+
+                    // Additional redraw after a short delay
+                    console.log('🔄 [MAP] Scheduling additional redraw after 200ms delay');
+                    setTimeout(() => {
+                        if (mapRef.current) {
+                            console.log('🔄 [MAP] Executing delayed map invalidation');
+                            mapRef.current.invalidateSize({ animate: false, pan: false });
+                            console.log('🔄 [MAP] Delayed map invalidation complete');
+
+                            // Check if map tiles are visible
+                            console.log('🔄 [MAP] Checking map tile visibility after redraw:');
+                            const tileElements = document.querySelectorAll('.leaflet-tile-container img');
+                            console.log(`🔄 [MAP] Found ${tileElements.length} tile images`);
+                            if (tileElements.length > 0) {
+                                const sampleTile = tileElements[0];
+                                const computedStyle = window.getComputedStyle(sampleTile);
+                                console.log(`🔄 [MAP] Sample tile visibility: ${computedStyle.visibility}`);
+                                console.log(`🔄 [MAP] Sample tile opacity: ${computedStyle.opacity}`);
+                                console.log(`🔄 [MAP] Sample tile display: ${computedStyle.display}`);
+                                console.log(`🔄 [MAP] Sample tile filter: ${computedStyle.filter}`);
+                            }
+                        } else {
+                            console.warn('⚠️ [MAP] Map reference not available during delayed redraw');
+                        }
+                    }, 200);
+                } else {
+                    console.warn('⚠️ [MAP] Map reference not available when trying to force redraw');
+                }
+
+                console.log('🔄 [MAP] Setting isDrawingMode to false');
+                setIsDrawingMode(false);
+                console.log('🔄 [MAP] Exiting drawing mode - COMPLETE');
+            } catch (error) {
+                console.error('❌ [MAP] Error exiting drawing mode:', error);
+                console.error('❌ [MAP] Error stack:', error.stack);
+                setIsDrawingMode(false);
+            }
+            return;
+        }
+
+        // Exit marker drop mode if it's active
+        if (markerDropMode) {
+            console.log('🔄 [MAP] Exiting marker drop mode before entering drawing mode');
+            setMarkerDropMode(false);
+        }
+
+        // Enter drawing mode
+        console.log('🔄 [MAP] Entering drawing mode - START');
+        try {
+            // Add the drawing-mode class to the map container
+            const mapContainer = document.getElementById('map');
+            if (mapContainer) {
+                console.log('🔄 [MAP] Adding drawing-mode class to map container');
+                mapContainer.classList.add('drawing-mode');
+
+                // Force map container to be visible and properly sized
+                mapContainer.style.visibility = 'visible';
+                mapContainer.style.opacity = '1';
+                mapContainer.style.display = 'block';
+                mapContainer.style.position = 'relative';
+                mapContainer.style.overflow = 'visible';
+                mapContainer.style.width = '100%';
+                mapContainer.style.height = '100%';
+                mapContainer.style.minWidth = '100%';
+                mapContainer.style.minHeight = '100%';
+                mapContainer.style.zIndex = '0';
+                mapContainer.style.backgroundColor = '#f0f0f0';
+            } else {
+                console.warn('⚠️ [MAP] Map container not found when trying to add drawing-mode class');
+            }
+
+            // Ensure the current map layer is visible
+            if (window.mapTileLayers && mapRef.current) {
+                const currentView = localSettings.default_map_view || 'standard';
+                const currentLayer = window.mapTileLayers[currentView];
+                console.log(`🔄 [MAP] Setting up map tiles for drawing mode, using view: ${currentView}`);
+
+                // Log current map layers
+                console.log('🔄 [MAP] Current map layers before reset:');
+                let layerCount = 0;
+                mapRef.current.eachLayer(layer => {
+                    layerCount++;
+                    console.log(`🔄 [MAP] Layer #${layerCount}: ${layer.constructor.name}, visible: ${mapRef.current.hasLayer(layer)}`);
+                });
+
+                // Instead of removing and re-adding tile layers, just make sure they're visible
+                console.log('🔄 [MAP] Ensuring tile layers are visible');
+
+                // Check if the current view layer is on the map
+                if (!mapRef.current.hasLayer(currentLayer)) {
+                    console.log(`🔄 [MAP] Adding missing tile layer: ${currentView}`);
+                    currentLayer.addTo(mapRef.current);
+                }
+
+                // Make sure all other tile layers are removed
+                Object.entries(window.mapTileLayers).forEach(([key, layer]) => {
+                    if (key !== currentView && mapRef.current.hasLayer(layer)) {
+                        console.log(`🔄 [MAP] Removing unnecessary tile layer: ${key}`);
+                        mapRef.current.removeLayer(layer);
+                    }
+                });
+
+                // Ensure the current layer has high z-index and full opacity
+                console.log(`🔄 [MAP] Setting z-index to 100 and opacity to 1 for tile layer: ${currentView}`);
+                currentLayer.setZIndex(100);
+                currentLayer.setOpacity(1);
+
+                // Force redraw of the current layer
+                console.log(`🔄 [MAP] Forcing redraw of tile layer: ${currentView}`);
+                if (currentLayer.redraw) {
+                    currentLayer.redraw();
+                }
+
+                // Log tile layer properties
+                console.log(`🔄 [MAP] Tile layer properties: z-index=${currentLayer.options.zIndex || 100}, opacity=${currentLayer.options.opacity || 1}`);
+
+                // Force the tile layer to be visible with inline styles
+                const tileContainers = document.querySelectorAll('.leaflet-tile-container');
+                tileContainers.forEach(container => {
+                    container.style.visibility = 'visible';
+                    container.style.opacity = '1';
+                    container.style.zIndex = '100';
+                    container.style.width = '100%';
+                    container.style.height = '100%';
+                    container.style.minWidth = '256px';
+                    container.style.minHeight = '256px';
+                });
+
+                const tiles = document.querySelectorAll('.leaflet-tile');
+                tiles.forEach(tile => {
+                    tile.style.visibility = 'visible';
+                    tile.style.opacity = '1';
+                    tile.style.display = 'block';
+                    tile.style.width = '256px';
+                    tile.style.height = '256px';
+                    tile.style.minWidth = '256px';
+                    tile.style.minHeight = '256px';
+                });
+
+                // Force tile images to be visible
+                const tileImages = document.querySelectorAll('.leaflet-tile img, .leaflet-tile-container img');
+                tileImages.forEach(img => {
+                    img.style.visibility = 'visible';
+                    img.style.opacity = '1';
+                    img.style.display = 'block';
+                    img.style.width = '256px';
+                    img.style.height = '256px';
+                    img.style.minWidth = '256px';
+                    img.style.minHeight = '256px';
+                    img.style.objectFit = 'fill';
+                    img.style.position = 'absolute';
+                });
+
+                // Force tile pane to be visible
+                const tilePanes = document.querySelectorAll('.leaflet-tile-pane');
+                tilePanes.forEach(pane => {
+                    pane.style.visibility = 'visible';
+                    pane.style.opacity = '1';
+                    pane.style.zIndex = '100';
+                    pane.style.width = '100%';
+                    pane.style.height = '100%';
+                    pane.style.minWidth = '100%';
+                    pane.style.minHeight = '100%';
+                });
+
+                // CRITICAL FIX: Ensure sidebar remains visible
+                const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+                if (sidebar) {
+                    sidebar.style.visibility = 'visible';
+                    sidebar.style.opacity = '1';
+                    sidebar.style.zIndex = '2000';
+                    sidebar.style.display = 'flex';
+                    sidebar.style.pointerEvents = 'auto';
+                }
+
+                // Ensure sidebar toggle button is visible
+                const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+                if (sidebarToggleButton) {
+                    sidebarToggleButton.style.visibility = 'visible';
+                    sidebarToggleButton.style.opacity = '1';
+                    sidebarToggleButton.style.zIndex = '3000';
+                    sidebarToggleButton.style.display = 'block';
+                    sidebarToggleButton.style.pointerEvents = 'auto';
+                }
+            } else {
+                console.warn('⚠️ [MAP] Map tiles or map reference not available when trying to set up tiles');
+            }
+
+            // Force a complete redraw of the map
+            if (mapRef.current) {
+                console.log('🔄 [MAP] Forcing redraw of all map layers');
+                let layerCount = 0;
+                mapRef.current.eachLayer(layer => {
+                    layerCount++;
+                    if (layer.redraw) {
+                        console.log(`🔄 [MAP] Forcing redraw of layer #${layerCount}: ${layer.constructor.name}`);
+                        layer.redraw();
+                    } else {
+                        console.log(`🔄 [MAP] Layer #${layerCount} has no redraw method: ${layer.constructor.name}`);
+                    }
+
+                    // Ensure tile layers are visible
+                    if (layer instanceof L.TileLayer) {
+                        console.log(`🔄 [MAP] Setting opacity to 1 for tile layer #${layerCount}`);
+                        layer.setOpacity(1);
+                    }
+                });
+                console.log(`🔄 [MAP] Processed ${layerCount} layers`);
+
+                // Invalidate the map size to force a complete redraw
+                console.log('🔄 [MAP] Invalidating map size to force complete redraw');
+                mapRef.current.invalidateSize({ animate: false, pan: false, debounceMoveend: false });
+
+                // Additional redraw after a short delay
+                console.log('🔄 [MAP] Scheduling additional redraw after 200ms delay');
+                setTimeout(() => {
+                    if (mapRef.current) {
+                        console.log('🔄 [MAP] Executing delayed map operations');
+
+                        // Force redraw of all map layers again
+                        console.log('🔄 [MAP] Forcing redraw of all map layers again');
+                        let secondLayerCount = 0;
+                        mapRef.current.eachLayer(layer => {
+                            secondLayerCount++;
+                            if (layer.redraw) {
+                                console.log(`🔄 [MAP] Forcing redraw of layer #${secondLayerCount}: ${layer.constructor.name}`);
+                                layer.redraw();
+                            }
+                        });
+                        console.log(`🔄 [MAP] Processed ${secondLayerCount} layers in delayed redraw`);
+
+                        // Invalidate the map size again
+                        console.log('🔄 [MAP] Invalidating map size again');
+                        mapRef.current.invalidateSize({ animate: false, pan: false });
+
+                        // Force tile layers to update again
+                        if (window.mapTileLayers) {
+                            console.log('🔄 [MAP] Forcing update of all tile layers again');
+                            let tileLayerCount = 0;
+                            Object.entries(window.mapTileLayers).forEach(([key, layer]) => {
+                                tileLayerCount++;
+                                if (layer && layer.redraw) {
+                                    console.log(`🔄 [MAP] Forcing redraw of tile layer: ${key}`);
+                                    layer.redraw();
+                                    console.log(`🔄 [MAP] Setting opacity to 1 for tile layer: ${key}`);
+                                    layer.setOpacity(1);
+                                }
+                            });
+                            console.log(`🔄 [MAP] Processed ${tileLayerCount} tile layers in delayed update`);
+                        }
+
+                        // Check if map tiles are visible
+                        console.log('🔄 [MAP] Checking map tile visibility after redraw:');
+                        const tileElements = document.querySelectorAll('.leaflet-tile-container img');
+                        console.log(`🔄 [MAP] Found ${tileElements.length} tile images`);
+                        if (tileElements.length > 0) {
+                            const sampleTile = tileElements[0];
+                            const computedStyle = window.getComputedStyle(sampleTile);
+                            console.log(`🔄 [MAP] Sample tile visibility: ${computedStyle.visibility}`);
+                            console.log(`🔄 [MAP] Sample tile opacity: ${computedStyle.opacity}`);
+                            console.log(`🔄 [MAP] Sample tile display: ${computedStyle.display}`);
+                            console.log(`🔄 [MAP] Sample tile filter: ${computedStyle.filter}`);
+                        }
+
+                        console.log('🔄 [MAP] Drawing mode initialization complete');
+                    } else {
+                        console.warn('⚠️ [MAP] Map reference not available during delayed operations');
+                    }
+                }, 200);
+            } else {
+                console.warn('⚠️ [MAP] Map reference not available when trying to force redraw');
+            }
+
+            console.log('🔄 [MAP] Setting isDrawingMode to true');
+            setIsDrawingMode(true);
+            console.log('🔄 [MAP] Entering drawing mode - COMPLETE');
+        } catch (error) {
+            console.error('❌ [MAP] Error entering drawing mode:', error);
+            console.error('❌ [MAP] Error stack:', error.stack);
+            setIsDrawingMode(true);
+        }
+    };
+
+    // Handle when a road is drawn
+    const handleRoadDrawn = (roadData) => {
+        if (!roadData) {
+            setDrawnRoadData(null);
+            return;
+        }
+
+        console.log('Road drawn:', roadData);
+        setDrawnRoadData(roadData);
+
+        // Show the save road modal
+        setShowSaveRoadModal(true);
+    };
+
+    // Handle saving a custom road
+    const handleSaveCustomRoad = (savedRoad) => {
+        console.log('Custom road saved:', savedRoad);
+
+        // Add the new road to the saved roads list
+        setSavedRoads(prevRoads => [savedRoad, ...prevRoads]);
+
+        // Close the save road modal
+        setShowSaveRoadModal(false);
+
+        // CRITICAL FIX: Ensure sidebar is visible with multiple approaches
+        // 1. Direct DOM manipulation with primary selector
+        const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+        if (sidebar) {
+            console.log('🔄 [SAVE-ROAD] Making sidebar visible via direct DOM manipulation');
+            sidebar.style.visibility = 'visible';
+            sidebar.style.opacity = '1';
+            sidebar.style.zIndex = '2000';
+            sidebar.style.display = 'flex';
+            sidebar.style.pointerEvents = 'auto';
+            sidebar.style.width = sidebarCollapsed ? '4rem' : '20rem'; // 16px or 80px
+
+            // Force repaint
+            sidebar.style.display = 'none';
+            void sidebar.offsetHeight; // Force reflow
+            sidebar.style.display = 'flex';
+        }
+
+        // 2. Try alternate selector for sidebar
+        const altSidebar = document.querySelector(sidebarCollapsed ? '.w-16' : '.w-80');
+        if (altSidebar) {
+            console.log('🔄 [SAVE-ROAD] Making sidebar visible via alternate selector');
+            altSidebar.style.visibility = 'visible';
+            altSidebar.style.opacity = '1';
+            altSidebar.style.zIndex = '2000';
+            altSidebar.style.display = 'flex';
+            altSidebar.style.pointerEvents = 'auto';
+        }
+
+        // 3. Ensure sidebar toggle button is visible
+        const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+        if (sidebarToggleButton) {
+            console.log('🔄 [SAVE-ROAD] Making sidebar toggle button visible');
+            sidebarToggleButton.style.visibility = 'visible';
+            sidebarToggleButton.style.opacity = '1';
+            sidebarToggleButton.style.zIndex = '3000';
+            sidebarToggleButton.style.display = 'block';
+            sidebarToggleButton.style.pointerEvents = 'auto';
+
+            // Force repaint
+            sidebarToggleButton.style.display = 'none';
+            void sidebarToggleButton.offsetHeight; // Force reflow
+            sidebarToggleButton.style.display = 'block';
+        }
+
+        // 4. Remove drawing-mode class from map container and add to body
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            console.log('🔄 [SAVE-ROAD] Removing drawing-mode class from map container');
+            mapContainer.classList.remove('drawing-mode');
+        }
+
+        // 5. Update body classes
+        document.body.classList.remove('drawing-mode');
+        document.body.classList.add('sidebar-visible');
+
+        // 6. Exit drawing mode
+        console.log('🔄 [SAVE-ROAD] Setting isDrawingMode to false');
+        setIsDrawingMode(false);
+
+        // 7. Clear the drawn road data
+        setDrawnRoadData(null);
+
+        // 8. Schedule a delayed check to ensure sidebar is still visible
+        setTimeout(() => {
+            console.log('🔄 [SAVE-ROAD] Delayed check for sidebar visibility');
+            const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+            if (sidebar) {
+                sidebar.style.visibility = 'visible';
+                sidebar.style.opacity = '1';
+                sidebar.style.zIndex = '2000';
+                sidebar.style.display = 'flex';
+                sidebar.style.pointerEvents = 'auto';
+            }
+
+            const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+            if (sidebarToggleButton) {
+                sidebarToggleButton.style.visibility = 'visible';
+                sidebarToggleButton.style.opacity = '1';
+                sidebarToggleButton.style.zIndex = '3000';
+                sidebarToggleButton.style.display = 'block';
+                sidebarToggleButton.style.pointerEvents = 'auto';
+            }
+        }, 200);
+
+        // Show a success message
+        alert('Road saved successfully!');
+    };
+
     // Marker drop mode state is defined at the top level
 
     // Initialize map only once
@@ -1522,42 +2137,73 @@ export default function Map() {
 
         console.log('Initializing map...');
 
-        // Create the map with specific options to prevent errors
+        // Create the map with specific options to prevent white map issues
         const leafletMap = L.map(mapContainer, {
             center: [57.1, 27.1],
             zoom: 10,
-            zoomControl: false, // Disable default zoom control, we'll add it manually
+            zoomControl: false,
             attributionControl: true,
-            fadeAnimation: true,
+            fadeAnimation: false,
             zoomAnimation: true,
-            markerZoomAnimation: true
+            markerZoomAnimation: true,
+            editable: true,
+            preferCanvas: true,
+            renderer: L.canvas({
+                padding: 0.5,
+                tolerance: 10
+            }),
+            worldCopyJump: true,
+            maxBoundsViscosity: 1.0,
+            inertia: true,
+            updateWhenIdle: false,
+            updateWhenZooming: true,
+            updateInterval: 100,
+            keepBuffer: 4
         });
 
         // Add zoom control to the bottom-right corner
         L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
 
-        // Create references to store tile layers
+        // Create references to store tile layers with improved visibility settings
         const tileLayers = {
             standard: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19,
-                updateWhenIdle: true,
-                updateWhenZooming: false,
-                updateInterval: 250,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                updateInterval: 100,
+                keepBuffer: 4,
+                className: 'map-tiles',
+                zIndex: 1,
+                opacity: 1,
+                detectRetina: true,
+                crossOrigin: true
             }),
             terrain: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; OpenTopoMap contributors',
                 maxZoom: 17,
-                updateWhenIdle: true,
-                updateWhenZooming: false,
-                updateInterval: 250,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                updateInterval: 100,
+                keepBuffer: 4,
+                className: 'map-tiles',
+                zIndex: 1,
+                opacity: 1,
+                detectRetina: true,
+                crossOrigin: true
             }),
             satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '&copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
                 maxZoom: 19,
-                updateWhenIdle: true,
-                updateWhenZooming: false,
-                updateInterval: 250,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                updateInterval: 100,
+                keepBuffer: 4,
+                className: 'map-tiles',
+                zIndex: 1,
+                opacity: 1,
+                detectRetina: true,
+                crossOrigin: true
             })
         };
 
@@ -1567,6 +2213,7 @@ export default function Map() {
 
         // Add the selected tile layer to the map
         tileLayers[defaultMapView].addTo(leafletMap);
+        tileLayers[defaultMapView].setZIndex(100);
 
         // Store the tile layers in a ref for later access
         window.mapTileLayers = tileLayers;
@@ -1588,20 +2235,15 @@ export default function Map() {
         // Add layer control
         L.control.layers(baseMaps, {}, { position: 'bottomleft' }).addTo(leafletMap);
 
-        // Add event listener for baselayerchange but don't save the preference
+        // Add event listener for baselayerchange
         leafletMap.on('baselayerchange', function(e) {
             const selectedMapView = layerToSetting[e.layer._leaflet_id];
             if (selectedMapView) {
                 console.log('Map view changed to:', selectedMapView);
-
-                // Update local settings temporarily (for this session only)
                 setLocalSettings(prev => ({
                     ...prev,
                     default_map_view: selectedMapView
                 }));
-
-                // We don't save the setting to the server anymore
-                // The map will always default to 'standard' on page load
             }
         });
 
@@ -1611,7 +2253,10 @@ export default function Map() {
             console.log('Map resized');
         }, 500);
 
-        // We'll set up the click handler in a separate useEffect to ensure it has access to the current state
+        mapRef.current = leafletMap;
+
+        const newLayerGroup = L.layerGroup().addTo(leafletMap);
+        roadsLayerRef.current = newLayerGroup;
 
         // Add event listener for map move end to update mapCenter
         leafletMap.on('moveend', () => {
@@ -1619,90 +2264,13 @@ export default function Map() {
             setMapCenter({ lat: center.lat, lng: center.lng });
         });
 
-        // Add event listener for POI popup clicks
-        leafletMap.on('popupopen', (e) => {
-            const popup = e.popup;
-            const content = popup._contentNode;
-
-            // Find any POI view buttons in the popup
-            const poiButtons = content.querySelectorAll('[id^="view-poi-"]');
-            poiButtons.forEach(button => {
-                const poiId = button.id.replace('view-poi-', '');
-                button.addEventListener('click', () => {
-                    // Find the POI data from our state
-                    const allPois = [...tourism, ...fuelStations, ...chargingStations];
-                    const poi = allPois.find(p => p.osm_id?.toString() === poiId || p.id?.toString() === poiId);
-
-                    if (poi) {
-                        setSelectedPoiId(poiId);
-                        setSelectedPoi(poi);
-                        console.log('Selected POI:', poi);
-                    } else {
-                        console.warn('POI not found with ID:', poiId);
-                        console.log('Available POIs:', allPois);
-                    }
-                });
-            });
-        });
-
-        mapRef.current = leafletMap;
-
-        const newLayerGroup = L.layerGroup().addTo(leafletMap);
-        roadsLayerRef.current = newLayerGroup;
-
-        // Add event listener for custom viewRoadOnMap event
-        const handleViewRoadOnMapEvent = (event) => {
-            if (event.detail && event.detail.road) {
-                handleViewOnMap(event.detail.road);
-            }
-        };
-
-        // Add event listeners for collection actions
-        const handleViewCollectionDetailsEvent = (event) => {
-            if (event.detail && event.detail.collection) {
-                console.log("View collection details:", event.detail.collection);
-                // For now, just show an alert
-                alert(`Collection details: ${event.detail.collection.name} (${event.detail.collection.roads?.length || 0} roads)`);
-                // TODO: Implement proper collection details view
-            }
-        };
-
-        const handleEditCollectionEvent = (event) => {
-            if (event.detail && event.detail.collection) {
-                console.log("Edit collection:", event.detail.collection);
-                // For now, just show an alert
-                alert(`Edit collection: ${event.detail.collection.name}`);
-                // TODO: Implement proper collection editing
-            }
-        };
-
-        window.addEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
-        window.addEventListener('viewCollectionDetails', handleViewCollectionDetailsEvent);
-        window.addEventListener('editCollection', handleEditCollectionEvent);
-
-        // Add Font Awesome CSS for POI markers
-        if (!document.getElementById('font-awesome-css')) {
-            const link = document.createElement('link');
-            link.id = 'font-awesome-css';
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-            document.head.appendChild(link);
-        }
-
+        // Cleanup function
         return () => {
-            leafletMap.off();
-            leafletMap.remove();
-            mapRef.current = null;
-            markerRef.current = null;
-            radiusCircleRef.current = null;
-            roadsLayerRef.current = null;
-
-            // Remove the event listeners when component unmounts
-            window.removeEventListener('viewRoadOnMap', handleViewRoadOnMapEvent);
-            window.removeEventListener('viewCollectionDetails', handleViewCollectionDetailsEvent);
-            window.removeEventListener('editCollection', handleEditCollectionEvent);
+            if (leafletMap) {
+                leafletMap.remove();
+            }
         };
-    }, []); // Empty dependency array to ensure map is initialized only once
+    }, []);
 
     // Set up map click handler in a separate useEffect to ensure it has access to the current markerDropMode state
     useEffect(() => {
@@ -1719,6 +2287,12 @@ export default function Map() {
                 e.originalEvent.target.closest('button') ||
                 e.originalEvent.target.closest('.poi-details')) { // Also check for POI details panel
                 console.log('Click on control element, ignoring map click');
+                return;
+            }
+
+            // Skip if we're in drawing mode - let Leaflet.Draw handle it
+            if (isDrawingMode) {
+                console.log('In drawing mode, letting Leaflet.Draw handle the click');
                 return;
             }
 
@@ -1821,7 +2395,143 @@ export default function Map() {
                 mapRef.current.off('click');
             }
         };
-    }, [markerDropMode, selectedPoi]); // Re-attach the handler when markerDropMode changes
+    }, [markerDropMode, selectedPoi, isDrawingMode]); // Re-attach the handler when markerDropMode or isDrawingMode changes
+
+    // Effect to handle drawing mode changes
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        // Add or remove the drawing-mode class to the map container
+        const mapContainer = document.getElementById('map');
+        if (mapContainer) {
+            if (isDrawingMode) {
+                console.log('🔄 [MAP-EFFECT] Entering drawing mode');
+                mapContainer.classList.add('drawing-mode');
+                document.body.classList.add('drawing-mode');
+
+                // Force redraw when entering drawing mode
+                setTimeout(() => {
+                    if (mapRef.current) {
+                        // Force redraw of all map layers
+                        mapRef.current.eachLayer(layer => {
+                            if (layer.redraw) {
+                                layer.redraw();
+                            }
+                        });
+
+                        mapRef.current.invalidateSize();
+                    }
+                }, 100);
+            } else {
+                console.log('🔄 [MAP-EFFECT] Exiting drawing mode');
+                mapContainer.classList.remove('drawing-mode');
+                document.body.classList.remove('drawing-mode');
+                document.body.classList.add('sidebar-visible');
+
+                // CRITICAL FIX: Ensure sidebar is visible with multiple approaches
+                // 1. Direct DOM manipulation with primary selector
+                const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+                if (sidebar) {
+                    console.log('🔄 [MAP-EFFECT] Making sidebar visible via direct DOM manipulation');
+                    sidebar.style.visibility = 'visible';
+                    sidebar.style.opacity = '1';
+                    sidebar.style.zIndex = '2000';
+                    sidebar.style.display = 'flex';
+                    sidebar.style.pointerEvents = 'auto';
+                    sidebar.style.width = sidebarCollapsed ? '4rem' : '20rem'; // 16px or 80px
+
+                    // Force repaint
+                    sidebar.style.display = 'none';
+                    void sidebar.offsetHeight; // Force reflow
+                    sidebar.style.display = 'flex';
+                }
+
+                // 2. Try alternate selector for sidebar
+                const altSidebar = document.querySelector(sidebarCollapsed ? '.w-16' : '.w-80');
+                if (altSidebar) {
+                    console.log('🔄 [MAP-EFFECT] Making sidebar visible via alternate selector');
+                    altSidebar.style.visibility = 'visible';
+                    altSidebar.style.opacity = '1';
+                    altSidebar.style.zIndex = '2000';
+                    altSidebar.style.display = 'flex';
+                    altSidebar.style.pointerEvents = 'auto';
+                }
+
+                // 3. Ensure sidebar toggle button is visible
+                const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+                if (sidebarToggleButton) {
+                    console.log('🔄 [MAP-EFFECT] Making sidebar toggle button visible');
+                    sidebarToggleButton.style.visibility = 'visible';
+                    sidebarToggleButton.style.opacity = '1';
+                    sidebarToggleButton.style.zIndex = '3000';
+                    sidebarToggleButton.style.display = 'block';
+                    sidebarToggleButton.style.pointerEvents = 'auto';
+
+                    // Force repaint
+                    sidebarToggleButton.style.display = 'none';
+                    void sidebarToggleButton.offsetHeight; // Force reflow
+                    sidebarToggleButton.style.display = 'block';
+                }
+
+                // Force redraw of the map when exiting drawing mode
+                setTimeout(() => {
+                    if (mapRef.current) {
+                        console.log('🔄 [MAP-EFFECT] Forcing map redraw after exiting drawing mode');
+                        // Force redraw of all map layers
+                        mapRef.current.eachLayer(layer => {
+                            if (layer.redraw) {
+                                layer.redraw();
+                            }
+                        });
+
+                        // Make sure the current map layer is visible
+                        if (window.mapTileLayers) {
+                            Object.values(window.mapTileLayers).forEach(layer => {
+                                if (mapRef.current.hasLayer(layer)) {
+                                    layer.redraw();
+                                }
+                            });
+                        }
+
+                        mapRef.current.invalidateSize();
+
+                        // Additional check after a delay to ensure sidebar is still visible
+                        setTimeout(() => {
+                            console.log('🔄 [MAP-EFFECT] Double-checking sidebar visibility');
+                            // Double-check sidebar visibility with all selectors
+                            const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+                            if (sidebar) {
+                                sidebar.style.visibility = 'visible';
+                                sidebar.style.opacity = '1';
+                                sidebar.style.zIndex = '2000';
+                                sidebar.style.display = 'flex';
+                                sidebar.style.pointerEvents = 'auto';
+                                sidebar.style.width = sidebarCollapsed ? '4rem' : '20rem';
+                            }
+
+                            const altSidebar = document.querySelector(sidebarCollapsed ? '.w-16' : '.w-80');
+                            if (altSidebar) {
+                                altSidebar.style.visibility = 'visible';
+                                altSidebar.style.opacity = '1';
+                                altSidebar.style.zIndex = '2000';
+                                altSidebar.style.display = 'flex';
+                                altSidebar.style.pointerEvents = 'auto';
+                            }
+
+                            const sidebarToggleButton = document.querySelector('.absolute.top-4.left-4, .absolute.top-4.left-40');
+                            if (sidebarToggleButton) {
+                                sidebarToggleButton.style.visibility = 'visible';
+                                sidebarToggleButton.style.opacity = '1';
+                                sidebarToggleButton.style.zIndex = '3000';
+                                sidebarToggleButton.style.display = 'block';
+                                sidebarToggleButton.style.pointerEvents = 'auto';
+                            }
+                        }, 200);
+                    }
+                }, 100);
+            }
+        }
+    }, [isDrawingMode, sidebarCollapsed]);
 
     useEffect(() => {
         if (showCommunity && markerRef.current) {
@@ -2192,9 +2902,15 @@ export default function Map() {
             const center = mapRef.current.getCenter();
             console.log('Using map center for POI search:', center);
             return { lat: center.lat, lon: center.lng };
+        } else if (currentPoiLocation) {
+            // If we have a previously set POI location, use that
+            console.log('Using previously set POI location:', currentPoiLocation);
+            return currentPoiLocation;
         }
-        console.warn('No location available for POI search');
-        return null;
+
+        // Provide a default location (Latvia center) if nothing else is available
+        console.warn('No location available for POI search, using default location');
+        return { lat: 57.1, lon: 27.1 }; // Default location in Latvia
     };
 
     // Force re-render of POI controls when marker changes
@@ -2279,9 +2995,6 @@ export default function Map() {
         setSelectedRoad(road);
         setShowNavigationSelector(true);
     };
-
-    // Add state for sidebar collapse
-    const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
     // Add state for social modal
     const [showSocialModal, setShowSocialModal] = useState(false);
@@ -2488,12 +3201,44 @@ export default function Map() {
     // Toggle sidebar collapse
     const toggleSidebar = () => {
         setSidebarCollapsed(!sidebarCollapsed);
+
+        // Force sidebar to be visible with correct width after toggling
+        setTimeout(() => {
+            const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+            if (sidebar) {
+                const newWidth = !sidebarCollapsed ? '4rem' : '20rem';
+                sidebar.style.minWidth = newWidth;
+                sidebar.style.width = newWidth;
+                sidebar.style.flexBasis = newWidth;
+                sidebar.style.flexShrink = '0';
+                sidebar.style.flexGrow = '0';
+                sidebar.style.display = 'flex';
+                sidebar.style.visibility = 'visible';
+                sidebar.style.opacity = '1';
+
+                // Force repaint
+                sidebar.style.display = 'none';
+                void sidebar.offsetHeight; // Force reflow
+                sidebar.style.display = 'flex';
+            }
+        }, 50);
     };
 
     return (
-        <div className="flex h-screen relative">
+        <div className="flex h-screen relative" style={{ display: 'flex', minHeight: '100vh', position: 'relative' }}>
             {/* Main Sidebar */}
-            <div className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}>
+            <div
+                className={`${sidebarCollapsed ? 'w-16' : 'w-80'} transition-all duration-300 bg-white shadow-md overflow-y-auto overflow-x-hidden z-20 flex flex-col relative`}
+                style={{
+                    minWidth: sidebarCollapsed ? '4rem' : '20rem',
+                    width: sidebarCollapsed ? '4rem' : '20rem',
+                    flexBasis: sidebarCollapsed ? '4rem' : '20rem',
+                    flexShrink: 0,
+                    flexGrow: 0,
+                    display: 'flex',
+                    visibility: 'visible',
+                    opacity: 1
+                }}>
                 {/* Sidebar toggle button removed - using only the "Hide Sidebar" button */}
 
                 {/* Collapsed sidebar content - show icons only */}
@@ -2759,6 +3504,11 @@ export default function Map() {
                             console.log('Setting marker drop mode to:', !markerDropMode);
                             console.log('Map reference exists:', !!mapRef.current);
                             setMarkerDropMode(!markerDropMode);
+
+                            // Exit drawing mode if it's active
+                            if (isDrawingMode) {
+                                setIsDrawingMode(false);
+                            }
                         }}
                         className={`w-full p-2 rounded transition-colors mb-4 ${
                             markerDropMode
@@ -2773,6 +3523,23 @@ export default function Map() {
                                 : 'Drop a Marker on Map'
                         }
                     </button>
+
+                    {/* Custom Road Drawing Button */}
+                    <button
+                        onClick={toggleDrawingMode}
+                        className={`w-full p-2 rounded transition-colors mb-4 flex items-center justify-center ${
+                            isDrawingMode
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-green-500 text-white hover:bg-green-600'
+                        }`}
+                    >
+                        <FaDrawPolygon className="mr-2" />
+                        {isDrawingMode
+                            ? 'Cancel Drawing Mode'
+                            : 'Draw Custom Road'
+                        }
+                    </button>
+
                     {markerRef.current && (
                         <div className="mb-4 p-2 bg-green-100 border border-green-300 rounded text-sm">
                             <p className="font-medium text-green-800">Marker placed at:</p>
@@ -2782,10 +3549,10 @@ export default function Map() {
                             </p>
                         </div>
                     )}
-                    {!markerRef.current && !markerDropMode && (
+                    {!markerRef.current && !markerDropMode && !isDrawingMode && (
                         <div className="mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded text-sm">
                             <p className="text-yellow-700">
-                                Please drop a marker on the map first to search for roads.
+                                Please drop a marker on the map first to search for roads, or use the drawing tool to create a custom road.
                             </p>
                         </div>
                     )}
@@ -2889,16 +3656,24 @@ export default function Map() {
             </div>
 
             {/* Map */}
-            <div className="flex-1 relative" id="map" style={{ zIndex: 10, pointerEvents: 'auto', position: 'relative', overflow: 'visible' }}>
+            <div className={`flex-1 relative ${isDrawingMode ? 'drawing-mode' : ''}`} id="map" style={{
+                pointerEvents: 'auto',
+                position: 'relative',
+                overflow: 'visible',
+                background: '#f0f0f0',
+                filter: 'none',
+                visibility: 'visible',
+                opacity: 1
+            }}>
                 {/* Sidebar toggle button - positioned at the top */}
                 <button
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent map click event
                         toggleSidebar();
                     }}
-                    className="absolute top-4 left-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors font-semibold"
+                    className={`absolute top-4 ${isDrawingMode ? 'left-40' : 'left-4'} px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 font-semibold transition-all duration-300`}
                     style={{
-                        zIndex: 2000,
+                        zIndex: 1500,
                         border: '2px solid white',
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
@@ -2930,7 +3705,7 @@ export default function Map() {
                     }}
                     className="absolute top-4 right-4 px-4 py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition-colors font-semibold"
                     style={{
-                        zIndex: 2000,
+                        zIndex: 1500,
                         border: '2px solid white',
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
@@ -2949,7 +3724,7 @@ export default function Map() {
                     }}
                     className="absolute top-16 right-4 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-colors font-semibold"
                     style={{
-                        zIndex: 2000,
+                        zIndex: 1500,
                         border: '2px solid white',
                         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                     }}
@@ -2965,8 +3740,8 @@ export default function Map() {
 
                 {/* POI Controls - positioned below the sidebar toggle button */}
                 <div
-                    className="absolute top-20 left-4 max-w-[250px]"
-                    style={{ zIndex: 2000, pointerEvents: 'auto' }}
+                    className={`absolute top-20 ${isDrawingMode ? 'left-40' : 'left-4'} max-w-[250px] transition-all duration-300`}
+                    style={{ zIndex: 1500, pointerEvents: 'auto' }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     <PoiControls
@@ -2988,7 +3763,7 @@ export default function Map() {
                 {selectedPoi && (
                     <div
                         className="absolute top-20 right-4 max-w-md"
-                        style={{ zIndex: 1001, pointerEvents: 'auto' }}
+                        style={{ zIndex: 1500, pointerEvents: 'auto' }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <PoiDetails
@@ -3457,6 +4232,32 @@ export default function Map() {
                 />
             )}
 
+            {/* Custom Road Drawer */}
+            {mapRef.current && (
+                <CustomRoadDrawer
+                    map={mapRef.current}
+                    isDrawingMode={isDrawingMode}
+                    setIsDrawingMode={setIsDrawingMode}
+                    onRoadDrawn={handleRoadDrawn}
+                    auth={auth}
+                />
+            )}
+
+            {/* Save Road Modal */}
+            {showSaveRoadModal && drawnRoadData && (
+                <SaveRoadModal
+                    isOpen={showSaveRoadModal}
+                    onClose={() => {
+                        setShowSaveRoadModal(false);
+                        setDrawnRoadData(null);
+                    }}
+                    roadData={drawnRoadData}
+                    onSave={handleSaveCustomRoad}
+                    auth={auth}
+                    userSettings={userSettings}
+                />
+            )}
+
             {/* Road Edit Modal */}
             {showEditModal && editingRoad && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[30000] p-4">
@@ -3572,3 +4373,4 @@ export default function Map() {
         </div>
     );
 }
+

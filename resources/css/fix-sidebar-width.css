@@ -1,0 +1,121 @@
+/*
+ * CRITICAL FIX FOR SIDEBAR WIDTH ISSUE
+ * This file contains CSS fixes specifically for ensuring the sidebar maintains
+ * its width when in drawing mode and after exiting drawing mode
+ */
+
+/* 
+ * DIRECT SIDEBAR WIDTH FIX
+ * Force the sidebar to maintain its width regardless of drawing mode state
+ */
+
+/* Target the sidebar container directly */
+.flex.h-screen.relative > div:first-child {
+    min-width: 4rem !important; /* Minimum width for collapsed state */
+    width: auto !important; /* Allow width to be controlled by w-16/w-80 classes */
+    max-width: 20rem !important; /* Maximum width for expanded state */
+    flex-shrink: 0 !important; /* Prevent sidebar from shrinking */
+    flex-grow: 0 !important; /* Prevent sidebar from growing */
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure collapsed sidebar has proper width */
+.w-16.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    min-width: 4rem !important; /* 16px */
+    width: 4rem !important;
+    flex-basis: 4rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure expanded sidebar has proper width */
+.w-80.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    min-width: 20rem !important; /* 80px */
+    width: 20rem !important;
+    flex-basis: 20rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 
+ * DRAWING MODE SPECIFIC FIXES
+ * Ensure sidebar maintains width in drawing mode
+ */
+
+/* When in drawing mode, force sidebar to maintain width */
+.drawing-mode ~ div:first-child,
+body.drawing-mode .flex.h-screen.relative > div:first-child {
+    min-width: 4rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* When in drawing mode, ensure collapsed sidebar has proper width */
+.drawing-mode ~ .w-16,
+body.drawing-mode .w-16 {
+    min-width: 4rem !important;
+    width: 4rem !important;
+    flex-basis: 4rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* When in drawing mode, ensure expanded sidebar has proper width */
+.drawing-mode ~ .w-80,
+body.drawing-mode .w-80 {
+    min-width: 20rem !important;
+    width: 20rem !important;
+    flex-basis: 20rem !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 
+ * OVERFLOW FIXES
+ * Prevent overflow issues from hiding content
+ */
+
+/* Fix overflow-x-hidden causing content to disappear */
+.overflow-x-hidden {
+    overflow-x: visible !important;
+}
+
+/* Only apply overflow-x-hidden to specific elements that need it */
+.overflow-x-hidden:not(.flex.h-screen.relative > div:first-child):not(.w-16):not(.w-80) {
+    overflow-x: hidden !important;
+}
+
+/* 
+ * SIDEBAR TOGGLE BUTTON FIXES
+ * Ensure the sidebar toggle button is always visible
+ */
+
+/* Sidebar toggle button */
+.absolute.top-4.left-4,
+.absolute.top-4.left-40,
+button[class*="absolute top-4"][class*="left-4"],
+button[class*="absolute top-4"][class*="left-40"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}

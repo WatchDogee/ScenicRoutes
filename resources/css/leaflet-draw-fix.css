@@ -1,0 +1,599 @@
+/* Fix for Leaflet Draw controls */
+.leaflet-draw-toolbar {
+  z-index: 1000 !important;
+}
+
+.leaflet-draw-tooltip {
+  z-index: 1000 !important;
+}
+
+.leaflet-draw-actions {
+  z-index: 1000 !important;
+}
+
+.leaflet-draw-section {
+  z-index: 1000 !important;
+}
+
+.leaflet-draw {
+  z-index: 1000 !important;
+}
+
+/* Ensure the drawing controls are visible */
+.leaflet-control-container .leaflet-top,
+.leaflet-control-container .leaflet-bottom {
+  z-index: 900 !important;
+}
+
+/* Make sure the drawing controls are above other elements */
+.leaflet-draw-toolbar a {
+  z-index: 1001 !important;
+}
+
+/* Ensure the drawing tooltip is visible */
+.leaflet-draw-tooltip-single {
+  z-index: 1001 !important;
+}
+
+/* Make sure the drawing actions menu is visible */
+.leaflet-draw-actions a {
+  z-index: 1001 !important;
+}
+
+/* Ensure the drawing guide line is visible */
+.leaflet-draw-guide-dash {
+  z-index: 999 !important;
+}
+
+/* Make sure the vertex markers are visible */
+.leaflet-draw-marker-icon {
+  z-index: 1001 !important;
+}
+
+/* Ensure the edit handles are visible */
+.leaflet-edit-marker-selected {
+  z-index: 1001 !important;
+}
+
+.leaflet-marker-draggable {
+  z-index: 1001 !important;
+}
+
+.leaflet-editing-icon {
+  z-index: 1001 !important;
+}
+
+/* Make sure the drawing controls are above the sidebar */
+.leaflet-control {
+  z-index: 900 !important;
+}
+
+/* Ensure the drawing controls are positioned correctly */
+.leaflet-draw.leaflet-control {
+  margin-top: 10px !important; /* Reduced margin to fit better */
+  margin-left: 10px !important; /* Add left margin */
+}
+
+/* Make sure the polyline being drawn is visible */
+.leaflet-interactive {
+  z-index: 950 !important;
+}
+
+/* Fix for map buttons */
+.absolute.top-4.left-4,
+.absolute.top-4.right-4,
+.absolute.top-16.right-4 {
+  z-index: 1500 !important;
+}
+
+/* Fix for POI controls */
+.absolute.top-20.left-4 {
+  z-index: 1500 !important;
+}
+
+/* Fix for POI details */
+.absolute.top-20.right-4 {
+  z-index: 1500 !important;
+}
+
+/* Special styles for drawing mode */
+.drawing-mode .leaflet-draw-toolbar {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 2px solid #3388ff !important;
+  border-radius: 5px !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2) !important;
+}
+
+.drawing-mode .leaflet-draw-toolbar a {
+  background-color: #f8f8f8 !important;
+  border: 1px solid #ddd !important;
+  margin: 2px !important;
+}
+
+.drawing-mode .leaflet-draw-toolbar a:hover {
+  background-color: #e8e8e8 !important;
+}
+
+/* Make the polyline tool more visible */
+.drawing-mode .leaflet-draw-draw-polyline {
+  background-color: #e6f2ff !important;
+  border: 1px solid #3388ff !important;
+}
+
+/* Fix for map disappearing */
+.leaflet-container {
+  z-index: 0 !important;
+  background-color: #f0f0f0 !important;
+}
+
+/* Make sure map tiles are visible */
+.leaflet-tile-container {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* Fix for map turning white in drawing mode */
+.drawing-mode .leaflet-tile-container {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.drawing-mode .leaflet-tile-pane {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.drawing-mode .leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Critical fix for map turning white in drawing mode */
+#map.drawing-mode {
+  background-color: #f0f0f0 !important;
+}
+
+.drawing-mode .leaflet-map-pane {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Force all map layers to be visible in drawing mode */
+.drawing-mode .leaflet-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure map panes are properly stacked */
+.leaflet-map-pane {
+  z-index: 0 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-objects-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 6 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 1600 !important; /* Higher z-index to ensure popups are above UI controls */
+}
+
+/* Make sure polyline tooltips are visible and not obstructed */
+.leaflet-tooltip {
+  z-index: 1600 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure drawing tooltips are visible */
+.drawing-mode .leaflet-draw-tooltip {
+  z-index: 1600 !important;
+  pointer-events: auto !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid #3388ff !important;
+  padding: 5px 10px !important;
+  font-weight: bold !important;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Additional fixes for map turning white in drawing mode */
+.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+}
+
+.drawing-mode .leaflet-pane {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.drawing-mode .leaflet-tile-container {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-tile {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-tile-pane {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-map-pane {
+    z-index: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure drawing controls are above map tiles */
+.drawing-mode .leaflet-draw-toolbar {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-draw-tooltip {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+}
+
+/* Force all map layers to be visible and interactive in drawing mode */
+.drawing-mode .leaflet-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Base map container styles */
+.leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+}
+
+/* Map tile container styles */
+.leaflet-tile-container {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.leaflet-tile {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    filter: none !important;
+}
+
+/* Critical fix for map tiles - ensure images are visible */
+.leaflet-tile img,
+.leaflet-tile-container img {
+    visibility: visible !important;
+    opacity: 1 !important;
+    filter: none !important;
+    pointer-events: auto !important;
+}
+
+/* CRITICAL FIX FOR DRAWING MODE - ensure map tiles are visible */
+.drawing-mode .leaflet-tile-container img,
+.drawing-mode .leaflet-tile img {
+    visibility: visible !important;
+    opacity: 1 !important;
+    filter: none !important;
+    z-index: 100 !important;
+    display: block !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    position: absolute !important;
+}
+
+/* Drawing mode specific styles */
+.drawing-mode {
+    background-color: #f0f0f0 !important;
+}
+
+.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+}
+
+.drawing-mode .leaflet-tile-container {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-tile {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-tile-pane {
+    z-index: 1 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-map-pane {
+    z-index: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure drawing controls are above map tiles */
+.drawing-mode .leaflet-draw-toolbar {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+}
+
+.drawing-mode .leaflet-draw-tooltip {
+    z-index: 1000 !important;
+    pointer-events: auto !important;
+}
+
+/* Force all map layers to be visible and interactive in drawing mode */
+.drawing-mode .leaflet-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure proper z-index stacking */
+.leaflet-map-pane { z-index: 0 !important; }
+.leaflet-tile-pane { z-index: 1 !important; }
+.leaflet-objects-pane { z-index: 2 !important; }
+.leaflet-overlay-pane { z-index: 3 !important; }
+.leaflet-shadow-pane { z-index: 4 !important; }
+.leaflet-marker-pane { z-index: 5 !important; }
+.leaflet-tooltip-pane { z-index: 6 !important; }
+.leaflet-popup-pane { z-index: 7 !important; }
+
+/* Map container specific styles */
+#map {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+}
+
+#map.drawing-mode {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Force tile pane to be visible in drawing mode */
+#map.drawing-mode .leaflet-tile-pane {
+    z-index: 100 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure map tiles are always visible */
+.map-tiles {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure all Leaflet elements are visible */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-map-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane,
+.leaflet-tooltip-pane,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Bulletproof z-index and background fixes for Leaflet map */
+/* Remove this rule as it causes map tiles to be invisible */
+/* #map, #map * {
+    background: transparent !important;
+} */
+
+#map .leaflet-pane,
+#map .leaflet-map-pane,
+#map .leaflet-tile-pane,
+#map .leaflet-tile-container,
+#map .leaflet-tile {
+    z-index: 100 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: none !important;
+}
+
+/* Ensure map tiles are visible and not affected by filters */
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    max-width: none !important; /* Prevent responsive image rules from affecting tiles */
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+}
+
+/* Remove or comment out all .drawing-mode z-index/opacity/visibility rules */
+/* .drawing-mode .leaflet-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+*/
+
+/* Remove z-index from #map if present */
+#map {
+    z-index: 1 !important;
+}
+
+/* Additional debugging styles for map visibility */
+.leaflet-container {
+    background-color: #f0f0f0 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    perspective: none !important;
+    transform-style: flat !important;
+    mix-blend-mode: normal !important;
+    isolation: auto !important;
+    contain: none !important;
+    mask: none !important;
+    clip: auto !important;
+    clip-path: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Force map to be visible in drawing mode */
+.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    perspective: none !important;
+    transform-style: flat !important;
+    mix-blend-mode: normal !important;
+    isolation: auto !important;
+    contain: none !important;
+    mask: none !important;
+    clip: auto !important;
+    clip-path: none !important;
+    backdrop-filter: none !important;
+}
+
+/* Ensure map tiles are visible in drawing mode */
+.drawing-mode .leaflet-tile-container img,
+.drawing-mode .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    transition: none !important;
+    animation: none !important;
+    will-change: auto !important;
+    backface-visibility: visible !important;
+    perspective: none !important;
+    transform-style: flat !important;
+    mix-blend-mode: normal !important;
+    isolation: auto !important;
+    contain: none !important;
+    mask: none !important;
+    clip: auto !important;
+    clip-path: none !important;
+    backdrop-filter: none !important;
+}

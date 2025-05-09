@@ -39,6 +39,23 @@ export default function PoiControls({
             return;
         }
 
+        // Check if it's the default location (Latvia center)
+        const isDefaultLocation =
+            Math.abs(currentLocation.lat - 57.1) < 0.01 &&
+            Math.abs(currentLocation.lon - 27.1) < 0.01;
+
+        if (isDefaultLocation) {
+            console.log('Fetching POIs at default location (Latvia):', currentLocation);
+            // Optionally show a message to the user
+            const confirmUseDefault = window.confirm(
+                'You are using the default location in Latvia. Would you like to search for POIs here? (Click Cancel to set a specific location first)'
+            );
+
+            if (!confirmUseDefault) {
+                return;
+            }
+        }
+
         console.log('Fetching POIs at location:', currentLocation);
         fetchAllPois(currentLocation.lat, currentLocation.lon);
     };
@@ -49,6 +66,19 @@ export default function PoiControls({
             return (
                 <div className="text-xs text-red-600 flex items-center mb-2 bg-red-50 p-1 rounded">
                     <FaInfoCircle className="mr-1" /> Click map to set location
+                </div>
+            );
+        }
+
+        // Check if it's the default location (Latvia center)
+        const isDefaultLocation =
+            Math.abs(currentLocation.lat - 57.1) < 0.01 &&
+            Math.abs(currentLocation.lon - 27.1) < 0.01;
+
+        if (isDefaultLocation) {
+            return (
+                <div className="text-xs text-blue-600 flex items-center mb-2 bg-blue-50 p-1 rounded">
+                    <FaMapMarkerAlt className="mr-1" /> Using default location (Latvia)
                 </div>
             );
         }

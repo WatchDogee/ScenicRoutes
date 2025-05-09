@@ -125,14 +125,21 @@ class SavedRoadController extends Controller
             'twistiness' => 'nullable|numeric',
             'corner_count' => 'nullable|integer',
             'length' => 'nullable|numeric',
+            'elevation_gain' => 'nullable|numeric',
+            'elevation_loss' => 'nullable|numeric',
+            'max_elevation' => 'nullable|numeric',
+            'min_elevation' => 'nullable|numeric',
+            'description' => 'nullable|string|max:1000',
+            'is_public' => 'nullable|boolean',
+            'tags' => 'nullable|string',
         ]);
 
         // Serialize coordinates to JSON
         $data['road_coordinates'] = json_encode($data['coordinates']);
         unset($data['coordinates']); // Remove the original 'coordinates' key
 
-        // Explicitly set is_public to false for new roads
-        $data['is_public'] = false;
+        // Set is_public to the provided value or default to false
+        $data['is_public'] = $data['is_public'] ?? false;
 
         // Get elevation data and calculate statistics
         try {
@@ -200,7 +207,20 @@ class SavedRoadController extends Controller
             // Continue without location data if there's an error
         }
 
+        // Create the road
         $road = auth()->user()->savedRoads()->create($data);
+
+        // Handle tags if provided
+        if (!empty($request->input('tags'))) {
+            $tagIds = explode(',', $request->input('tags'));
+            if (!empty($tagIds)) {
+                $road->tags()->sync($tagIds);
+            }
+        }
+
+        // Load the tags relationship
+        $road->load('tags');
+
         return response()->json($road, 201);
     }
 
@@ -412,20 +432,20 @@ class SavedRoadController extends Controller
                       ->orWhereRaw('region LIKE ?', ["%$region%"]);
                 });
             }
-            
+
             if ($minRating) {
                 $query->where('average_rating', '>=', $minRating)
                       ->whereNotNull('average_rating')
                       ->where('average_rating', '>', 0);
             }
-            
+
             // Fix for tag filtering
             if ($tags) {
                 \Log::info('Filtering by tags', ['tags' => $tags]);
-                
+
                 // Handle both array and comma-separated string formats
                 $tagArray = is_array($tags) ? $tags : explode(',', $tags);
-                
+
                 // Using whereHas to filter roads that have the specified tags
                 $query->whereHas('tags', function ($q) use ($tagArray) {
                     $q->whereIn('tags.id', $tagArray);
