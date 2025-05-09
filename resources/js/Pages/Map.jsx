@@ -541,12 +541,14 @@ export default function Map() {
             const data = await response.json();
             roadsLayerRef.current.clearLayers();
 
-            const newRoads = [];
+            // Process all road segments first
+            const roadSegments = [];
             data.elements.forEach((way) => {
                 if (!way.geometry) return;
 
                 const roadLength = getRoadLength(way.geometry);
-                if (roadLength < 1750) return;
+                // Increase minimum road length to 2km (2000m)
+                if (roadLength < 2000) return;
 
                 const twistinessData = calculateTwistiness(way.geometry);
                 if (twistinessData === 0) return;
@@ -555,58 +557,238 @@ export default function Map() {
                 if (curvatureType === "moderate" && (twistinessData.twistiness < 0.0035 || twistinessData.twistiness > 0.007)) return;
                 if (curvatureType === "mellow" && twistinessData.twistiness > 0.0035) return;
 
-                const coordinates = way.geometry.map(point => [point.lat, point.lon]);
-                const name = way.tags.name || "Unnamed Road";
+                // Skip roads in urban areas unless they're very curvy
+                const isUrban = way.tags && (
+                    way.tags.highway === 'residential' ||
+                    way.tags.highway === 'living_street' ||
+                    (way.tags.maxspeed && parseInt(way.tags.maxspeed) <= 50)
+                );
 
+                if (isUrban && twistinessData.twistiness <= 0.007) return;
+
+                roadSegments.push({
+                    id: way.id,
+                    name: way.tags.name || "Unnamed Road",
+                    geometry: way.geometry,
+                    tags: way.tags,
+                    twistiness: twistinessData.twistiness,
+                    corner_count: twistinessData.corner_count,
+                    length: roadLength,
+                    elevation_gain: way.elevation_gain,
+                    elevation_loss: way.elevation_loss,
+                    max_elevation: way.max_elevation,
+                    min_elevation: way.min_elevation
+                });
+            });
+
+            // Try to connect road segments
+            const processedSegments = new Set();
+            const connectedRoads = [];
+
+            // First pass: try to connect segments
+            for (let i = 0; i < roadSegments.length; i++) {
+                if (processedSegments.has(roadSegments[i].id)) continue;
+
+                let currentRoad = roadSegments[i];
+                let hasConnected = true;
+
+                // Keep trying to connect more segments as long as we find connections
+                while (hasConnected) {
+                    hasConnected = false;
+
+                    for (let j = 0; j < roadSegments.length; j++) {
+                        if (i === j || processedSegments.has(roadSegments[j].id)) continue;
+
+                        // Check if roads can be connected (same name and endpoints close)
+                        const canConnect = (() => {
+                            // If roads have different names and both are named, they're probably different roads
+                            if (currentRoad.name && roadSegments[j].name &&
+                                currentRoad.name !== 'Unnamed Road' && roadSegments[j].name !== 'Unnamed Road' &&
+                                currentRoad.name !== roadSegments[j].name) {
+                                return false;
+                            }
+
+                            // Get endpoints of both roads
+                            const road1Start = currentRoad.geometry[0];
+                            const road1End = currentRoad.geometry[currentRoad.geometry.length - 1];
+                            const road2Start = roadSegments[j].geometry[0];
+                            const road2End = roadSegments[j].geometry[roadSegments[j].geometry.length - 1];
+
+                            // Check if any endpoints are close enough to connect
+                            const connectionThreshold = 50; // 50 meters
+
+                            // Check all possible connections between endpoints
+                            const connections = [
+                                { from: road1End, to: road2Start },
+                                { from: road1Start, to: road2End },
+                                { from: road1End, to: road2End },
+                                { from: road1Start, to: road2Start }
+                            ];
+
+                            for (const conn of connections) {
+                                const distance = getDistance(
+                                    conn.from.lat, conn.from.lon,
+                                    conn.to.lat, conn.to.lon
+                                );
+
+                                if (distance <= connectionThreshold) {
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        })();
+
+                        if (canConnect) {
+                            // Connect the roads
+                            const road1Start = currentRoad.geometry[0];
+                            const road1End = currentRoad.geometry[currentRoad.geometry.length - 1];
+                            const road2Start = roadSegments[j].geometry[0];
+                            const road2End = roadSegments[j].geometry[roadSegments[j].geometry.length - 1];
+
+                            // Find which endpoints are closest
+                            const connections = [
+                                { type: 'end-start', from: road1End, to: road2Start, distance: getDistance(road1End.lat, road1End.lon, road2Start.lat, road2Start.lon) },
+                                { type: 'start-end', from: road1Start, to: road2End, distance: getDistance(road1Start.lat, road1Start.lon, road2End.lat, road2End.lon) },
+                                { type: 'end-end', from: road1End, to: road2End, distance: getDistance(road1End.lat, road1End.lon, road2End.lat, road2End.lon) },
+                                { type: 'start-start', from: road1Start, to: road2Start, distance: getDistance(road1Start.lat, road1Start.lon, road2Start.lat, road2Start.lon) }
+                            ];
+
+                            // Sort by distance and get the closest connection
+                            connections.sort((a, b) => a.distance - b.distance);
+                            const closestConnection = connections[0];
+
+                            // Create a new connected geometry based on the connection type
+                            let newGeometry = [];
+
+                            if (closestConnection.type === 'end-start') {
+                                // road1 -> road2
+                                newGeometry = [...currentRoad.geometry, ...roadSegments[j].geometry];
+                            } else if (closestConnection.type === 'start-end') {
+                                // road2 -> road1
+                                newGeometry = [...roadSegments[j].geometry, ...currentRoad.geometry];
+                            } else if (closestConnection.type === 'end-end') {
+                                // road1 -> reverse(road2)
+                                newGeometry = [...currentRoad.geometry, ...roadSegments[j].geometry.slice().reverse()];
+                            } else if (closestConnection.type === 'start-start') {
+                                // reverse(road1) -> road2
+                                newGeometry = [...currentRoad.geometry.slice().reverse(), ...roadSegments[j].geometry];
+                            }
+
+                            // Create a new connected road
+                            currentRoad = {
+                                id: `${currentRoad.id}_${roadSegments[j].id}`,
+                                name: currentRoad.name || roadSegments[j].name || 'Unnamed Road',
+                                geometry: newGeometry,
+                                tags: { ...currentRoad.tags, ...roadSegments[j].tags },
+                                is_connected: true
+                            };
+
+                            processedSegments.add(roadSegments[j].id);
+                            hasConnected = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Recalculate properties for the connected road
+                const roadLength = getRoadLength(currentRoad.geometry);
+                const twistinessData = calculateTwistiness(currentRoad.geometry);
+
+                // Add the connected road (or single segment if no connections found)
+                connectedRoads.push({
+                    id: currentRoad.id,
+                    name: currentRoad.name,
+                    geometry: currentRoad.geometry,
+                    tags: currentRoad.tags,
+                    twistiness: twistinessData.twistiness,
+                    corner_count: twistinessData.corner_count,
+                    length: roadLength,
+                    is_connected: currentRoad.is_connected || false,
+                    elevation_gain: currentRoad.elevation_gain,
+                    elevation_loss: currentRoad.elevation_loss,
+                    max_elevation: currentRoad.max_elevation,
+                    min_elevation: currentRoad.min_elevation
+                });
+
+                processedSegments.add(roadSegments[i].id);
+            }
+
+            // Sort roads by length (longest first)
+            connectedRoads.sort((a, b) => b.length - a.length);
+
+            // Process roads for display
+            const newRoads = [];
+            connectedRoads.forEach(road => {
+                const coordinates = road.geometry.map(point => [point.lat, point.lon]);
+                const name = road.name;
+
+                // Determine road style based on length and twistiness
+                const lengthInKm = road.length / 1000;
+                let weight = 5; // Default weight for short roads
+
+                if (lengthInKm >= 15) {
+                    weight = 9; // Thicker for long roads
+                } else if (lengthInKm >= 5) {
+                    weight = 7; // Medium thickness for medium roads
+                }
+
+                // Determine color based on twistiness
                 let color = "green";
-                if (twistinessData.twistiness > 0.007) color = "red";
-                else if (twistinessData.twistiness > 0.0035) color = "yellow";
+                if (road.twistiness > 0.007) color = "red";
+                else if (road.twistiness > 0.0035) color = "yellow";
 
-                const polyline = L.polyline(coordinates, { color, weight: 8 }).addTo(roadsLayerRef.current);
+                const polyline = L.polyline(coordinates, { color, weight }).addTo(roadsLayerRef.current);
 
                 // Convert distance based on user settings
-                const distanceInKm = roadLength / 1000;
+                const distanceInKm = road.length / 1000;
                 const distanceInMiles = distanceInKm * 0.621371;
                 const displayDistance = userSettings.measurement_units === 'imperial'
                     ? `${distanceInMiles.toFixed(2)} miles`
                     : `${distanceInKm.toFixed(2)} km`;
 
-                // Get elevation data from the API response if available
-                const elevationGain = way.elevation_gain ?
+                // Get elevation data if available
+                const elevationGain = road.elevation_gain ?
                     userSettings.measurement_units === 'imperial' ?
-                        `${Math.round(way.elevation_gain * 3.28084)} ft` :
-                        `${Math.round(way.elevation_gain)} m` :
+                        `${Math.round(road.elevation_gain * 3.28084)} ft` :
+                        `${Math.round(road.elevation_gain)} m` :
                     'N/A';
 
-                const elevationLoss = way.elevation_loss ?
+                const elevationLoss = road.elevation_loss ?
                     userSettings.measurement_units === 'imperial' ?
-                        `${Math.round(way.elevation_loss * 3.28084)} ft` :
-                        `${Math.round(way.elevation_loss)} m` :
+                        `${Math.round(road.elevation_loss * 3.28084)} ft` :
+                        `${Math.round(road.elevation_loss)} m` :
                     'N/A';
 
-                const maxElevation = way.max_elevation ?
+                const maxElevation = road.max_elevation ?
                     userSettings.measurement_units === 'imperial' ?
-                        `${Math.round(way.max_elevation * 3.28084)} ft` :
-                        `${Math.round(way.max_elevation)} m` :
+                        `${Math.round(road.max_elevation * 3.28084)} ft` :
+                        `${Math.round(road.max_elevation)} m` :
                     'N/A';
+
+                // Add road type info (connected or single segment)
+                const roadTypeInfo = road.is_connected ?
+                    '<span class="text-blue-500">(Connected Road)</span>' : '';
+
+                // Add length category info
+                let lengthCategory = '';
+                if (distanceInKm >= 15) {
+                    lengthCategory = '<span class="text-purple-500">(Long Road)</span>';
+                } else if (distanceInKm >= 5) {
+                    lengthCategory = '<span class="text-blue-500">(Medium Road)</span>';
+                }
 
                 const popupContent = `
                     <div class="road-popup">
-                        <h3 class="font-bold">${name}</h3>
+                        <h3 class="font-bold">${name} ${roadTypeInfo} ${lengthCategory}</h3>
                         <p>Length: ${displayDistance}</p>
-                        <p>Corners: ${twistinessData.corner_count}</p>
-                        <p>Curve Score: ${twistinessData.twistiness.toFixed(4)}</p>
+                        <p>Corners: ${road.corner_count}</p>
+                        <p>Curve Score: ${road.twistiness.toFixed(4)}</p>
                         <p>Elevation Gain: ${elevationGain} ↑</p>
                         <p>Elevation Loss: ${elevationLoss} ↓</p>
                         <p>Max Elevation: ${maxElevation}</p>
-                        <p class="text-xs text-gray-500">Debug: ${JSON.stringify({
-                            gain: way.elevation_gain,
-                            loss: way.elevation_loss,
-                            max: way.max_elevation,
-                            min: way.min_elevation
-                        })}</p>
                         ${auth.user ?
-                            `<button id="save-road-${way.id}" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Save Road</button>` :
+                            `<button id="save-road-${road.id}" class="bg-blue-500 text-white px-2 py-1 rounded mt-2">Save Road</button>` :
                             '<p class="text-sm text-gray-500 mt-2">Log in to save roads</p>'
                         }
                     </div>
@@ -617,23 +799,30 @@ export default function Map() {
 
                 if (auth.user) {
                     polyline.on("popupopen", () => {
-                        document.getElementById(`save-road-${way.id}`)?.addEventListener('click', () =>
+                        document.getElementById(`save-road-${road.id}`)?.addEventListener('click', () =>
                             saveRoad({
                                 name,
                                 coordinates,
-                                twistiness: twistinessData.twistiness,
-                                corner_count: twistinessData.corner_count,
-                                length: roadLength,
-                                elevation_gain: way.elevation_gain,
-                                elevation_loss: way.elevation_loss,
-                                max_elevation: way.max_elevation,
-                                min_elevation: way.min_elevation
+                                twistiness: road.twistiness,
+                                corner_count: road.corner_count,
+                                length: road.length,
+                                elevation_gain: road.elevation_gain,
+                                elevation_loss: road.elevation_loss,
+                                max_elevation: road.max_elevation,
+                                min_elevation: road.min_elevation
                             })
                         );
                     });
                 }
 
-                newRoads.push({ id: way.id, name, coordinates });
+                newRoads.push({
+                    id: road.id,
+                    name,
+                    coordinates,
+                    length: road.length,
+                    twistiness: road.twistiness,
+                    is_connected: road.is_connected
+                });
             });
 
             setRoads(newRoads);
