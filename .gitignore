@@ -49,3 +49,5 @@ db-management.php
 captain-definition
 .gitignore
 docs/weather-integration-guide.md
+SECURE_STORAGE_GUIDE.md
+postgres_backup.sql
