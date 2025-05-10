@@ -15,6 +15,9 @@ const getBaseUrl = () => {
 
 window.axios.defaults.baseURL = getBaseUrl();
 
+// Log the base URL for debugging
+console.log('Axios base URL:', window.axios.defaults.baseURL);
+
 // Function to get CSRF token from cookie with better error handling
 const getCSRFToken = () => {
     try {
@@ -101,7 +104,7 @@ const refreshCSRFToken = async () => {
 
         // Make a direct fetch request to get a fresh CSRF token
         // This avoids using axios which might have interceptors that could cause issues
-        const response = await fetch('/sanctum/csrf-cookie', {
+        const response = await fetch(`${window.location.origin}/sanctum/csrf-cookie`, {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -114,8 +117,8 @@ const refreshCSRFToken = async () => {
 
         console.log('CSRF cookie request completed with status:', response.status);
 
-        // Wait longer for cookies to be set (1500ms instead of 1000ms)
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Wait longer for cookies to be set (2000ms instead of 1500ms)
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Log cookies after the initial wait
         console.log('Cookies after initial wait:', document.cookie);
@@ -146,18 +149,38 @@ const refreshCSRFToken = async () => {
 
             // Try a direct request to the root path to ensure cookies are set
             console.log('Still no token, trying a direct request to root path...');
-            await fetch('/', {
+            await fetch(window.location.origin, {
                 method: 'GET',
                 credentials: 'include'
             });
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 1500));
             const lastChanceToken = getCSRFToken();
 
             if (lastChanceToken) {
                 axios.defaults.headers.common['X-XSRF-TOKEN'] = lastChanceToken;
                 console.log('CSRF token obtained after root request:', lastChanceToken);
                 return true;
+            }
+
+            // Try a direct request to the API health endpoint
+            console.log('Still no token, trying API health endpoint...');
+            try {
+                await fetch(`${window.location.origin}/api/health`, {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const apiHealthToken = getCSRFToken();
+
+                if (apiHealthToken) {
+                    axios.defaults.headers.common['X-XSRF-TOKEN'] = apiHealthToken;
+                    console.log('CSRF token obtained after API health request:', apiHealthToken);
+                    return true;
+                }
+            } catch (healthError) {
+                console.error('API health endpoint request failed:', healthError);
             }
 
             // Log more detailed information about cookies

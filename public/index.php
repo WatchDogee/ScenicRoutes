@@ -1,27 +1,20 @@
 <?php
 
-// This is a PHP 5.3 compatible index.php file
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
-// Define the application start time
 define('LARAVEL_START', microtime(true));
 
-// Check for maintenance mode
-if (file_exists($maintenance = dirname(__FILE__).'/../storage/framework/maintenance.php')) {
+// Determine if the application is in maintenance mode...
+if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
 
-// Register the Composer autoloader
-require dirname(__FILE__).'/../vendor/autoload.php';
+// Register the Composer autoloader...
+require __DIR__.'/../vendor/autoload.php';
 
-// Bootstrap the application
-$app = require_once dirname(__FILE__).'/../bootstrap/app.php';
+// Bootstrap Laravel and handle the request...
+/** @var Application $app */
+$app = require_once __DIR__.'/../bootstrap/app.php';
 
-// Run the application
-$kernel = $app->make('Illuminate\Contracts\Http\Kernel');
-
-$request = Illuminate\Http\Request::capture();
-$response = $kernel->handle($request);
-
-$response->send();
-
-$kernel->terminate($request, $response);
+$app->handleRequest(Request::capture());

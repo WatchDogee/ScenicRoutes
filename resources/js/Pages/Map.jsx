@@ -960,7 +960,11 @@ export default function Map() {
                 formData.append('login', loginForm.login);
                 formData.append('password', loginForm.password);
 
-                const response = await fetch('/api/login', {
+                // Use full URL with origin to avoid path issues
+                const apiUrl = `${window.location.origin}/api/login`;
+                console.log('Attempting login with fetch to URL:', apiUrl);
+
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -989,7 +993,11 @@ export default function Map() {
 
                 // Second try: Axios with JSON
                 try {
-                    const response = await axios.post('/api/login', {
+                    // Use the apiClient utility for consistent URL handling
+                    const apiUrl = `${window.location.origin}/api/login`;
+                    console.log('Attempting login with axios to URL:', apiUrl);
+
+                    const response = await axios.post(apiUrl, {
                         login: loginForm.login,
                         password: loginForm.password
                     }, {
@@ -1057,7 +1065,10 @@ export default function Map() {
                 // Show option to resend verification email
                 if (confirm("Would you like us to resend the verification email?")) {
                     try {
-                        await axios.post('/api/email/verification-notification', { email }, {
+                        const apiUrl = `${window.location.origin}/api/email/verification-notification`;
+                        console.log('Sending verification email to:', apiUrl);
+
+                        await axios.post(apiUrl, { email }, {
                             headers: {
                                 'Content-Type': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
@@ -1077,7 +1088,10 @@ export default function Map() {
 
     const handleLogout = async () => {
         try {
-            await axios.post('/api/logout', {}, {
+            const apiUrl = `${window.location.origin}/api/logout`;
+            console.log('Logging out with URL:', apiUrl);
+
+            await axios.post(apiUrl, {}, {
                 headers: { Authorization: `Bearer ${auth.token}` }
             });
             localStorage.removeItem('token');
@@ -1098,7 +1112,10 @@ export default function Map() {
     const handleRegister = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('/api/register', registerForm, {
+            const apiUrl = `${window.location.origin}/api/register`;
+            console.log('Attempting registration with URL:', apiUrl);
+
+            const response = await axios.post(apiUrl, registerForm, {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
@@ -3488,8 +3505,8 @@ export default function Map() {
                                 </div>
                                 <form onSubmit={handleLogin} className="space-y-2">
                                     <input
-                                        type="text"
-                                        placeholder="Email or Username"
+                                        type="email"
+                                        placeholder="Email Address"
                                         value={loginForm.login}
                                         onChange={(e) => setLoginForm({ ...loginForm, login: e.target.value })}
                                         className="w-full p-2 border rounded"

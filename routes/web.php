@@ -187,6 +187,11 @@ Route::get('/debug', function () {
     ]);
 });
 
+// Simple test route that doesn't use Inertia
+Route::get('/test-simple', function () {
+    return response('Simple test route is working!');
+});
+
 // Test route to check cookie functionality
 Route::get('/test-cookie', function () {
     // Set a test cookie

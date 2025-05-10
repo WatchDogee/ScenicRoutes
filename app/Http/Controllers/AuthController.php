@@ -50,8 +50,9 @@ class AuthController extends Controller
             'input' => $request->only(['email', 'login', 'password'])
         ]);
 
-        // Check if we're receiving email directly or through the login field
+        // Simplified login logic that only uses email
         if ($request->has('email')) {
+            // Direct email login
             $credentials = $request->validate([
                 'email' => 'required|string',
                 'password' => 'required',
@@ -59,45 +60,32 @@ class AuthController extends Controller
 
             \Log::info('Attempting login with email', ['email' => $credentials['email']]);
 
-            // Direct email login
             if (!Auth::attempt($credentials)) {
                 \Log::warning('Email login failed', ['email' => $credentials['email']]);
                 return response()->json(['message' => 'Invalid credentials'], 401);
             }
-        } else {
+        } else if ($request->has('login')) {
+            // Login field could be either email or username
             $credentials = $request->validate([
                 'login' => 'required|string',
                 'password' => 'required',
             ]);
 
-            // Determine if the login input is an email or username
-            $loginField = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+            // Always try with email first
+            $loginValue = $credentials['login'];
+            \Log::info('Attempting login with login field as email', ['email' => $loginValue]);
 
-            \Log::info('Attempting login with ' . $loginField, [$loginField => $credentials['login']]);
-
-            // Attempt to authenticate with the appropriate field
-            $authData = [
-                $loginField => $credentials['login'],
+            $emailAuthData = [
+                'email' => $loginValue,
                 'password' => $credentials['password']
             ];
 
-            if (!Auth::attempt($authData)) {
-                // If authentication fails, try the other field as a fallback
-                $alternativeField = $loginField === 'email' ? 'username' : 'email';
-
-                \Log::info('First attempt failed, trying with ' . $alternativeField,
-                    [$alternativeField => $credentials['login']]);
-
-                $alternativeAuthData = [
-                    $alternativeField => $credentials['login'],
-                    'password' => $credentials['password']
-                ];
-
-                if (!Auth::attempt($alternativeAuthData)) {
-                    \Log::warning('Both login attempts failed', ['login' => $credentials['login']]);
-                    return response()->json(['message' => 'Invalid credentials'], 401);
-                }
+            if (!Auth::attempt($emailAuthData)) {
+                \Log::warning('Login failed with email', ['login' => $loginValue]);
+                return response()->json(['message' => 'Invalid credentials'], 401);
             }
+        } else {
+            return response()->json(['message' => 'Email or login field is required'], 422);
         }
 
         $user = Auth::user();

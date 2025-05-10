@@ -2,8 +2,13 @@ import axios from 'axios';
 
 // Always use the current origin + /api as the base URL
 const getApiBaseUrl = () => {
-    return `${window.location.origin}/api`;
+    // Make sure we don't have double slashes in the URL
+    const origin = window.location.origin;
+    return `${origin}/api`;
 };
+
+// Log the API base URL for debugging
+console.log('API client base URL:', getApiBaseUrl());
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -51,7 +56,7 @@ apiClient.interceptors.request.use(
                 console.log('Requesting new CSRF token');
 
                 // Use fetch with explicit CORS mode and credentials
-                const response = await fetch('/sanctum/csrf-cookie', {
+                const response = await fetch(`${window.location.origin}/sanctum/csrf-cookie`, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
@@ -127,7 +132,7 @@ apiClient.interceptors.response.use(
                 console.log('Trying to refresh CSRF token after error:', error.response?.status);
 
                 // Try to refresh the CSRF token using fetch instead of axios
-                const response = await fetch('/sanctum/csrf-cookie', {
+                const response = await fetch(`${window.location.origin}/sanctum/csrf-cookie`, {
                     method: 'GET',
                     credentials: 'include',
                     headers: {
