@@ -1,7 +1,9 @@
 {
     "scripts": {
         "deploy": [
-            "composer laravel-cloud:deploy"
+            "php artisan config:clear",
+            "php artisan migrate --force",
+            "php artisan optimize:clear"
         ]
     }
 }
