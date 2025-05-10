@@ -1,0 +1,50 @@
+/*
+ * Road Scaling CSS
+ * This file contains styles to ensure roads scale properly with zoom level
+ */
+
+/* Base class for road polylines */
+.road-polyline {
+    /* Ensure the polyline is visible at all zoom levels */
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: auto;
+    /* Add a subtle shadow for better visibility */
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+    /* Ensure proper scaling with zoom */
+    vector-effect: non-scaling-stroke;
+}
+
+/* Ensure the radius circle is properly visible */
+.leaflet-circle-pane {
+    z-index: 400 !important; /* Ensure it's above other layers but below markers */
+}
+
+/* Ensure the marker is always on top */
+.main-location-marker {
+    z-index: 1000 !important;
+}
+
+/* Ensure proper scaling at different zoom levels */
+@media screen and (min-width: 768px) {
+    /* Adjust for desktop screens */
+    .leaflet-zoom-animated {
+        transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+    }
+}
+
+/* Fix for road polylines to ensure they scale properly with zoom */
+.leaflet-overlay-pane svg path {
+    vector-effect: non-scaling-stroke;
+}
+
+/* Ensure polylines have proper stroke width */
+.leaflet-overlay-pane path.leaflet-interactive {
+    stroke-width: inherit !important;
+    vector-effect: non-scaling-stroke;
+}
+
+/* Ensure the radius circle scales properly */
+.leaflet-circle-pane path {
+    vector-effect: non-scaling-stroke;
+}
