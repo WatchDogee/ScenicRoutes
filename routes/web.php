@@ -8,7 +8,12 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
 
 Route::get('/', function () {
-    return redirect()->route('map');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
 
 // Public routes
