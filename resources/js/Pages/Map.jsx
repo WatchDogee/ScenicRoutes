@@ -1877,6 +1877,33 @@ export default function Map() {
         // Enter drawing mode
         console.log('🔄 [MAP] Entering drawing mode - START');
         try {
+            // Clear searched roads and radius circle to prepare map for drawing
+            console.log('🔄 [MAP] Clearing searched roads and radius circle');
+            if (roadsLayerRef.current) {
+                roadsLayerRef.current.clearLayers();
+            }
+
+            // Remove radius circle if it exists
+            if (radiusCircleRef.current) {
+                console.log('🔄 [MAP] Removing radius circle');
+                if (mapRef.current) {
+                    mapRef.current.removeLayer(radiusCircleRef.current);
+                    radiusCircleRef.current = null;
+                }
+            }
+
+            // Remove marker if it exists
+            if (markerRef.current) {
+                console.log('🔄 [MAP] Removing marker');
+                if (mapRef.current) {
+                    mapRef.current.removeLayer(markerRef.current);
+                    markerRef.current = null;
+
+                    // Reset current POI location
+                    setCurrentPoiLocation(null);
+                }
+            }
+
             // Add the drawing-mode class to the map container
             const mapContainer = document.getElementById('map');
             if (mapContainer) {

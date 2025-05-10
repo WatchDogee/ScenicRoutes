@@ -443,10 +443,7 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 // For development purposes, use mock data if API fails
                 if (process.env.NODE_ENV === 'development') {
                     console.log('Using mock following data for development');
-                    setFollowing([
-                        { id: 1, name: 'John Doe', username: 'johndoe', profile_picture_url: null },
-                        { id: 2, name: 'Jane Smith', username: 'janesmith', profile_picture_url: null }
-                    ]);
+                    setFollowing([]);
                 } else {
                     setError('Failed to load following users. The API endpoint may not be implemented yet.');
                 }
@@ -473,27 +470,8 @@ export default function SocialModal({ isOpen, onClose, onViewRoad, onViewRoadDet
                 if (process.env.NODE_ENV === 'development') {
                     console.log('Using mock feed data for development');
                     setFeedContent({
-                        roads: [
-                            {
-                                id: 1,
-                                road_name: 'Alpine Pass',
-                                length: 18000,
-                                user: { name: 'John Doe', profile_picture_url: null },
-                                road_coordinates: [
-                                    { lat: 47.1, lon: 9.5 },
-                                    { lat: 47.2, lon: 9.6 }
-                                ]
-                            }
-                        ],
-                        collections: [
-                            {
-                                id: 1,
-                                name: 'Mountain Roads',
-                                description: 'Best mountain roads in Europe',
-                                user: { name: 'Jane Smith', profile_picture_url: null },
-                                roads: [{ id: 1, road_name: 'Alpine Pass' }]
-                            }
-                        ]
+                        roads: [],
+                        collections: []
                     });
                 } else {
                     setError('Failed to load feed. The API endpoint may not be implemented yet.');
