@@ -1,0 +1,111 @@
+/*
+ * FIXED BUTTONS CSS
+ * This file contains styles for the fixed buttons that appear on the map
+ */
+
+/* Fixed buttons container */
+#fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 400px !important; /* Fixed position to the left of community panel (w-96 = 384px) */
+    z-index: 10000 !important; /* Increased z-index to be above everything */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    pointer-events: auto !important;
+    width: 140px !important; /* Fixed width */
+}
+
+/* When community panel is not shown, position buttons at the right edge */
+body:not(.community-shown) #fixed-map-buttons {
+    right: 1rem !important;
+}
+
+/* Ensure buttons are visible in all states */
+#fixed-map-buttons button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+    height: 40px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 14px !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+/* Weather button positioning */
+.weather-display-container {
+    position: fixed !important;
+    top: 8rem !important; /* Position below the social button */
+    right: 400px !important; /* Match the position of the fixed buttons */
+    z-index: 10000 !important; /* Same as the main buttons to ensure visibility */
+}
+
+/* When community panel is not shown, position weather button at the right edge */
+body:not(.community-shown) .weather-display-container {
+    right: 1rem !important;
+}
+
+/* Community toggle button */
+#fixed-map-buttons button:first-child {
+    background-color: #9333ea !important; /* Purple-600 */
+    color: white !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* Social hub button */
+#fixed-map-buttons button:last-child {
+    background-color: #10b981 !important; /* Green-500 */
+    color: white !important;
+}
+
+/* Hover states */
+#fixed-map-buttons button:first-child:hover {
+    background-color: #7e22ce !important; /* Purple-700 */
+}
+
+#fixed-map-buttons button:last-child:hover {
+    background-color: #059669 !important; /* Green-600 */
+}
+
+/* Ensure buttons are visible in drawing mode */
+body.drawing-mode #fixed-map-buttons,
+.drawing-mode #fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 9999 !important;
+    display: flex !important;
+}
+
+/* Ensure buttons are visible when sidebar is collapsed */
+body.sidebar-collapsed #fixed-map-buttons,
+.sidebar-collapsed #fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 9999 !important;
+    display: flex !important;
+}
+
+/* Animation to keep buttons visible during transitions */
+@keyframes keep-fixed-buttons-visible {
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 1; visibility: visible; }
+}
+
+#fixed-map-buttons {
+    animation: keep-fixed-buttons-visible 0.1s infinite linear !important;
+}
+
+/* Force repaint on hover to ensure visibility */
+#fixed-map-buttons button:hover {
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
+}

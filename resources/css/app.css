@@ -15,6 +15,7 @@
 @import 'sidebar-fix.css'; /* Critical fix for sidebar visibility */
 @import 'sidebar-always-visible.css'; /* CRITICAL fix for sidebar visibility after drawing mode */
 @import 'fix-sidebar-width.css'; /* CRITICAL fix for sidebar width issues */
+@import 'map-buttons-fix.css'; /* CRITICAL fix for map buttons visibility */
 
 /* CRITICAL FIX FOR WHITE/GRAY MAP ISSUE */
 /* Base map styles */

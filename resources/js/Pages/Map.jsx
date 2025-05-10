@@ -1826,11 +1826,44 @@ export default function Map() {
 
                 console.log('🔄 [MAP] Setting isDrawingMode to false');
                 setIsDrawingMode(false);
+
+                // Ensure community toggle button is visible in normal position
+                const communityButton = document.querySelector('.absolute.top-4.right-4, button[class*="absolute top-4"][class*="right-4"]');
+                if (communityButton) {
+                    console.log('🔄 [MAP] Making community button visible after exiting drawing mode');
+                    communityButton.style.visibility = 'visible';
+                    communityButton.style.opacity = '1';
+                    communityButton.style.zIndex = '9999';
+                    communityButton.style.display = 'block';
+                    communityButton.style.pointerEvents = 'auto';
+                }
+
+                // Ensure social hub button is visible in normal position
+                const socialButton = document.querySelector('.absolute.top-16.right-4, button[class*="absolute top-16"][class*="right-4"]');
+                if (socialButton) {
+                    console.log('🔄 [MAP] Making social button visible after exiting drawing mode');
+                    socialButton.style.visibility = 'visible';
+                    socialButton.style.opacity = '1';
+                    socialButton.style.zIndex = '9999';
+                    socialButton.style.display = 'block';
+                    socialButton.style.pointerEvents = 'auto';
+                }
+
+                // Schedule multiple checks to ensure buttons remain visible during and after transition
+                setTimeout(ensureMapButtonsVisible, 50);
+                setTimeout(ensureMapButtonsVisible, 100);
+                setTimeout(ensureMapButtonsVisible, 300);
+                setTimeout(ensureMapButtonsVisible, 500);
+                setTimeout(ensureMapButtonsVisible, 1000);
+
                 console.log('🔄 [MAP] Exiting drawing mode - COMPLETE');
             } catch (error) {
                 console.error('❌ [MAP] Error exiting drawing mode:', error);
                 console.error('❌ [MAP] Error stack:', error.stack);
                 setIsDrawingMode(false);
+
+                // Even if there's an error, try to ensure buttons are visible
+                setTimeout(ensureMapButtonsVisible, 100);
             }
             return;
         }
@@ -1979,6 +2012,26 @@ export default function Map() {
                     sidebarToggleButton.style.display = 'block';
                     sidebarToggleButton.style.pointerEvents = 'auto';
                 }
+
+                // Ensure community toggle button is visible
+                const communityButton = document.querySelector('.absolute.top-32.right-12, button[class*="absolute top-32"][class*="right-12"]');
+                if (communityButton) {
+                    communityButton.style.visibility = 'visible';
+                    communityButton.style.opacity = '1';
+                    communityButton.style.zIndex = '3000';
+                    communityButton.style.display = 'block';
+                    communityButton.style.pointerEvents = 'auto';
+                }
+
+                // Ensure social hub button is visible
+                const socialButton = document.querySelector('.absolute.top-44.right-12, button[class*="absolute top-44"][class*="right-12"]');
+                if (socialButton) {
+                    socialButton.style.visibility = 'visible';
+                    socialButton.style.opacity = '1';
+                    socialButton.style.zIndex = '3000';
+                    socialButton.style.display = 'block';
+                    socialButton.style.pointerEvents = 'auto';
+                }
             } else {
                 console.warn('⚠️ [MAP] Map tiles or map reference not available when trying to set up tiles');
             }
@@ -2070,11 +2123,22 @@ export default function Map() {
 
             console.log('🔄 [MAP] Setting isDrawingMode to true');
             setIsDrawingMode(true);
+
+            // Schedule multiple checks to ensure buttons remain visible during and after transition
+            setTimeout(ensureMapButtonsVisible, 50);
+            setTimeout(ensureMapButtonsVisible, 100);
+            setTimeout(ensureMapButtonsVisible, 300);
+            setTimeout(ensureMapButtonsVisible, 500);
+            setTimeout(ensureMapButtonsVisible, 1000);
+
             console.log('🔄 [MAP] Entering drawing mode - COMPLETE');
         } catch (error) {
             console.error('❌ [MAP] Error entering drawing mode:', error);
             console.error('❌ [MAP] Error stack:', error.stack);
             setIsDrawingMode(true);
+
+            // Even if there's an error, try to ensure buttons are visible
+            setTimeout(ensureMapButtonsVisible, 100);
         }
     };
 
@@ -2184,6 +2248,26 @@ export default function Map() {
                 sidebarToggleButton.style.zIndex = '3000';
                 sidebarToggleButton.style.display = 'block';
                 sidebarToggleButton.style.pointerEvents = 'auto';
+            }
+
+            // Ensure community toggle button is visible
+            const communityButton = document.querySelector('.absolute.top-4.right-4, button[class*="absolute top-4"][class*="right-4"]');
+            if (communityButton) {
+                communityButton.style.visibility = 'visible';
+                communityButton.style.opacity = '1';
+                communityButton.style.zIndex = '3000';
+                communityButton.style.display = 'block';
+                communityButton.style.pointerEvents = 'auto';
+            }
+
+            // Ensure social hub button is visible
+            const socialButton = document.querySelector('.absolute.top-16.right-4, button[class*="absolute top-16"][class*="right-4"]');
+            if (socialButton) {
+                socialButton.style.visibility = 'visible';
+                socialButton.style.opacity = '1';
+                socialButton.style.zIndex = '3000';
+                socialButton.style.display = 'block';
+                socialButton.style.pointerEvents = 'auto';
             }
         }, 200);
 
@@ -2397,6 +2481,167 @@ export default function Map() {
         };
     }, []);
 
+    // Function to ensure map buttons are always visible
+    const ensureMapButtonsVisible = () => {
+        console.log('🔄 [MAP] Ensuring map buttons are visible');
+        console.log('🔄 [MAP] Drawing mode:', isDrawingMode);
+        console.log('🔄 [MAP] Sidebar collapsed:', sidebarCollapsed);
+
+        // Add a class to the body to help with CSS targeting
+        if (sidebarCollapsed) {
+            document.body.classList.add('sidebar-collapsed');
+        } else {
+            document.body.classList.remove('sidebar-collapsed');
+        }
+
+        // Community toggle button - normal mode
+        const communityButton = document.querySelector('.absolute.top-4.right-4, button[class*="absolute top-4"][class*="right-4"]');
+        if (communityButton) {
+            console.log('🔄 [MAP] Found community button in normal position');
+            communityButton.style.visibility = 'visible';
+            communityButton.style.opacity = '1';
+            communityButton.style.zIndex = '9999';
+            communityButton.style.display = 'block';
+            communityButton.style.pointerEvents = 'auto';
+
+            // Force repaint
+            communityButton.style.display = 'none';
+            void communityButton.offsetHeight; // Force reflow
+            communityButton.style.display = 'block';
+        }
+
+        // Social Hub button - normal mode
+        const socialButton = document.querySelector('.absolute.top-16.right-4, button[class*="absolute top-16"][class*="right-4"]');
+        if (socialButton) {
+            console.log('🔄 [MAP] Found social button in normal position');
+            socialButton.style.visibility = 'visible';
+            socialButton.style.opacity = '1';
+            socialButton.style.zIndex = '9999';
+            socialButton.style.display = 'block';
+            socialButton.style.pointerEvents = 'auto';
+
+            // Force repaint
+            socialButton.style.display = 'none';
+            void socialButton.offsetHeight; // Force reflow
+            socialButton.style.display = 'block';
+        }
+
+        // Drawing mode specific buttons
+        if (isDrawingMode) {
+            // Community toggle button - drawing mode
+            const drawingModeCommunityButton = document.querySelector('button[class*="absolute top-32"][class*="right-12"]');
+            if (drawingModeCommunityButton) {
+                console.log('🔄 [MAP] Found community button in drawing mode position');
+                drawingModeCommunityButton.style.visibility = 'visible';
+                drawingModeCommunityButton.style.opacity = '1';
+                drawingModeCommunityButton.style.zIndex = '9999';
+                drawingModeCommunityButton.style.display = 'block';
+                drawingModeCommunityButton.style.pointerEvents = 'auto';
+
+                // Force position to be visible on screen
+                drawingModeCommunityButton.style.right = '1rem';
+                drawingModeCommunityButton.style.top = '4rem';
+
+                // Force repaint
+                drawingModeCommunityButton.style.display = 'none';
+                void drawingModeCommunityButton.offsetHeight; // Force reflow
+                drawingModeCommunityButton.style.display = 'block';
+            }
+
+            // Social Hub button - drawing mode
+            const drawingModeSocialButton = document.querySelector('button[class*="absolute top-44"][class*="right-12"]');
+            if (drawingModeSocialButton) {
+                console.log('🔄 [MAP] Found social button in drawing mode position');
+                drawingModeSocialButton.style.visibility = 'visible';
+                drawingModeSocialButton.style.opacity = '1';
+                drawingModeSocialButton.style.zIndex = '9999';
+                drawingModeSocialButton.style.display = 'block';
+                drawingModeSocialButton.style.pointerEvents = 'auto';
+
+                // Force position to be visible on screen
+                drawingModeSocialButton.style.right = '1rem';
+                drawingModeSocialButton.style.top = '8rem';
+
+                // Force repaint
+                drawingModeSocialButton.style.display = 'none';
+                void drawingModeSocialButton.offsetHeight; // Force reflow
+                drawingModeSocialButton.style.display = 'block';
+            }
+
+            // Also update normal buttons in drawing mode as a fallback
+            if (communityButton) {
+                communityButton.style.right = '1rem';
+                communityButton.style.top = '4rem';
+            }
+
+            if (socialButton) {
+                socialButton.style.right = '1rem';
+                socialButton.style.top = '8rem';
+            }
+        }
+
+        // If we're in drawing mode but the drawing mode buttons aren't found,
+        // make sure the normal buttons are still visible as a fallback
+        if (isDrawingMode && (!document.querySelector('button[class*="absolute top-32"][class*="right-12"]') ||
+                             !document.querySelector('button[class*="absolute top-44"][class*="right-12"]'))) {
+            console.log('🔄 [MAP] Drawing mode buttons not found, ensuring normal buttons are visible');
+
+            // Force normal buttons to be visible even in drawing mode
+            if (communityButton) {
+                communityButton.style.visibility = 'visible';
+                communityButton.style.opacity = '1';
+                communityButton.style.zIndex = '9999';
+                communityButton.style.display = 'block';
+                communityButton.style.right = '1rem';
+                communityButton.style.top = '4rem';
+                communityButton.style.position = 'absolute';
+
+                // Force repaint
+                communityButton.style.display = 'none';
+                void communityButton.offsetHeight; // Force reflow
+                communityButton.style.display = 'block';
+            }
+
+            if (socialButton) {
+                socialButton.style.visibility = 'visible';
+                socialButton.style.opacity = '1';
+                socialButton.style.zIndex = '9999';
+                socialButton.style.display = 'block';
+                socialButton.style.right = '1rem';
+                socialButton.style.top = '8rem';
+                socialButton.style.position = 'absolute';
+
+                // Force repaint
+                socialButton.style.display = 'none';
+                void socialButton.offsetHeight; // Force reflow
+                socialButton.style.display = 'block';
+            }
+        }
+    };
+
+    // Set up an interval to periodically check and ensure buttons are visible
+    useEffect(() => {
+        // Initial check
+        ensureMapButtonsVisible();
+
+        // Set up interval to check every 1 second
+        const intervalId = setInterval(ensureMapButtonsVisible, 1000);
+
+        // Additional checks at specific times to catch transitions
+        const timeouts = [
+            setTimeout(ensureMapButtonsVisible, 100),
+            setTimeout(ensureMapButtonsVisible, 300),
+            setTimeout(ensureMapButtonsVisible, 500),
+            setTimeout(ensureMapButtonsVisible, 1000),
+        ];
+
+        // Clean up interval and timeouts on component unmount
+        return () => {
+            clearInterval(intervalId);
+            timeouts.forEach(clearTimeout);
+        };
+    }, [isDrawingMode, sidebarCollapsed]); // Re-run when drawing mode or sidebar state changes
+
     // Set up map click handler in a separate useEffect to ensure it has access to the current markerDropMode state
     useEffect(() => {
         if (!mapRef.current) return;
@@ -2534,6 +2779,8 @@ export default function Map() {
         // Add or remove the drawing-mode class to the map container
         const mapContainer = document.getElementById('map');
         if (mapContainer) {
+            // Always ensure map buttons are visible first
+            ensureMapButtonsVisible();
             if (isDrawingMode) {
                 console.log('🔄 [MAP-EFFECT] Entering drawing mode');
                 mapContainer.classList.add('drawing-mode');
@@ -2662,6 +2909,15 @@ export default function Map() {
             }
         }
     }, [isDrawingMode, sidebarCollapsed]);
+
+    // Effect to update the body class when community panel is shown/hidden
+    useEffect(() => {
+        if (showCommunity) {
+            document.body.classList.add('community-shown');
+        } else {
+            document.body.classList.remove('community-shown');
+        }
+    }, [showCommunity]);
 
     useEffect(() => {
         if (showCommunity && markerRef.current) {
@@ -3338,28 +3594,156 @@ export default function Map() {
 
     // Toggle sidebar collapse
     const toggleSidebar = () => {
-        setSidebarCollapsed(!sidebarCollapsed);
+        const newCollapsedState = !sidebarCollapsed;
+        setSidebarCollapsed(newCollapsedState);
+
+        // Update body class to help with CSS targeting
+        if (newCollapsedState) {
+            document.body.classList.add('sidebar-collapsed');
+        } else {
+            document.body.classList.remove('sidebar-collapsed');
+        }
 
         // Force sidebar to be visible with correct width after toggling
         setTimeout(() => {
-            const sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+            // First, find the sidebar using multiple selectors to ensure we get it
+            let sidebar = document.querySelector('.flex.h-screen.relative > div:first-child');
+
+            // If not found, try alternate selectors
+            if (!sidebar) {
+                sidebar = document.querySelector(newCollapsedState ? '.w-16' : '.w-80');
+            }
+
+            if (!sidebar) {
+                // Try to find any sidebar-like element
+                sidebar = document.querySelector('[class*="sidebar"], [id*="sidebar"], .flex.h-screen.relative > div');
+            }
+
             if (sidebar) {
-                const newWidth = !sidebarCollapsed ? '4rem' : '20rem';
+                console.log('🔄 [SIDEBAR] Found sidebar element, updating styles');
+                const newWidth = newCollapsedState ? '4rem' : '20rem';
+
+                // Apply styles directly
                 sidebar.style.minWidth = newWidth;
                 sidebar.style.width = newWidth;
+                sidebar.style.maxWidth = newWidth;
                 sidebar.style.flexBasis = newWidth;
                 sidebar.style.flexShrink = '0';
                 sidebar.style.flexGrow = '0';
                 sidebar.style.display = 'flex';
                 sidebar.style.visibility = 'visible';
                 sidebar.style.opacity = '1';
+                sidebar.style.zIndex = '2000';
+                sidebar.style.pointerEvents = 'auto';
+                sidebar.style.overflow = 'visible';
+
+                // Update classes
+                if (newCollapsedState) {
+                    sidebar.classList.remove('w-80');
+                    sidebar.classList.add('w-16');
+                } else {
+                    sidebar.classList.remove('w-16');
+                    sidebar.classList.add('w-80');
+                }
 
                 // Force repaint
                 sidebar.style.display = 'none';
                 void sidebar.offsetHeight; // Force reflow
                 sidebar.style.display = 'flex';
+
+                console.log('🔄 [SIDEBAR] Sidebar width updated to:', newWidth);
+            } else {
+                console.error('❌ [SIDEBAR] Could not find sidebar element');
             }
+
+            // Ensure map buttons are visible after sidebar toggle
+            ensureMapButtonsVisible();
+
+            // Schedule multiple checks after animation completes
+            setTimeout(ensureMapButtonsVisible, 100);
+            setTimeout(ensureMapButtonsVisible, 300);
+            setTimeout(ensureMapButtonsVisible, 500);
         }, 50);
+    };
+
+    // Create a fixed floating button container that will always be visible
+    const renderFixedButtons = () => {
+        // Handle community toggle with server-side setting
+        const handleCommunityToggle = (e) => {
+            e.stopPropagation(); // Prevent map click event
+            const newValue = !showCommunity;
+            setShowCommunity(newValue);
+
+            // Save the setting to the server if user is logged in
+            if (auth.token) {
+                console.log('Saving show_community_by_default setting:', newValue);
+                axios.post('/api/settings', {
+                    key: 'show_community_by_default',
+                    value: newValue
+                }, {
+                    headers: { Authorization: `Bearer ${auth.token}` }
+                }).then(() => {
+                    console.log('Community panel preference saved successfully');
+                }).catch(error => {
+                    console.error('Error saving community panel preference:', error);
+                });
+            }
+        };
+
+        // Handle social hub button click
+        const handleSocialHubClick = (e) => {
+            e.stopPropagation(); // Prevent map click event
+            console.log('Social Hub button clicked');
+            // Explicitly set roadToAddToCollection to null when opening directly
+            setRoadToAddToCollection(null);
+            setShowSocialModal(true);
+        };
+
+        return (
+            <div id="fixed-map-buttons" className="fixed z-[9999]" style={{
+                top: '1rem',
+                right: '1rem',
+                zIndex: 9999,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                pointerEvents: 'auto',
+                position: 'fixed'
+            }}>
+                {/* Community Toggle Button */}
+                <button
+                    onClick={handleCommunityToggle}
+                    className="bg-purple-600 text-white p-2 rounded-md shadow-md hover:bg-purple-700 transition-colors"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '140px',
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        marginBottom: '0.5rem'
+                    }}
+                >
+                    {showCommunity ? 'Hide Community' : 'Show Community'}
+                </button>
+
+                {/* Social Hub Button */}
+                <button
+                    onClick={handleSocialHubClick}
+                    className="bg-green-500 text-white p-2 rounded-md shadow-md hover:bg-green-600 transition-colors"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '140px',
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                    }}
+                >
+                    Social Hub
+                </button>
+            </div>
+        );
     };
 
     return (
@@ -3819,56 +4203,8 @@ export default function Map() {
                     {sidebarCollapsed ? 'Show Sidebar' : 'Hide Sidebar'}
                 </button>
 
-                {/* Community toggle button */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent map click event
-                        const newValue = !showCommunity;
-                        setShowCommunity(newValue);
-
-                        // Save the setting to the server if user is logged in
-                        if (auth.token) {
-                            console.log('Saving show_community_by_default setting:', newValue);
-                            axios.post('/api/settings', {
-                                key: 'show_community_by_default',
-                                value: newValue
-                            }, {
-                                headers: { Authorization: `Bearer ${auth.token}` }
-                            }).then(() => {
-                                console.log('Community panel preference saved successfully');
-                            }).catch(error => {
-                                console.error('Error saving community panel preference:', error);
-                            });
-                        }
-                    }}
-                    className="absolute top-4 right-4 px-4 py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition-colors font-semibold"
-                    style={{
-                        zIndex: 1500,
-                        border: '2px solid white',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                    }}
-                >
-                    {showCommunity ? 'Hide Community' : 'Show Community'}
-                </button>
-
-                {/* Social Hub button */}
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation(); // Prevent map click event
-                        console.log('Social Hub button clicked');
-                        // Explicitly set roadToAddToCollection to null when opening directly
-                        setRoadToAddToCollection(null);
-                        setShowSocialModal(true);
-                    }}
-                    className="absolute top-16 right-4 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition-colors font-semibold"
-                    style={{
-                        zIndex: 1500,
-                        border: '2px solid white',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                    }}
-                >
-                    Social Hub
-                </button>
+                {/* Render the fixed buttons */}
+                {renderFixedButtons()}
 
                 {/* Weather Display */}
                 <MapWeatherDisplay
@@ -3900,7 +4236,7 @@ export default function Map() {
                 {/* POI Details */}
                 {selectedPoi && (
                     <div
-                        className="absolute top-20 right-4 max-w-md"
+                        className={`absolute ${isDrawingMode ? 'top-56 right-12' : 'top-20 right-4'} max-w-md transition-all duration-300`}
                         style={{ zIndex: 1500, pointerEvents: 'auto' }}
                         onClick={(e) => e.stopPropagation()}
                     >
@@ -3917,9 +4253,21 @@ export default function Map() {
 
             {/* Community Sidebar */}
             {showCommunity && (
-                <div className="w-96 p-4 bg-white shadow-md overflow-y-auto z-20">
+                <div className="w-96 p-4 bg-white shadow-md overflow-y-auto" style={{
+                    zIndex: 1000, /* Lower z-index than fixed buttons */
+                    position: 'relative'
+                }}>
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">Community Roads</h2>
+                        <button
+                            onClick={() => setShowCommunity(false)}
+                            className="p-1 rounded-full hover:bg-gray-200"
+                            aria-label="Close community panel"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
 
                     {/* Roads Tab Content */}

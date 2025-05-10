@@ -2,6 +2,14 @@
 
 .community-container {
   padding: 1rem;
+  position: relative;
+  z-index: 1000; /* Lower than fixed buttons */
+}
+
+/* Ensure community panel doesn't overlay fixed buttons */
+.w-96.p-4.bg-white.shadow-md.overflow-y-auto {
+  position: relative;
+  z-index: 1000; /* Lower than fixed buttons */
 }
 
 .community-search-form {

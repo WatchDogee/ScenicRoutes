@@ -65,11 +65,30 @@ const MapWeatherDisplay = ({ mapCenter, units = 'metric' }) => {
     }, [mapCenter, units]);
 
     return (
-        <div className="absolute top-4 right-4 z-10">
+        <div className="weather-display-container fixed z-[10000]" style={{
+            position: 'fixed',
+            top: '12rem', /* Position below the social button */
+            right: '400px', /* Position to the left of community panel */
+            zIndex: 10000
+        }}>
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
                 <button
                     onClick={toggleWeather}
                     className="flex items-center justify-center p-2 w-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '140px',
+                        maxWidth: '140px',
+                        height: '40px',
+                        padding: '0.5rem 1rem',
+                        fontSize: '14px',
+                        border: '2px solid white',
+                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                        backgroundColor: '#3b82f6', /* Blue-500 */
+                        color: 'white'
+                    }}
                 >
                     <svg className="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
