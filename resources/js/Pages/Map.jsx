@@ -351,15 +351,8 @@ export default function Map() {
         setRadius(newRadius);
         // Also update our persistent radius reference directly
         radiusRef.current = newRadius;
-
-        // Update the radius circle with proper geographic radius
         if (radiusCircleRef.current) {
-            radiusCircleRef.current.setRadius(newRadius * 1000); // Convert km to meters
-
-            // Force redraw of the circle to ensure it's properly scaled
-            if (mapRef.current) {
-                radiusCircleRef.current.redraw();
-            }
+            radiusCircleRef.current.setRadius(newRadius * 1000);
         }
 
         // Update the range progress CSS variable
@@ -751,12 +744,12 @@ export default function Map() {
 
                 // Determine road style based on length and twistiness
                 const lengthInKm = road.length / 1000;
-                let weight = 4; // Default weight for short roads - reduced from 5
+                let weight = 5; // Default weight for short roads
 
                 if (lengthInKm >= 15) {
-                    weight = 6; // Thicker for long roads - reduced from 9
+                    weight = 9; // Thicker for long roads
                 } else if (lengthInKm >= 5) {
-                    weight = 5; // Medium thickness for medium roads - reduced from 7
+                    weight = 7; // Medium thickness for medium roads
                 }
 
                 // Determine color based on twistiness
@@ -764,19 +757,7 @@ export default function Map() {
                 if (road.twistiness > 0.007) color = "red";
                 else if (road.twistiness > 0.0035) color = "yellow";
 
-                // Create polyline with proper options for scaling with zoom
-                const polyline = L.polyline(coordinates, {
-                    color,
-                    weight,
-                    originalWeight: weight, // Store original weight for zoom scaling
-                    smoothFactor: 1, // Simplify the polyline for better performance
-                    className: 'road-polyline', // Add a class for potential CSS styling
-                    interactive: true, // Make sure it responds to mouse events
-                    bubblingMouseEvents: false, // Prevent event bubbling for better performance
-                    renderer: L.svg({ padding: 0.5 }), // Use SVG renderer with padding for better scaling
-                    lineCap: 'round', // Round line caps for better appearance
-                    lineJoin: 'round' // Round line joins for better appearance
-                }).addTo(roadsLayerRef.current);
+                const polyline = L.polyline(coordinates, { color, weight }).addTo(roadsLayerRef.current);
 
                 // Convert distance based on user settings
                 const distanceInKm = road.length / 1000;
@@ -1127,18 +1108,7 @@ export default function Map() {
 
         // Add the road's polyline to the map
         const coordinates = JSON.parse(road.road_coordinates);
-        const polyline = L.polyline(coordinates, {
-            color: 'blue',
-            weight: 5, // Reduced from 8 for better scaling
-            originalWeight: 5, // Store original weight for zoom scaling
-            smoothFactor: 1, // Simplify the polyline for better performance
-            className: 'road-polyline', // Add a class for potential CSS styling
-            interactive: true, // Make sure it responds to mouse events
-            bubblingMouseEvents: false, // Prevent event bubbling for better performance
-            renderer: L.svg({ padding: 0.5 }), // Use SVG renderer with padding for better scaling
-            lineCap: 'round', // Round line caps for better appearance
-            lineJoin: 'round' // Round line joins for better appearance
-        }).addTo(roadsLayerRef.current);
+        const polyline = L.polyline(coordinates, { color: 'blue', weight: 8 }).addTo(roadsLayerRef.current);
 
         // Zoom to the road
         mapRef.current.fitBounds(polyline.getBounds());
@@ -1296,15 +1266,7 @@ export default function Map() {
                 const polyline = L.polyline(coordinates, {
                     color: selectedRoadId === road.id ? '#2563eb' : '#4ade80', // Blue when selected, green otherwise
                     weight: 6,
-                    originalWeight: 6, // Store original weight for zoom scaling
-                    opacity: 0.8,
-                    smoothFactor: 1, // Simplify the polyline for better performance
-                    className: 'road-polyline', // Add a class for potential CSS styling
-                    interactive: true, // Make sure it responds to mouse events
-                    bubblingMouseEvents: false, // Prevent event bubbling for better performance
-                    renderer: L.svg({ padding: 0.5 }), // Use SVG renderer with padding for better scaling
-                    lineCap: 'round', // Round line caps for better appearance
-                    lineJoin: 'round' // Round line joins for better appearance
+                    opacity: 0.8
                 }).addTo(roadsLayerRef.current);
 
                 // Fit map to the road bounds
@@ -1545,15 +1507,7 @@ export default function Map() {
             const polyline = L.polyline(coordinates, {
                 color: '#2563eb', // Blue color
                 weight: 6,
-                originalWeight: 6, // Store original weight for zoom scaling
-                opacity: 0.8,
-                smoothFactor: 1, // Simplify the polyline for better performance
-                className: 'road-polyline', // Add a class for potential CSS styling
-                interactive: true, // Make sure it responds to mouse events
-                bubblingMouseEvents: false, // Prevent event bubbling for better performance
-                renderer: L.svg({ padding: 0.5 }), // Use SVG renderer with padding for better scaling
-                lineCap: 'round', // Round line caps for better appearance
-                lineJoin: 'round' // Round line joins for better appearance
+                opacity: 0.8
             }).addTo(roadsLayerRef.current);
 
             // Fit map to the road bounds
@@ -2310,68 +2264,6 @@ export default function Map() {
             setMapCenter({ lat: center.lat, lng: center.lng });
         });
 
-        // Add event listener for zoom end to adjust road weights based on zoom level
-        leafletMap.on('zoomend', () => {
-            const currentZoom = leafletMap.getZoom();
-            console.log('Map zoom changed to:', currentZoom);
-
-            // If we have roads displayed, adjust their weights based on zoom level
-            if (roadsLayerRef.current) {
-                console.log('Adjusting road weights for zoom level:', currentZoom);
-                let layerCount = 0;
-                let polylineCount = 0;
-
-                roadsLayerRef.current.eachLayer(layer => {
-                    layerCount++;
-                    if (layer instanceof L.Polyline) {
-                        polylineCount++;
-                        // Get the original weight from the options
-                        const originalWeight = layer.options.originalWeight || layer.options.weight;
-                        console.log('Road layer found, original weight:', originalWeight);
-
-                        // Calculate new weight based on zoom level with more aggressive scaling
-                        // Use a formula that scales inversely with zoom level
-                        // This ensures roads appear thinner as you zoom in and thicker as you zoom out
-                        // Base the calculation on the map's current bounds width in meters
-
-                        // Get the map bounds
-                        const bounds = leafletMap.getBounds();
-                        const east = bounds.getEast();
-                        const west = bounds.getWest();
-                        const north = bounds.getNorth();
-
-                        // Calculate the approximate width of the map view in meters
-                        // This is a rough approximation that works well enough for scaling
-                        const mapWidthInMeters = leafletMap.distance(
-                            [north, west],
-                            [north, east]
-                        );
-
-                        // Calculate a scaling factor based on the map width
-                        // The divisor (5000) controls how quickly the roads thin out as you zoom in
-                        // Higher values = roads thin out more slowly
-                        const scaleFactor = Math.min(Math.max(mapWidthInMeters / 5000, 0.1), 2);
-
-                        // Apply the scaling factor to the original weight
-                        const adjustedWeight = originalWeight * scaleFactor;
-
-                        console.log('Map width in meters:', mapWidthInMeters);
-                        console.log('Scale factor:', scaleFactor);
-
-                        // Update the line weight
-                        layer.setStyle({ weight: adjustedWeight });
-                        console.log('Adjusted weight:', adjustedWeight);
-                    }
-                });
-                console.log(`Processed ${layerCount} layers, found ${polylineCount} polylines`);
-            }
-
-            // Also adjust the radius circle if it exists
-            if (radiusCircleRef.current) {
-                radiusCircleRef.current.redraw();
-            }
-        });
-
         // Cleanup function
         return () => {
             if (leafletMap) {
@@ -2455,19 +2347,14 @@ export default function Map() {
                 if (radiusCircleRef.current) {
                     console.log('Updating existing radius circle');
                     radiusCircleRef.current.setLatLng(latlng).setRadius(currentRadius * 1000);
-
-                    // Force redraw of the circle to ensure it's properly scaled
-                    radiusCircleRef.current.redraw();
                 } else {
                     console.log('Creating new radius circle');
                     radiusCircleRef.current = L.circle(latlng, {
-                        radius: currentRadius * 1000, // Radius in meters
+                        radius: currentRadius * 1000,
                         color: 'blue',
                         fillColor: 'blue',
                         fillOpacity: 0.05,
-                        zIndex: 100, // Lower than marker but still high
-                        interactive: false, // Prevent circle from capturing mouse events
-                        pane: 'overlayPane' // Ensure it's in the correct pane
+                        zIndex: 100 // Lower than marker but still high
                     }).addTo(map);
                 }
 
@@ -3242,15 +3129,7 @@ export default function Map() {
                             L.polyline(coordinates, {
                                 color: '#3388ff',
                                 weight: 5,
-                                originalWeight: 5, // Store original weight for zoom scaling
-                                opacity: 0.8,
-                                smoothFactor: 1, // Simplify the polyline for better performance
-                                className: 'road-polyline', // Add a class for potential CSS styling
-                                interactive: true, // Make sure it responds to mouse events
-                                bubblingMouseEvents: false, // Prevent event bubbling for better performance
-                                renderer: L.svg({ padding: 0.5 }), // Use SVG renderer with padding for better scaling
-                                lineCap: 'round', // Round line caps for better appearance
-                                lineJoin: 'round' // Round line joins for better appearance
+                                opacity: 0.8
                             }).addTo(roadsLayerRef.current);
 
                             // Fit the map to the road bounds
@@ -4283,15 +4162,10 @@ export default function Map() {
                                 // Clear existing layers
                                 roadsLayerRef.current.clearLayers();
 
-                                // Add the new road with improved options for proper scaling
+                                // Add the new road
                                 const polyline = L.polyline(coordinates, {
                                     color: 'blue',
-                                    weight: 8,
-                                    originalWeight: 8, // Store original weight for zoom scaling
-                                    smoothFactor: 1, // Simplify the polyline for better performance
-                                    className: 'road-polyline', // Add a class for potential CSS styling
-                                    interactive: true, // Make sure it responds to mouse events
-                                    bubblingMouseEvents: false // Prevent event bubbling for better performance
+                                    weight: 8
                                 }).addTo(roadsLayerRef.current);
 
                                 // Fit map to the road bounds
