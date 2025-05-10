@@ -1,0 +1,7 @@
+{
+    "scripts": {
+        "deploy": [
+            "composer laravel-cloud:deploy"
+        ]
+    }
+}
