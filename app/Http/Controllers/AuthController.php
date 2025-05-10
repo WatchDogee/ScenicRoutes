@@ -50,7 +50,7 @@ class AuthController extends Controller
             'input' => $request->only(['email', 'login', 'password'])
         ]);
 
-        // Simplified login logic that only uses email
+        // Login logic that handles both email and username
         if ($request->has('email')) {
             // Direct email login
             $credentials = $request->validate([
@@ -71,18 +71,49 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
-            // Always try with email first
             $loginValue = $credentials['login'];
-            \Log::info('Attempting login with login field as email', ['email' => $loginValue]);
+            $isEmail = filter_var($loginValue, FILTER_VALIDATE_EMAIL);
 
-            $emailAuthData = [
-                'email' => $loginValue,
-                'password' => $credentials['password']
-            ];
+            if ($isEmail) {
+                // Try with email
+                \Log::info('Attempting login with login field as email', ['email' => $loginValue]);
 
-            if (!Auth::attempt($emailAuthData)) {
-                \Log::warning('Login failed with email', ['login' => $loginValue]);
-                return response()->json(['message' => 'Invalid credentials'], 401);
+                $authData = [
+                    'email' => $loginValue,
+                    'password' => $credentials['password']
+                ];
+            } else {
+                // Try with username (name field)
+                \Log::info('Attempting login with login field as username', ['username' => $loginValue]);
+
+                $authData = [
+                    'name' => $loginValue,
+                    'password' => $credentials['password']
+                ];
+            }
+
+            if (!Auth::attempt($authData)) {
+                // If first attempt fails, try the other field
+                if ($isEmail) {
+                    // Try with name as fallback
+                    \Log::info('Email login failed, trying with username', ['login' => $loginValue]);
+                    $fallbackAuthData = [
+                        'name' => $loginValue,
+                        'password' => $credentials['password']
+                    ];
+                } else {
+                    // Try with email as fallback
+                    \Log::info('Username login failed, trying with email', ['login' => $loginValue]);
+                    $fallbackAuthData = [
+                        'email' => $loginValue,
+                        'password' => $credentials['password']
+                    ];
+                }
+
+                if (!Auth::attempt($fallbackAuthData)) {
+                    \Log::warning('Both login attempts failed', ['login' => $loginValue]);
+                    return response()->json(['message' => 'Invalid credentials'], 401);
+                }
             }
         } else {
             return response()->json(['message' => 'Email or login field is required'], 422);

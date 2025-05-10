@@ -1044,7 +1044,7 @@ export default function Map() {
                 }
 
                 // Stay on the map page, no need to redirect
-                alert("Successfully logged in!");
+                console.log("Successfully logged in!");
             } else {
                 throw new Error(errorMessage || 'Login failed for unknown reason');
             }
@@ -3505,8 +3505,8 @@ export default function Map() {
                                 </div>
                                 <form onSubmit={handleLogin} className="space-y-2">
                                     <input
-                                        type="email"
-                                        placeholder="Email Address"
+                                        type="text"
+                                        placeholder="Email or Username"
                                         value={loginForm.login}
                                         onChange={(e) => setLoginForm({ ...loginForm, login: e.target.value })}
                                         className="w-full p-2 border rounded"
