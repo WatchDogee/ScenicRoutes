@@ -1,0 +1,162 @@
+$1
+
+$1
+.absolute.top-4.right-4,
+button[class*="absolute top-4"][class*="right-4"],
+button[class*="absolute"][class*="top-4"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    background-color: #9333ea !important; $1
+    color: white !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+$1
+.absolute.top-16.right-4,
+button[class*="absolute top-16"][class*="right-4"],
+button[class*="absolute"][class*="top-16"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    background-color: #10b981 !important; $1
+    color: white !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+$1
+.drawing-mode button[class*="absolute top-32"][class*="right-12"],
+.drawing-mode button[class*="absolute"][class*="top-32"][class*="right-12"],
+.drawing-mode button[class*="absolute top-4"][class*="right-4"],
+.drawing-mode button[class*="absolute"][class*="top-4"][class*="right-4"],
+body.drawing-mode button[class*="absolute top-32"][class*="right-12"],
+body.drawing-mode button[class*="absolute"][class*="top-32"][class*="right-12"],
+body.drawing-mode button[class*="absolute top-4"][class*="right-4"],
+body.drawing-mode button[class*="absolute"][class*="top-4"][class*="right-4"],
+#map.drawing-mode ~ button[class*="absolute top-32"][class*="right-12"],
+#map.drawing-mode ~ button[class*="absolute top-4"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    background-color: #9333ea !important; $1
+    color: white !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    right: 1rem !important; $1
+    top: 4rem !important; $1
+}
+
+.drawing-mode button[class*="absolute top-44"][class*="right-12"],
+.drawing-mode button[class*="absolute"][class*="top-44"][class*="right-12"],
+.drawing-mode button[class*="absolute top-16"][class*="right-4"],
+.drawing-mode button[class*="absolute"][class*="top-16"][class*="right-4"],
+body.drawing-mode button[class*="absolute top-44"][class*="right-12"],
+body.drawing-mode button[class*="absolute"][class*="top-44"][class*="right-12"],
+body.drawing-mode button[class*="absolute top-16"][class*="right-4"],
+body.drawing-mode button[class*="absolute"][class*="top-16"][class*="right-4"],
+#map.drawing-mode ~ button[class*="absolute top-44"][class*="right-12"],
+#map.drawing-mode ~ button[class*="absolute top-16"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    background-color: #10b981 !important; $1
+    color: white !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    right: 1rem !important; $1
+    top: 8rem !important; $1
+}
+
+$1
+body:not(.drawing-mode) button[class*="absolute top-4"][class*="right-4"],
+body:not(.drawing-mode) button[class*="absolute top-16"][class*="right-4"],
+#map:not(.drawing-mode) ~ button[class*="absolute top-4"][class*="right-4"],
+#map:not(.drawing-mode) ~ button[class*="absolute top-16"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+body.drawing-mode button[class*="absolute top-32"][class*="right-12"],
+body.drawing-mode button[class*="absolute top-44"][class*="right-12"],
+#map.drawing-mode ~ button[class*="absolute top-32"][class*="right-12"],
+#map.drawing-mode ~ button[class*="absolute top-44"][class*="right-12"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+button[class*="absolute top-4"][class*="right-4"]:hover,
+button[class*="absolute top-16"][class*="right-4"]:hover,
+button[class*="absolute top-32"][class*="right-12"]:hover,
+button[class*="absolute top-44"][class*="right-12"]:hover {
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
+}
+
+$1
+body.drawing-mode.sidebar-collapsed button[class*="absolute top-4"][class*="right-4"],
+body.drawing-mode.sidebar-collapsed button[class*="absolute top-16"][class*="right-4"],
+body.sidebar-collapsed .drawing-mode button[class*="absolute top-4"][class*="right-4"],
+body.sidebar-collapsed .drawing-mode button[class*="absolute top-16"][class*="right-4"],
+body.sidebar-collapsed #map.drawing-mode ~ button[class*="absolute top-4"][class*="right-4"],
+body.sidebar-collapsed #map.drawing-mode ~ button[class*="absolute top-16"][class*="right-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 9999 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+    right: 1rem !important;
+}
+
+$1
+body.drawing-mode.sidebar-collapsed button[class*="absolute top-4"][class*="right-4"],
+body.sidebar-collapsed .drawing-mode button[class*="absolute top-4"][class*="right-4"],
+body.sidebar-collapsed #map.drawing-mode ~ button[class*="absolute top-4"][class*="right-4"] {
+    top: 4rem !important;
+}
+
+$1
+body.drawing-mode.sidebar-collapsed button[class*="absolute top-16"][class*="right-4"],
+body.sidebar-collapsed .drawing-mode button[class*="absolute top-16"][class*="right-4"],
+body.sidebar-collapsed #map.drawing-mode ~ button[class*="absolute top-16"][class*="right-4"] {
+    top: 8rem !important;
+}
+
+$1
+@keyframes keep-buttons-visible {
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 1; visibility: visible; }
+}
+
+$1
+button[class*="absolute top-4"][class*="right-4"],
+button[class*="absolute top-16"][class*="right-4"],
+button[class*="absolute top-32"][class*="right-12"],
+button[class*="absolute top-44"][class*="right-12"] {
+    animation: keep-buttons-visible 0.1s infinite linear !important;
+}

@@ -1,0 +1,84 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The skeleton application for the Laravel framework.",
+    "keywords": ["laravel", "framework"],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "inertiajs/inertia-laravel": "^2.0",
+        "laravel/framework": "^12.0",
+        "laravel/sanctum": "^4.1",
+        "laravel/tinker": "^2.10.1",
+        "league/flysystem-aws-s3-v3": "^3.29",
+        "tightenco/ziggy": "^2.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.23",
+        "phpunit/phpunit": "^11.5.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi",
+            "@php artisan migrate --graceful --ansi"
+        ],
+
+        "test": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
+        "migrate:pgsql": [
+            "@php artisan migrate --path=database/migrations/2025_05_05_000000_create_all_tables_postgres.php --force"
+        ],
+        "laravel-cloud:deploy": [
+            "@php artisan config:clear",
+            "@php artisan migrate --path=database/migrations/2025_06_01_000000_laravel_cloud_fix_schema.php --force",
+            "@php artisan migrate --path=database/migrations/2025_06_10_000000_fix_leaderboard_review_photos_table.php --force",
+            "@php artisan migrate --force",
+            "@php artisan storage:link || echo 'Storage link already exists'",
+            "@php artisan optimize:clear"
+        ],
+        "check-schema": [
+            "php scripts/check-database-schema.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": []
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

@@ -1,0 +1,148 @@
+$1
+
+$1
+.absolute.top-4.left-4,
+button[class*="absolute top-4"][class*="left-4"] {
+  position: absolute !important;
+  top: 1rem !important;
+  left: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.absolute.top-20.left-4,
+div[class*="absolute top-20"][class*="left-4"] {
+  position: absolute !important;
+  top: 5rem !important;
+  left: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.absolute.top-20.right-4,
+div[class*="absolute top-20"][class*="right-4"] {
+  position: absolute !important;
+  top: 5rem !important;
+  right: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.absolute.top-4.right-4,
+button[class*="absolute top-4"][class*="right-4"] {
+  position: absolute !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.absolute.top-16.right-4,
+button[class*="absolute top-16"][class*="right-4"] {
+  position: absolute !important;
+  top: 4rem !important;
+  right: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.absolute.top-28.right-4,
+button[class*="absolute top-28"][class*="right-4"] {
+  position: absolute !important;
+  top: 7rem !important;
+  right: 1rem !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+#community-sidebar {
+  padding-top: 50px !important;
+}
+
+#community-sidebar h2 {
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+$1
+.drawing-mode .absolute.top-4.left-4,
+.drawing-mode button[class*="absolute top-4"][class*="left-4"],
+.drawing-mode .absolute.top-20.left-4,
+.drawing-mode div[class*="absolute top-20"][class*="left-4"],
+.drawing-mode .absolute.top-20.right-4,
+.drawing-mode div[class*="absolute top-20"][class*="right-4"],
+.drawing-mode .absolute.top-4.right-4,
+.drawing-mode button[class*="absolute top-4"][class*="right-4"],
+.drawing-mode .absolute.top-16.right-4,
+.drawing-mode button[class*="absolute top-16"][class*="right-4"],
+.drawing-mode .absolute.top-28.right-4,
+.drawing-mode button[class*="absolute top-28"][class*="right-4"] {
+  $1
+  position: absolute !important;
+  z-index: 1500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .absolute.top-4.left-4,
+.drawing-mode button[class*="absolute top-4"][class*="left-4"] {
+  top: 1rem !important;
+  left: 1rem !important;
+}
+
+.drawing-mode .absolute.top-20.left-4,
+.drawing-mode div[class*="absolute top-20"][class*="left-4"] {
+  top: 5rem !important;
+  left: 1rem !important;
+}
+
+.drawing-mode .absolute.top-20.right-4,
+.drawing-mode div[class*="absolute top-20"][class*="right-4"] {
+  top: 5rem !important;
+  right: 1rem !important;
+}
+
+.drawing-mode .absolute.top-4.right-4,
+.drawing-mode button[class*="absolute top-4"][class*="right-4"] {
+  top: 1rem !important;
+  right: 1rem !important;
+}
+
+.drawing-mode .absolute.top-16.right-4,
+.drawing-mode button[class*="absolute top-16"][class*="right-4"] {
+  top: 4rem !important;
+  right: 1rem !important;
+}
+
+.drawing-mode .absolute.top-28.right-4,
+.drawing-mode button[class*="absolute top-28"][class*="right-4"] {
+  top: 7rem !important;
+  right: 1rem !important;
+}

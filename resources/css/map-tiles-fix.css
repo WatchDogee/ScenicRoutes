@@ -1,0 +1,156 @@
+$1
+
+$1
+.leaflet-tile-container img,
+.leaflet-tile-pane img,
+.leaflet-tile img,
+.map-tiles img,
+.leaflet-layer img {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  display: block !important;
+  background: none !important;
+  width: 256px !important;
+  height: 256px !important;
+  min-width: 256px !important;
+  min-height: 256px !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  position: absolute !important;
+}
+
+$1
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  display: block !important;
+  width: 256px !important;
+  height: 256px !important;
+  min-width: 256px !important;
+  min-height: 256px !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  position: absolute !important;
+}
+
+$1
+.map-tiles {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+$1
+.leaflet-container,
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-map-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane,
+.leaflet-tooltip-pane,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+$1
+.leaflet-tile-container {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  width: 256px !important;
+  height: 256px !important;
+  min-width: 256px !important;
+  min-height: 256px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+$1
+.drawing-mode .leaflet-tile,
+.drawing-mode .leaflet-tile-container,
+.drawing-mode .leaflet-tile-pane,
+.drawing-mode .leaflet-map-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-tile img,
+.drawing-mode .leaflet-tile-container img {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  display: block !important;
+  background: none !important;
+  width: 256px !important;
+  height: 256px !important;
+  min-width: 256px !important;
+  min-height: 256px !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: fill !important;
+  position: absolute !important;
+}
+
+$1
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+  filter: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 100 !important;
+  display: block !important;
+  $1 $1
+  pointer-events: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  mix-blend-mode: normal !important;
+}

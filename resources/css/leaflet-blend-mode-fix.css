@@ -1,0 +1,108 @@
+$1
+
+$1
+.leaflet-container img.leaflet-tile {
+    mix-blend-mode: normal !important;
+}
+
+$1
+img.leaflet-tile,
+img.leaflet-tile-loaded,
+.leaflet-tile-container img,
+.leaflet-tile-pane img,
+.leaflet-layer img {
+    mix-blend-mode: normal !important;
+}
+
+$1
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.drawing-mode .leaflet-container img.leaflet-tile,
+.drawing-mode img.leaflet-tile,
+.drawing-mode img.leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+$1
+*[style*="mix-blend-mode: plus-lighter"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+html body #map .leaflet-container img.leaflet-tile.leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+$1
+img[src*="tile.openstreetmap.org"].leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+$1
+img[src*=".tile.openstreetmap.org"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.leaflet-tile-container img {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.leaflet-container img.leaflet-tile[style*="transform"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.leaflet-container img.leaflet-tile[style*="mix-blend-mode"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.drawing-mode .leaflet-container img.leaflet-tile[style*="transform"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+.drawing-mode .leaflet-container img.leaflet-tile[style*="mix-blend-mode"] {
+    mix-blend-mode: normal !important;
+}
+
+$1
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    $1 $1
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    mix-blend-mode: normal !important;
+}
+
+$1
+#map.drawing-mode .leaflet-tile-container img,
+#map.drawing-mode .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    $1 $1
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    mix-blend-mode: normal !important;
+}

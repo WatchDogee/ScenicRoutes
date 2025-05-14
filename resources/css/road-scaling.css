@@ -1,0 +1,47 @@
+$1
+
+$1
+.road-polyline {
+    $1
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: auto;
+    $1
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.3));
+    $1
+    vector-effect: non-scaling-stroke;
+}
+
+$1
+.leaflet-circle-pane {
+    z-index: 400 !important; $1
+}
+
+$1
+.main-location-marker {
+    z-index: 1000 !important;
+}
+
+$1
+@media screen and (min-width: 768px) {
+    $1
+    .leaflet-zoom-animated {
+        transition: transform 0.25s cubic-bezier(0, 0, 0.25, 1);
+    }
+}
+
+$1
+.leaflet-overlay-pane svg path {
+    vector-effect: non-scaling-stroke;
+}
+
+$1
+.leaflet-overlay-pane path.leaflet-interactive {
+    stroke-width: inherit !important;
+    vector-effect: non-scaling-stroke;
+}
+
+$1
+.leaflet-circle-pane path {
+    vector-effect: non-scaling-stroke;
+}

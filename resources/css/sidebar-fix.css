@@ -1,0 +1,159 @@
+$1
+
+$1
+.flex.h-screen.relative > div:first-child {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+.w-96.p-4.bg-white.shadow-md.overflow-y-auto.z-20 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+.w-16.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+.w-80.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+.absolute.top-4.left-4.px-4.py-2.bg-blue-500.text-white.rounded-lg.shadow-lg.hover\\:bg-blue-600.font-semibold.transition-all.duration-300,
+.absolute.top-4.left-40.px-4.py-2.bg-blue-500.text-white.rounded-lg.shadow-lg.hover\\:bg-blue-600.font-semibold.transition-all.duration-300 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+.absolute.top-20.left-4.max-w-\\[250px\\].transition-all.duration-300,
+.absolute.top-20.left-40.max-w-\\[250px\\].transition-all.duration-300 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+.absolute.top-20.right-4.max-w-md {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+.drawing-mode ~ button {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode ~ .flex.flex-col {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode ~ div .p-4 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+button[class*="absolute top-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+.flex.h-screen.relative {
+    display: flex !important;
+    position: relative !important;
+    height: 100vh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+$1
+.flex-1.relative {
+    flex: 1 !important;
+    position: relative !important;
+    overflow: visible !important;
+}
+
+$1
+.w-16, .w-80 {
+    transition: width 0.3s ease !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+}
+
+$1
+body:not(.drawing-mode) .flex.h-screen.relative > div:first-child,
+#map:not(.drawing-mode) ~ div:first-child {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+body:not(.drawing-mode) button[class*="absolute top-4"],
+#map:not(.drawing-mode) ~ button[class*="absolute top-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}

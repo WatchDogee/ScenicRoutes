@@ -1,0 +1,75 @@
+$1
+
+$1
+#map.drawing-mode {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+$1
+body.drawing-mode #map {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+$1
+#map.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+$1
+body.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+$1
+#map.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+$1
+body.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    height: 100% !important;
+}

@@ -1,0 +1,114 @@
+$1
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    position: relative;
+}
+
+$1
+.modal-open {
+    overflow: hidden;
+}
+
+$1
+.container, .container-fluid {
+    max-width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+$1
+.map-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+$1
+.social-modal-content {
+    max-height: 80vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+$1
+.rating-modal-container {
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+$1
+.collection-modal {
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+$1
+.fixed, .absolute, [class*="z-"], [style*="z-index"] {
+    pointer-events: auto !important;
+}
+
+$1
+.leaflet-tile-container {
+    z-index: 1 !important;
+}
+
+.leaflet-tile-pane {
+    z-index: 1 !important;
+}
+
+.leaflet-pane {
+    z-index: 400 !important;
+}
+
+.leaflet-overlay-pane {
+    z-index: 410 !important;
+}
+
+.leaflet-marker-pane {
+    z-index: 420 !important;
+}
+
+.leaflet-tooltip-pane {
+    z-index: 430 !important;
+}
+
+.leaflet-popup-pane {
+    z-index: 440 !important;
+}
+
+.leaflet-control {
+    z-index: 800 !important;
+}
+
+$1
+[role="dialog"],
+.modal,
+.modal-overlay,
+.rating-modal-overlay,
+.social-modal,
+.navigation-modal,
+.collection-modal,
+.fixed {
+    pointer-events: auto !important;
+}
+
+$1
+.modal-content,
+.rating-modal-container,
+.social-modal-content,
+.navigation-modal-content,
+.collection-modal-content,
+.modal-container,
+.dialog-panel,
+.dialog-content {
+    pointer-events: auto !important;
+}

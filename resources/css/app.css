@@ -1,0 +1,223 @@
+@import 'common.css';
+@import 'map.css';
+@import 'poi.css';
+@import 'community.css';
+@import 'social.css';
+@import 'range-input.css';
+@import 'settings.css';
+@import 'leaflet-draw-fix.css';
+@import 'drawing-mode-fix.css'; $1
+@import 'map-tiles-fix.css'; $1
+@import 'leaflet-blend-mode-fix.css'; $1
+@import 'drawing-mode-tiles-fix.css'; $1
+@import 'osm-tiles-fix.css'; $1
+@import 'map-container-fix.css'; $1
+@import 'sidebar-fix.css'; $1
+@import 'sidebar-always-visible.css'; $1
+@import 'fix-sidebar-width.css'; $1
+@import 'map-buttons-fix.css'; $1
+@import 'transform-fix.css'; $1
+@import 'consistent-ui-positions.css'; $1
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+$1
+$1
+#map {
+  background-color: #f0f0f0 !important;
+  z-index: 0 !important;
+}
+
+$1
+.leaflet-tile-container img,
+.leaflet-tile-pane img,
+.leaflet-tile img,
+.map-tiles img,
+.leaflet-layer img {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+  z-index: 100 !important;
+  display: block !important;
+  background: none !important;
+}
+
+$1
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  display: block !important;
+  width: 256px !important; $1
+  height: 256px !important; $1
+  min-width: 256px !important; $1
+  min-height: 256px !important; $1
+  object-fit: fill !important; $1
+}
+
+$1
+.map-tiles {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+}
+
+$1
+.leaflet-container,
+.leaflet-pane,
+.leaflet-tile,
+.leaflet-marker-icon,
+.leaflet-marker-shadow,
+.leaflet-tile-container,
+.leaflet-map-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane,
+.leaflet-tooltip-pane,
+.leaflet-zoom-box,
+.leaflet-image-layer,
+.leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+$1
+.leaflet-tile-container {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  filter: none !important;
+  pointer-events: auto !important;
+}
+
+$1
+.leaflet-map-pane {
+  z-index: 0 !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-objects-pane {
+  z-index: 2 !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 3 !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 4 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 6 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 7 !important;
+}
+
+$1
+.drawing-mode .leaflet-tile,
+.drawing-mode .leaflet-tile-container,
+.drawing-mode .leaflet-tile-pane,
+.drawing-mode .leaflet-map-pane,
+.drawing-mode .leaflet-overlay-pane,
+.drawing-mode .leaflet-marker-pane,
+.drawing-mode .leaflet-shadow-pane,
+.drawing-mode .leaflet-popup-pane,
+.drawing-mode .leaflet-tooltip-pane,
+.drawing-mode .leaflet-zoom-box,
+.drawing-mode .leaflet-image-layer,
+.drawing-mode .leaflet-layer {
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: auto !important;
+}
+
+$1
+.dark .leaflet-tile,
+.dark .leaflet-tile-container,
+.dark .leaflet-tile-pane,
+.dark .leaflet-map-pane,
+.dark .leaflet-overlay-pane,
+.dark .leaflet-marker-pane,
+.dark .leaflet-shadow-pane,
+.dark .leaflet-popup-pane,
+.dark .leaflet-tooltip-pane,
+.dark .leaflet-zoom-box,
+.dark .leaflet-image-layer,
+.dark .leaflet-layer {
+  filter: none !important;
+}
+
+.dark .leaflet-tile img,
+.dark .leaflet-tile-container img,
+.dark .leaflet-tile-pane img {
+  filter: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+$1
+.marker-icon {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-marker .marker-icon {
+    background-color: #3b82f6; $1
+}
+
+.community-marker .marker-icon {
+    background-color: #8b5cf6; $1
+}
+
+$1
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+  filter: none !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 100 !important;
+  display: block !important;
+  $1
+  pointer-events: auto !important;
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  mix-blend-mode: normal !important;
+  transition: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}

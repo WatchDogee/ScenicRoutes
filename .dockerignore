@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.github
+
+# Docker
+.docker
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile.*
+
+# IDE
+.idea
+.vscode
+*.sublime-workspace
+*.sublime-project
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Laravel
+/vendor
+.env
+.env.*
+!.env.example
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+
+# Storage
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Tests
+/tests
+phpunit.xml
+
+# Documentation
+/docs
+*.md
+
+# Misc
+.DS_Store
+Thumbs.db

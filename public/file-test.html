@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Input Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-container {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button, .button-label {
+            padding: 10px 15px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>File Input Test</h1>
+    
+    <div class="test-container">
+        <h2>Basic File Input</h2>
+        <input type="file" id="basic-file" accept="image/*">
+        <div class="result" id="basic-result">No file selected</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Label + Hidden Input</h2>
+        <label for="hidden-file" class="button-label">Select File</label>
+        <input type="file" id="hidden-file" accept="image/*" style="display:none;">
+        <div class="result" id="hidden-result">No file selected</div>
+    </div>
+    
+    <div class="test-container">
+        <h2>Button + Programmatic Click</h2>
+        <button id="click-button">Select File</button>
+        <input type="file" id="click-file" accept="image/*" style="display:none;">
+        <div class="result" id="click-result">No file selected</div>
+    </div>
+
+    <script>
+        // Basic file input
+        document.getElementById('basic-file').addEventListener('change', function(e) {
+            const result = document.getElementById('basic-result');
+            if (e.target.files && e.target.files.length > 0) {
+                result.textContent = `Selected: ${e.target.files[0].name}`;
+            } else {
+                result.textContent = 'No file selected';
+            }
+        });
+        
+        // Hidden input with label
+        document.getElementById('hidden-file').addEventListener('change', function(e) {
+            const result = document.getElementById('hidden-result');
+            if (e.target.files && e.target.files.length > 0) {
+                result.textContent = `Selected: ${e.target.files[0].name}`;
+            } else {
+                result.textContent = 'No file selected';
+            }
+        });
+        
+        // Button with programmatic click
+        document.getElementById('click-button').addEventListener('click', function() {
+            document.getElementById('click-file').click();
+        });
+        
+        document.getElementById('click-file').addEventListener('change', function(e) {
+            const result = document.getElementById('click-result');
+            if (e.target.files && e.target.files.length > 0) {
+                result.textContent = `Selected: ${e.target.files[0].name}`;
+            } else {
+                result.textContent = 'No file selected';
+            }
+        });
+    </script>
+</body>
+</html>

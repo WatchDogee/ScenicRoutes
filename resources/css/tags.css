@@ -1,0 +1,198 @@
+$1
+.tag-selector {
+  position: relative;
+}
+
+$1
+
+$1
+.tag-road_characteristic {
+  background-color: #fce7f3 !important; $1
+  color: #9d174d !important;
+}
+
+$1
+.tag-surface_type {
+  background-color: #e0f2fe !important; $1
+  color: #0369a1 !important;
+}
+
+$1
+.tag-scenery {
+  background-color: #d1fae5 !important; $1
+  color: #065f46 !important;
+}
+
+$1
+.tag-experience {
+  background-color: #fee2e2 !important; $1
+  color: #991b1b !important;
+}
+
+$1
+.tag-vehicle {
+  background-color: #fef3c7 !important; $1
+  color: #92400e !important;
+}
+
+$1
+.tag-scenic {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-motorcycle {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.tag-mountain {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-coastal {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-forest {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-desert {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.tag-twisty {
+  background-color: #fce7f3 !important;
+  color: #9d174d !important;
+}
+
+.tag-beginner-friendly {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+.tag-advanced {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+$1
+.tag-filter-section {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #f9fafb;
+  border-radius: 0.375rem;
+}
+
+.tag-filter-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.tag-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-filter-option {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter-option.selected {
+  font-weight: 600;
+  box-shadow: 0 0 0 2px currentColor;
+  transform: scale(1.05);
+}
+
+.tag-filter-option:hover {
+  opacity: 0.8;
+}
+
+$1
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.tag-item-icon {
+  margin-right: 0.25rem;
+  font-size: 0.5rem;
+}
+
+$1
+.tag-category-collapsible {
+  margin-bottom: 0.5rem;
+}
+
+.tag-category-collapsible .tag-expand-button {
+  display: flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-category-collapsible .tag-expand-button:hover {
+  background-color: #e5e7eb;
+}
+
+$1
+.filter-by-tags .transform {
+  transform: rotate(180deg);
+}
+
+.filter-by-tags .transition-transform {
+  transition: transform 0.2s ease-in-out;
+}
+
+$1
+.filter-by-tags .text-gray-700 {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+
+.filter-by-tags .text-gray-700:hover {
+  color: #4b5563;
+}
+
+.tag-category-collapsible .tag-expand-button .icon {
+  margin-left: 0.25rem;
+  transition: transform 0.2s;
+}
+
+.tag-category-collapsible .tag-expand-button .icon.expanded {
+  transform: rotate(180deg);
+}

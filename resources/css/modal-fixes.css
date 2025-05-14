@@ -1,0 +1,94 @@
+$1
+
+$1
+#navigation-modal-root {
+    position: relative;
+    z-index: 10000000 !important; $1
+}
+
+#rating-modal-root,
+#collection-modal-root,
+#save-to-collection-modal-root {
+    position: relative;
+    z-index: 9999999 !important;
+}
+
+$1
+.navigation-modal,
+.navigation-modal-overlay,
+.navigation-app-selector {
+    z-index: 10000001 !important; $1
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.navigation-modal-content {
+    z-index: 10000002 !important; $1
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+$1
+.rating-modal-overlay {
+    z-index: 9999999 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.rating-modal-container {
+    z-index: 10000000 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+$1
+.social-modal {
+    z-index: 9999 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+.social-modal-content {
+    z-index: 10000 !important;
+    position: relative !important;
+    pointer-events: auto !important;
+}
+
+$1
+#save-to-collection-modal-root {
+    z-index: 10000000 !important;
+}
+
+$1
+.rating-modal-container button,
+.navigation-modal-content button,
+.social-modal-content button,
+#save-to-collection-modal-root button {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+$1
+.rating-modal-container input,
+.rating-modal-container textarea,
+.navigation-modal-content input,
+.navigation-modal-content select,
+.social-modal-content input,
+.social-modal-content textarea,
+#save-to-collection-modal-root input,
+#save-to-collection-modal-root textarea {
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+$1
+.fixed.inset-0 {
+    pointer-events: auto !important;
+}
+
+$1
+button, a, input, textarea, select, [role="button"] {
+    pointer-events: auto !important;
+}

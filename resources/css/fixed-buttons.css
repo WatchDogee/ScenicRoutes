@@ -1,0 +1,108 @@
+$1
+
+$1
+#fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 400px !important; $1
+    z-index: 10000 !important; $1
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    pointer-events: auto !important;
+    width: 140px !important; $1
+}
+
+$1
+body:not(.community-shown) #fixed-map-buttons {
+    right: 1rem !important;
+}
+
+$1
+#fixed-map-buttons button {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+    height: 40px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 14px !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+
+$1
+.weather-display-container {
+    position: fixed !important;
+    top: 8rem !important; $1
+    right: 400px !important; $1
+    z-index: 10000 !important; $1
+}
+
+$1
+body:not(.community-shown) .weather-display-container {
+    right: 1rem !important;
+}
+
+$1
+#fixed-map-buttons button:first-child {
+    background-color: #9333ea !important; $1
+    color: white !important;
+    margin-bottom: 0.5rem !important;
+}
+
+$1
+#fixed-map-buttons button:last-child {
+    background-color: #10b981 !important; $1
+    color: white !important;
+}
+
+$1
+#fixed-map-buttons button:first-child:hover {
+    background-color: #7e22ce !important; $1
+}
+
+#fixed-map-buttons button:last-child:hover {
+    background-color: #059669 !important; $1
+}
+
+$1
+body.drawing-mode #fixed-map-buttons,
+.drawing-mode #fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 9999 !important;
+    display: flex !important;
+}
+
+$1
+body.sidebar-collapsed #fixed-map-buttons,
+.sidebar-collapsed #fixed-map-buttons {
+    position: fixed !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 9999 !important;
+    display: flex !important;
+}
+
+$1
+@keyframes keep-fixed-buttons-visible {
+    from { opacity: 1; visibility: visible; }
+    to { opacity: 1; visibility: visible; }
+}
+
+#fixed-map-buttons {
+    animation: keep-fixed-buttons-visible 0.1s infinite linear !important;
+}
+
+$1
+#fixed-map-buttons button:hover {
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    perspective: 1000px !important;
+}

@@ -1,0 +1,207 @@
+$1
+
+$1
+#map.drawing-mode {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important; $1
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+$1
+.drawing-mode ~ div,
+.drawing-mode ~ button,
+.drawing-mode ~ .sidebar,
+.drawing-mode ~ .community-sidebar,
+.drawing-mode ~ .w-80,
+.drawing-mode ~ .w-96,
+.drawing-mode ~ .w-16 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-tile-pane {
+    z-index: 100 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    pointer-events: auto !important;
+    width: 100% !important; $1
+    height: 100% !important; $1
+    min-width: 100% !important; $1
+    min-height: 100% !important; $1
+}
+
+$1
+.drawing-mode .leaflet-tile-container {
+    z-index: 100 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    pointer-events: auto !important;
+    width: 100% !important; $1
+    height: 100% !important; $1
+    min-width: 256px !important; $1
+    min-height: 256px !important; $1
+}
+
+$1
+.drawing-mode .leaflet-tile {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+    width: 256px !important; $1
+    height: 256px !important; $1
+    min-width: 256px !important; $1
+    min-height: 256px !important; $1
+    object-fit: fill !important; $1
+}
+
+$1
+.drawing-mode .leaflet-tile img,
+.drawing-mode .leaflet-tile-container img {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+    filter: none !important;
+    $1 $1
+    max-width: none !important;
+    max-height: none !important;
+    width: 256px !important; $1
+    height: 256px !important; $1
+    min-width: 256px !important; $1
+    min-height: 256px !important; $1
+    object-fit: fill !important; $1
+    mix-blend-mode: normal !important; $1
+}
+
+$1
+.drawing-mode .leaflet-map-pane {
+    z-index: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-pane {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+}
+
+$1
+.drawing-mode .leaflet-map-pane { z-index: 0 !important; }
+.drawing-mode .leaflet-tile-pane { z-index: 100 !important; }
+.drawing-mode .leaflet-objects-pane { z-index: 200 !important; }
+.drawing-mode .leaflet-overlay-pane { z-index: 300 !important; }
+.drawing-mode .leaflet-shadow-pane { z-index: 400 !important; }
+.drawing-mode .leaflet-marker-pane { z-index: 500 !important; }
+.drawing-mode .leaflet-tooltip-pane { z-index: 600 !important; }
+.drawing-mode .leaflet-popup-pane { z-index: 700 !important; }
+
+$1
+.drawing-mode .leaflet-draw-toolbar {
+    z-index: 1000 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-draw-tooltip {
+    z-index: 1000 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+.drawing-mode .leaflet-draw-actions {
+    z-index: 1000 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+$1
+#map:not(.drawing-mode) ~ .w-16,
+#map:not(.drawing-mode) ~ .w-80 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+$1
+#map:not(.drawing-mode) ~ button[class*="absolute top-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+$1
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    $1 $1
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    mix-blend-mode: normal !important;
+}
