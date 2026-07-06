@@ -1,0 +1,25 @@
+# ============================================
+# STRIPE CONFIGURATION
+# Add these lines to your .env file
+# ============================================
+
+# Stripe API Keys (from Stripe Dashboard → Developers → API keys)
+STRIPE_KEY=pk_test_YOUR_PUBLISHABLE_KEY_HERE
+STRIPE_SECRET=sk_test_YOUR_SECRET_KEY_HERE
+
+# Stripe Webhook Secret (from Stripe CLI: stripe listen)
+# Or from Stripe Dashboard → Developers → Webhooks → Signing secret
+STRIPE_WEBHOOK_SECRET=whsec_YOUR_WEBHOOK_SECRET_HERE
+STRIPE_WEBHOOK_TOLERANCE=300
+
+# Stripe Price IDs (from Stripe Dashboard → Products → Click product → View prices)
+# Get these from your Premium and Pro products
+STRIPE_PRICE_PREMIUM_MONTHLY=price_YOUR_PREMIUM_MONTHLY_PRICE_ID
+STRIPE_PRICE_PREMIUM_YEARLY=price_YOUR_PREMIUM_YEARLY_PRICE_ID
+STRIPE_PRICE_PRO_MONTHLY=price_YOUR_PRO_MONTHLY_PRICE_ID
+STRIPE_PRICE_PRO_YEARLY=price_YOUR_PRO_YEARLY_PRICE_ID
+
+# Frontend URL (for Stripe redirects after checkout)
+FRONTEND_URL=http://localhost:5173
+
+

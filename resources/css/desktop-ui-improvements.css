@@ -1,0 +1,1296 @@
+/* Desktop UI Improvements - Critical Fixes */
+
+/* ============================================
+   1. FIX Z-INDEX CONFLICTS (P0 - Critical)
+   ============================================ */
+
+/* Route Planner - Lower z-index to prevent blocking */
+.route-planner-panel {
+    z-index: 900 !important;
+    position: relative;
+}
+
+/* Add backdrop for Route Planner that closes on outside click */
+.route-planner-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: 899;
+    pointer-events: auto;
+    display: none; /* Hidden by default, shown when Route Planner is open */
+}
+
+.route-planner-panel.active ~ .route-planner-backdrop,
+body.route-planner-active .route-planner-backdrop {
+    display: block;
+}
+
+/* Floating Controls - Higher z-index to always be accessible */
+.floating-controls,
+.community-button,
+.weather-button,
+.show-community-button,
+.show-weather-button,
+#fixed-map-buttons {
+    z-index: 1001 !important;
+    position: fixed !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure Route Planner doesn't block floating controls */
+.route-planner-panel {
+    z-index: 900 !important;
+    pointer-events: auto;
+}
+
+/* Route Planner should not intercept clicks outside its bounds */
+.route-planner-panel * {
+    pointer-events: auto;
+}
+
+/* ============================================
+   2. HEADER LAYOUT (P0 - Critical)
+   ============================================ */
+
+.desktop-header {
+    height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    overflow: visible; /* Ensure header doesn't clip content */
+    box-sizing: border-box;
+}
+
+.desktop-header > * {
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    position: relative;
+}
+
+.header-logo {
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+    position: absolute;
+    left: calc(20rem - 24px); /* Align with sidebar right edge: sidebar width (20rem) - header padding (24px) */
+}
+
+.nav-tab {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.nav-tab:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.nav-tab.active {
+    background: white;
+    color: #667eea;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    flex-shrink: 0;
+    height: 100%;
+}
+
+.header-right-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+    max-height: 60px;
+}
+
+.sign-in-button {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    height: auto !important;
+    min-height: 36px !important;
+    max-height: 50px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 1 !important;
+    box-sizing: border-box !important;
+}
+
+.sign-in-button:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.sign-in-button svg {
+    color: white !important;
+    fill: white !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    flex-shrink: 0 !important;
+    width: 1em !important;
+    height: 1em !important;
+}
+
+.sign-in-button span {
+    color: white !important;
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-left: 8px !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+    white-space: nowrap !important;
+}
+
+/* Login Dropdown Styles - Fixed positioning to prevent flickering */
+.login-dropdown {
+    position: fixed !important;
+    top: 70px !important;
+    right: 24px !important;
+    width: 320px !important;
+    max-width: calc(100vw - 48px) !important;
+    z-index: 1500 !important; /* Above header (1000) but below modals (9999+) */
+    box-sizing: border-box !important;
+    pointer-events: none !important; /* Don't block clicks outside dropdown */
+    will-change: transform !important;
+    transform: translateZ(0) !important;
+    backface-visibility: hidden !important;
+    -webkit-font-smoothing: antialiased !important;
+    left: auto !important;
+    margin: 0 !important;
+    isolation: isolate !important;
+}
+
+.login-dropdown > * {
+    pointer-events: auto !important; /* Re-enable pointer events for dropdown content */
+}
+
+.login-dropdown-content,
+.login-dropdown-content[style],
+div.login-dropdown-content,
+div.login-dropdown-content[style] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: #667eea !important; /* Fallback */
+    background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 20px 60px rgba(102, 126, 234, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+    padding: 24px !important;
+    max-height: calc(100vh - 100px) !important;
+    overflow-y: auto !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    color: white !important;
+    /* Force override any conflicting styles */
+    background-attachment: scroll !important;
+    background-clip: padding-box !important;
+    background-origin: padding-box !important;
+    background-position: 0% 0% !important;
+    background-repeat: repeat !important;
+    background-size: auto !important;
+}
+
+/* Override any white background classes - more specific selectors */
+.login-dropdown .login-dropdown-content,
+.login-dropdown-content.bg-white,
+.login-dropdown-content[class*="bg-white"],
+.login-dropdown-content[class*="bg-gray"],
+div.login-dropdown-content,
+div[class*="login-dropdown-content"],
+.header-right-item .login-dropdown-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: #667eea !important;
+    background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-attachment: scroll !important;
+    background-clip: padding-box !important;
+    background-origin: padding-box !important;
+    background-position: 0% 0% !important;
+    background-repeat: repeat !important;
+    background-size: auto !important;
+}
+
+.login-dropdown-content h3 {
+    color: white !important;
+}
+
+.login-dropdown-content label {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.login-dropdown-content input {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #333 !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.login-dropdown-content input:focus {
+    background: white !important;
+    border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.login-dropdown-content a {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.login-dropdown-content a:hover {
+    color: white !important;
+}
+
+.login-dropdown-content p {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.login-dropdown-content .border-t {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.login-dropdown-content h3.text-gray-900,
+.login-dropdown-content .text-gray-900,
+.login-dropdown-content .text-gray-600,
+.login-dropdown-content h3,
+.login-dropdown-content label,
+.login-dropdown-content span:not(.floating-icon) {
+    color: white !important;
+}
+
+.login-dropdown-content .text-purple-600,
+.login-dropdown-content a.text-purple-600 {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.login-dropdown-content a.text-purple-600:hover {
+    color: white !important;
+}
+
+.login-dropdown input,
+.login-dropdown label,
+.login-dropdown button,
+.login-dropdown a,
+.login-dropdown p {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.user-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.user-menu-dropdown {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background-color: #667eea !important;
+    background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.user-menu-dropdown .user-menu-item,
+.user-menu-dropdown button,
+.user-menu-dropdown a {
+    color: white !important;
+    transition: background-color 0.2s ease;
+}
+
+.user-menu-dropdown .user-menu-item:hover,
+.user-menu-dropdown button:hover,
+.user-menu-dropdown a:hover {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+}
+
+.user-menu-header:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.subscription-badge {
+    padding: 4px 10px;
+    background: #ffd700;
+    color: #333;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* ============================================
+   3. TABBED SIDEBAR (P1 - Major)
+   ============================================ */
+
+.sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #e5e5e5;
+    background: #f8f9fa;
+}
+
+.sidebar-tabs button {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.sidebar-tabs button:hover {
+    background: #e9ecef;
+}
+
+.sidebar-tabs button.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+/* Adjust sidebar to account for header */
+.sidebar-with-header {
+    margin-top: 60px;
+    height: calc(100vh - 60px);
+}
+
+/* ============================================
+   4. ROUTE RESULTS BOTTOM PANEL (P1 - Major)
+   ============================================ */
+
+.route-results-panel {
+    position: fixed;
+    bottom: 0;
+    left: 380px; /* Start after sidebar */
+    right: 0;
+    background: white;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    padding: 20px;
+    z-index: 800;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-height: 120px;
+    transition: transform 0.3s ease;
+}
+
+.route-results-panel.minimized {
+    transform: translateY(calc(100% - 40px));
+}
+
+.route-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.route-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.route-stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.route-stat-value {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.route-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.close-panel {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 24px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.close-panel:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+/* ============================================
+   5. FLOATING CONTROLS ORGANIZATION (P1)
+   ============================================ */
+
+.floating-controls {
+    position: fixed;
+    top: 110px; /* Increased to ensure button is fully below header (60px header + 50px gap) */
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 1200;
+    width: 260px;
+    max-width: calc(100vw - 48px); /* Ensure it doesn't overflow on small screens */
+    pointer-events: auto;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.floating-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 18px;
+    border-radius: 16px;
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(15,23,42,0.05);
+    box-shadow: 0 12px 24px rgba(15,23,42,0.1);
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: visible; /* Prevent text clipping */
+    word-wrap: break-word;
+}
+
+.floating-control:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 30px rgba(15,23,42,0.15);
+}
+
+.floating-control:active {
+    transform: translateY(0);
+}
+
+.floating-control.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.floating-control.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 20px 35px rgba(102, 126, 234, 0.35);
+}
+
+.floating-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: rgba(102, 126, 234, 0.12);
+    color: #4c1d95;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.floating-control.active .floating-icon {
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.floating-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.floating-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: inherit;
+}
+
+.floating-subtext {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.floating-control.active .floating-subtext {
+    color: rgba(255,255,255,0.9);
+}
+
+/* ============================================
+   6. MAP CONTAINER ADJUSTMENTS
+   ============================================ */
+
+.map-container-with-header {
+    margin-top: 60px; /* Account for fixed header */
+    height: calc(100vh - 60px);
+}
+
+.map-container-with-sidebar {
+    width: calc(100% - 380px); /* Account for sidebar */
+    margin-left: 380px;
+}
+
+/* ============================================
+   7. IMPROVED BUTTON STYLES
+   ============================================ */
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: white;
+    color: #667eea;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 2px solid #667eea;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: #f8f9ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* ============================================
+   8. RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+@media (min-width: 1024px) {
+    .sidebar {
+        width: 320px;
+    }
+    
+    .map-container-with-sidebar {
+        width: calc(100% - 320px);
+        margin-left: 320px;
+    }
+    
+    .route-results-panel {
+        left: 320px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .sidebar {
+        width: 380px;
+    }
+    
+    .map-container-with-sidebar {
+        width: calc(100% - 380px);
+        margin-left: 380px;
+    }
+    
+    .route-results-panel {
+        left: 380px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .sidebar {
+        width: 420px;
+    }
+    
+    .map-container-with-sidebar {
+        width: calc(100% - 420px);
+        margin-left: 420px;
+    }
+    
+    .route-results-panel {
+        left: 420px;
+    }
+}
+
+/* ============================================
+   9. LOADING STATES
+   ============================================ */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998 !important; /* Below modals but above everything else */
+    gap: 16px;
+    pointer-events: auto !important;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ============================================
+   10. TOAST NOTIFICATIONS
+   ============================================ */
+
+.toast {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 9998 !important; /* Below modals but above everything else */
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.3s ease;
+    pointer-events: auto !important;
+}
+
+.toast.success {
+    background: #10b981;
+    color: white;
+}
+
+.toast.error {
+    background: #ef4444;
+    color: white;
+}
+
+.toast.warning {
+    background: #f59e0b;
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   11. IMPROVED CARD STYLES
+   ============================================ */
+
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.card-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.card-body {
+    color: #666;
+    font-size: 14px;
+}
+
+/* ============================================
+   12. ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+/* Focus states */
+button:focus,
+input:focus,
+select:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   13. CONNECTIVITY + POI POLISH
+   ============================================ */
+
+.offline-indicator {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(15, 23, 42, 0.92);
+    color: white;
+    padding: 14px 18px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
+    z-index: 1600;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(6px);
+    max-width: 280px;
+}
+
+.offline-indicator svg {
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.offline-indicator .offline-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 0;
+}
+
+.offline-indicator .offline-text {
+    font-size: 12px;
+    margin: 2px 0 0;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.poi-controls {
+    backdrop-filter: blur(8px);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.15);
+    border-radius: 16px;
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    overflow: hidden;
+}
+
+.poi-controls .p-3 {
+    padding: 16px;
+}
+
+.poi-controls h3 {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.poi-controls label {
+    border: 1px solid transparent;
+}
+
+.poi-controls label:hover {
+    border-color: rgba(102, 126, 234, 0.3);
+    background: rgba(102, 126, 234, 0.08);
+}
+
+.poi-controls .poi-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.poi-controls button {
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.poi-controls .bg-gray-300 {
+    background: #f3f4f6;
+}
+
+/* ============================================
+   14. AUTH SECTION TRANSITIONS
+   ============================================ */
+
+.auth-section-container {
+    min-height: 120px;
+    position: relative;
+}
+
+.auth-form-wrapper,
+.user-profile-card {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.user-profile-card {
+    padding: 8px 0;
+}
+
+.user-profile-card button {
+    transition: all 0.2s ease;
+}
+
+.user-profile-card button:hover {
+    transform: scale(1.05);
+}
+
+/* ============================================
+   15. MODAL ANIMATIONS
+   ============================================ */
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.modal-content {
+    animation: modalFadeIn 0.2s ease-out;
+}
+
+/* ============================================
+   16. NAV TABS BUTTON STYLES
+   ============================================ */
+
+.nav-tab {
+    cursor: pointer;
+    user-select: none;
+}
+
+.nav-tab:active {
+    transform: scale(0.98);
+}
+
+/* ============================================
+   17. IMPROVED BUTTON STYLES
+   ============================================ */
+
+/* Primary Button - Gradient */
+.btn-primary {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    color: white;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Secondary Button - Blue */
+.btn-secondary {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    color: white;
+    background: #3b82f6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #2563eb;
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Neutral/Back Button */
+.btn-neutral {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+    color: #374151;
+    background: #f3f4f6;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-neutral:hover {
+    background: #e5e7eb;
+    transform: translateY(-1px);
+}
+
+.btn-neutral:active {
+    transform: translateY(0);
+}
+
+/* Success Button */
+.btn-success {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    color: white;
+    background: #10b981;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-success:hover:not(:disabled) {
+    background: #059669;
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-success:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Loading Button State */
+.btn-loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+/* ============================================
+   18. TYPOGRAPHY IMPROVEMENTS
+   ============================================ */
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.subsection-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.75rem;
+}
+
+.body-text {
+    font-size: 1rem;
+    color: #4b5563;
+}
+
+.label-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.25rem;
+}
+
+.helper-text {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* ============================================
+   19. SPACING CONSISTENCY
+   ============================================ */
+
+.spacing-section {
+    margin-bottom: 1.5rem;
+}
+
+.spacing-subsection {
+    margin-bottom: 1rem;
+}
+
+.spacing-item {
+    margin-bottom: 0.75rem;
+}
+
+.spacing-small {
+    margin-bottom: 0.5rem;
+}
+
+/* ============================================
+   20. EMPTY STATE STYLES
+   ============================================ */
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.empty-state-icon {
+    margin: 0 auto;
+    color: #d1d5db;
+    margin-bottom: 1rem;
+    font-size: 4rem;
+}
+
+.empty-state-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-description {
+    color: #6b7280;
+    margin-bottom: 1rem;
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.empty-state-action {
+    margin-top: 1rem;
+}
+
+/* ============================================
+   21. IMPROVED LOADING STATES
+   ============================================ */
+
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+.loading-spinner-sm {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+}
+
+.loading-spinner-lg {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+}
+
+.loading-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4b5563;
+}
+
+.skeleton {
+    background: #e5e7eb;
+    border-radius: 0.25rem;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.skeleton-text {
+    height: 1rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    border-radius: 0.25rem;
+}
+
+.skeleton-button {
+    height: 2.5rem;
+    border-radius: 0.25rem;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ============================================
+   22. IMPROVED FOCUS STATES
+   ============================================ */
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ============================================
+   23. SMOOTH TRANSITIONS
+   ============================================ */
+
+.sidebar-transition {
+    transition: all 0.3s ease-in-out;
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+

@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">ScenicRoutes</string>
+    <string name="search_location">Search location</string>
+    <string name="start_point">Start point</string>
+    <string name="curvature">Curvature</string>
+    <string name="avoidances">Avoidances</string>
+    <string name="map">Map</string>
+    <string name="explore">Explore</string>
+    <string name="saved">Saved</string>
+    <string name="profile">Profile</string>
+    <string name="sign_in">Sign In</string>
+    <string name="widget_description">Quick access to Scenic Routes features</string>
+</resources>
+
+
+

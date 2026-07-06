@@ -1,0 +1,340 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.scenicroutes.app"
+4    android:versionCode="6"
+5    android:versionName="1.5" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="35" />
+10
+11    <!-- Permissions -->
+12    <uses-permission android:name="android.permission.INTERNET" />
+12-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:6:5-67
+12-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:6:22-64
+13    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+13-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:7:5-79
+13-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:7:22-76
+14    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+14-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:8:5-81
+14-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:8:22-78
+15    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+15-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:9:5-79
+15-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:9:22-76
+16    <!-- Background location for ride recording -->
+17    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+17-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:11:5-85
+17-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:11:22-82
+18    <!-- Foreground service for location tracking -->
+19    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+19-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:13:5-77
+19-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:13:22-74
+20    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+20-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:14:5-86
+20-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:14:22-83
+21    <!-- Notifications -->
+22    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+22-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:16:5-77
+22-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:16:22-74
+23    <!-- OSMDroid needs write permission for tile cache -->
+24    <uses-permission
+24-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:18:5-19:38
+25        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+25-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:18:22-78
+26        android:maxSdkVersion="28" />
+26-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:19:9-35
+27    <uses-permission
+27-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:20:5-21:38
+28        android:name="android.permission.READ_EXTERNAL_STORAGE"
+28-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:20:22-77
+29        android:maxSdkVersion="32" />
+29-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:21:9-35
+30    <uses-permission android:name="com.android.vending.BILLING" />
+30-->[com.android.billingclient:billing-ktx:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\f1b3e985c0cd2289536c6c611cf01ed5\transformed\jetified-billing-ktx-6.1.0\AndroidManifest.xml:9:5-67
+30-->[com.android.billingclient:billing-ktx:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\f1b3e985c0cd2289536c6c611cf01ed5\transformed\jetified-billing-ktx-6.1.0\AndroidManifest.xml:9:22-64
+31
+32    <queries>
+32-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:12:5-16:15
+33        <intent>
+33-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:13:9-15:18
+34            <action android:name="com.android.vending.billing.InAppBillingService.BIND" />
+34-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:14:13-91
+34-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:14:21-88
+35        </intent>
+36    </queries>
+37
+38    <permission
+38-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+39        android:name="com.scenicroutes.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+39-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+40        android:protectionLevel="signature" />
+40-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+41
+42    <uses-permission android:name="com.scenicroutes.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+42-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+42-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+43
+44    <supports-screens
+44-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:9:5-12:40
+45        android:anyDensity="true"
+45-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:10:9-34
+46        android:largeScreens="true"
+46-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:11:9-36
+47        android:normalScreens="true" />
+47-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:12:9-37
+48
+49    <uses-feature
+49-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:14:5-16:36
+50        android:name="android.hardware.location.network"
+50-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:15:9-57
+51        android:required="false" />
+51-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:16:9-33
+52    <uses-feature
+52-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:17:5-19:36
+53        android:name="android.hardware.location.gps"
+53-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:18:9-53
+54        android:required="false" />
+54-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:19:9-33
+55    <uses-feature
+55-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:20:5-22:36
+56        android:name="android.hardware.telephony"
+56-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:21:9-50
+57        android:required="false" />
+57-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:22:9-33
+58    <uses-feature
+58-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:23:5-25:36
+59        android:name="android.hardware.wifi"
+59-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:24:9-45
+60        android:required="false" />
+60-->[org.osmdroid:osmdroid-android:6.1.18] C:\Users\mairi\.gradle\caches\8.13\transforms\3802b1a097793ec755bd7477462ad517\transformed\jetified-osmdroid-android-6.1.18\AndroidManifest.xml:25:9-33
+61
+62    <application
+62-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:23:5-76:19
+63        android:allowBackup="true"
+63-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:24:9-35
+64        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+64-->[androidx.core:core:1.12.0] C:\Users\mairi\.gradle\caches\8.13\transforms\ee49e0718431d49066e1d92aa5467af4\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+65        android:dataExtractionRules="@xml/data_extraction_rules"
+65-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:25:9-65
+66        android:enableOnBackInvokedCallback="true"
+66-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:26:9-51
+67        android:extractNativeLibs="false"
+68        android:fullBackupContent="@xml/backup_rules"
+68-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:27:9-54
+69        android:icon="@mipmap/ic_launcher"
+69-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:28:9-43
+70        android:label="@string/app_name"
+70-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:29:9-41
+71        android:networkSecurityConfig="@xml/network_security_config"
+71-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:30:9-69
+72        android:roundIcon="@mipmap/ic_launcher_round"
+72-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:31:9-54
+73        android:supportsRtl="true"
+73-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:32:9-35
+74        android:theme="@style/Theme.ScenicRoutes" >
+74-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:33:9-50
+75
+76        <!-- OSMDroid configuration -->
+77        <meta-data
+77-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:37:9-39:48
+78            android:name="osmdroid.userAgentValue"
+78-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:38:13-51
+79            android:value="ScenicRoutes/1.0" />
+79-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:39:13-45
+80
+81        <activity
+81-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:41:9-49:20
+82            android:name="com.scenicroutes.app.MainActivity"
+82-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:42:13-41
+83            android:exported="true"
+83-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:43:13-36
+84            android:theme="@style/Theme.ScenicRoutes" >
+84-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:44:13-54
+85            <intent-filter>
+85-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:45:13-48:29
+86                <action android:name="android.intent.action.MAIN" />
+86-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:46:17-69
+86-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:46:25-66
+87
+88                <category android:name="android.intent.category.LAUNCHER" />
+88-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:47:17-77
+88-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:47:27-74
+89            </intent-filter>
+90        </activity>
+91
+92        <!-- Background Location Service -->
+93        <service
+93-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:52:9-56:56
+94            android:name="com.scenicroutes.app.data.service.BackgroundLocationService"
+94-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:53:13-67
+95            android:enabled="true"
+95-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:54:13-35
+96            android:exported="false"
+96-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:55:13-37
+97            android:foregroundServiceType="location" />
+97-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:56:13-53
+98
+99        <!-- Ride Recording Foreground Service -->
+100        <service
+100-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:59:9-63:56
+101            android:name="com.scenicroutes.app.data.service.RideRecordingForegroundService"
+101-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:60:13-72
+102            android:enabled="true"
+102-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:61:13-35
+103            android:exported="false"
+103-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:62:13-37
+104            android:foregroundServiceType="location" />
+104-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:63:13-53
+105
+106        <!-- App Widget -->
+107        <receiver
+107-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:66:9-75:20
+108            android:name="com.scenicroutes.app.widget.ScenicRoutesWidget"
+108-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:67:13-54
+109            android:exported="true" >
+109-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:68:13-36
+110            <intent-filter>
+110-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:69:13-71:29
+111                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+111-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:70:17-84
+111-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:70:25-81
+112            </intent-filter>
+113
+114            <meta-data
+114-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:72:13-74:69
+115                android:name="android.appwidget.provider"
+115-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:73:17-58
+116                android:resource="@xml/widget_scenic_routes_info" />
+116-->C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\android-native\app\src\main\AndroidManifest.xml:74:17-66
+117        </receiver>
+118
+119        <meta-data
+119-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:19:9-21:37
+120            android:name="com.google.android.play.billingclient.version"
+120-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:20:13-73
+121            android:value="6.1.0" />
+121-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:21:13-34
+122
+123        <activity
+123-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:23:9-27:75
+124            android:name="com.android.billingclient.api.ProxyBillingActivity"
+124-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:24:13-78
+125            android:configChanges="keyboard|keyboardHidden|screenLayout|screenSize|orientation"
+125-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:25:13-96
+126            android:exported="false"
+126-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:26:13-37
+127            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+127-->[com.android.billingclient:billing:6.1.0] C:\Users\mairi\.gradle\caches\8.13\transforms\88aaf9b4f792f86578f91f8cef1e0297\transformed\jetified-billing-6.1.0\AndroidManifest.xml:27:13-72
+128        <activity
+128-->[com.google.android.gms:play-services-base:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\b902510029fe25797cf54e1888c7260c\transformed\jetified-play-services-base-18.0.1\AndroidManifest.xml:20:9-22:45
+129            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+129-->[com.google.android.gms:play-services-base:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\b902510029fe25797cf54e1888c7260c\transformed\jetified-play-services-base-18.0.1\AndroidManifest.xml:20:19-85
+130            android:exported="false"
+130-->[com.google.android.gms:play-services-base:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\b902510029fe25797cf54e1888c7260c\transformed\jetified-play-services-base-18.0.1\AndroidManifest.xml:22:19-43
+131            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+131-->[com.google.android.gms:play-services-base:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\b902510029fe25797cf54e1888c7260c\transformed\jetified-play-services-base-18.0.1\AndroidManifest.xml:21:19-78
+132
+133        <meta-data
+133-->[com.google.android.gms:play-services-basement:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\8797085a8783a0034c9d976e800768fb\transformed\jetified-play-services-basement-18.0.1\AndroidManifest.xml:21:9-23:69
+134            android:name="com.google.android.gms.version"
+134-->[com.google.android.gms:play-services-basement:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\8797085a8783a0034c9d976e800768fb\transformed\jetified-play-services-basement-18.0.1\AndroidManifest.xml:22:13-58
+135            android:value="@integer/google_play_services_version" />
+135-->[com.google.android.gms:play-services-basement:18.0.1] C:\Users\mairi\.gradle\caches\8.13\transforms\8797085a8783a0034c9d976e800768fb\transformed\jetified-play-services-basement-18.0.1\AndroidManifest.xml:23:13-66
+136
+137        <provider
+137-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:24:9-32:20
+138            android:name="androidx.startup.InitializationProvider"
+138-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:25:13-67
+139            android:authorities="com.scenicroutes.app.androidx-startup"
+139-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:26:13-68
+140            android:exported="false" >
+140-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:27:13-37
+141            <meta-data
+141-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:29:13-31:52
+142                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+142-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:30:17-75
+143                android:value="androidx.startup" />
+143-->[androidx.emoji2:emoji2:1.3.0] C:\Users\mairi\.gradle\caches\8.13\transforms\545c56543eb0115d272d61a75f924267\transformed\jetified-emoji2-1.3.0\AndroidManifest.xml:31:17-49
+144            <meta-data
+144-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mairi\.gradle\caches\8.13\transforms\ba7b23fb2104e38108d61d16e6d8ed39\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:29:13-31:52
+145                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+145-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mairi\.gradle\caches\8.13\transforms\ba7b23fb2104e38108d61d16e6d8ed39\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:30:17-78
+146                android:value="androidx.startup" />
+146-->[androidx.lifecycle:lifecycle-process:2.6.2] C:\Users\mairi\.gradle\caches\8.13\transforms\ba7b23fb2104e38108d61d16e6d8ed39\transformed\jetified-lifecycle-process-2.6.2\AndroidManifest.xml:31:17-49
+147            <meta-data
+147-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:29:13-31:52
+148                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+148-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:30:17-85
+149                android:value="androidx.startup" />
+149-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:31:17-49
+150        </provider>
+151
+152        <service
+152-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:28:9-34:19
+153            android:name="com.google.android.datatransport.runtime.backends.TransportBackendDiscovery"
+153-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:29:13-103
+154            android:exported="false" >
+154-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:30:13-37
+155            <meta-data
+155-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:31:13-33:39
+156                android:name="backend:com.google.android.datatransport.cct.CctBackendFactory"
+156-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:32:17-94
+157                android:value="cct" />
+157-->[com.google.android.datatransport:transport-backend-cct:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\d26ed395dcb921863e10928f2edbf437\transformed\jetified-transport-backend-cct-3.1.8\AndroidManifest.xml:33:17-36
+158        </service>
+159        <service
+159-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:26:9-30:19
+160            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+160-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:27:13-117
+161            android:exported="false"
+161-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:28:13-37
+162            android:permission="android.permission.BIND_JOB_SERVICE" >
+162-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:29:13-69
+163        </service>
+164
+165        <receiver
+165-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:32:9-34:40
+166            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.AlarmManagerSchedulerBroadcastReceiver"
+166-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:33:13-132
+167            android:exported="false" />
+167-->[com.google.android.datatransport:transport-runtime:3.1.8] C:\Users\mairi\.gradle\caches\8.13\transforms\9091ac254ffde7151100568e590e056a\transformed\jetified-transport-runtime-3.1.8\AndroidManifest.xml:34:13-37
+168        <receiver
+168-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:34:9-52:20
+169            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+169-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:35:13-76
+170            android:directBootAware="false"
+170-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:36:13-44
+171            android:enabled="true"
+171-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:37:13-35
+172            android:exported="true"
+172-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:38:13-36
+173            android:permission="android.permission.DUMP" >
+173-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:39:13-57
+174            <intent-filter>
+174-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:40:13-42:29
+175                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+175-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:17-91
+175-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:41:25-88
+176            </intent-filter>
+177            <intent-filter>
+177-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:43:13-45:29
+178                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+178-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:17-85
+178-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:44:25-82
+179            </intent-filter>
+180            <intent-filter>
+180-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:46:13-48:29
+181                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+181-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:17-88
+181-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:47:25-85
+182            </intent-filter>
+183            <intent-filter>
+183-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:49:13-51:29
+184                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+184-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:17-95
+184-->[androidx.profileinstaller:profileinstaller:1.3.1] C:\Users\mairi\.gradle\caches\8.13\transforms\4345d16c17e263c2787f9ef176375209\transformed\jetified-profileinstaller-1.3.1\AndroidManifest.xml:50:25-92
+185            </intent-filter>
+186        </receiver>
+187    </application>
+188
+189</manifest>

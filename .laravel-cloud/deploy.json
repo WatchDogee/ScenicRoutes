@@ -1,0 +1,17 @@
+{
+    "scripts": {
+        "deploy": [
+            "php artisan config:clear",
+            "php artisan migrate --path=database/migrations/2025_06_01_000000_laravel_cloud_fix_schema.php --force",
+            "php artisan migrate --path=database/migrations/2025_06_10_000000_fix_leaderboard_review_photos_table.php --force",
+            "php artisan migrate --force",
+            "php artisan storage:link || echo 'Storage link already exists'",
+            "php artisan optimize:clear",
+            "php artisan config:cache",
+            "php artisan route:cache",
+            "php artisan view:cache",
+            "php artisan event:cache",
+            "composer dump-autoload --optimize --no-dev"
+        ]
+    }
+}

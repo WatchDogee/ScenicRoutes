@@ -1,0 +1,197 @@
+/*
+ * CRITICAL FIX FOR TRANSFORM PROPERTY IN DRAWING MODE
+ * This file contains CSS fixes specifically for ensuring the transform property
+ * is not overridden in drawing mode, which is critical for proper tile positioning
+ */
+
+/* Ensure transform property is preserved for all map tiles */
+.leaflet-tile-container img,
+.leaflet-tile img {
+  /* DO NOT override transform property as it's needed for proper positioning */
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}
+
+/* Ensure transform property is preserved in drawing mode */
+.drawing-mode .leaflet-tile-container img,
+.drawing-mode .leaflet-tile img {
+  /* DO NOT override transform property as it's needed for proper positioning */
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+/* Ensure transform property is preserved for OpenStreetMap tiles */
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+  /* DO NOT override transform property as it's needed for proper positioning */
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}
+
+/* Ensure transform property is preserved for OpenStreetMap tiles in drawing mode */
+.drawing-mode img[src*="tile.openstreetmap.org"],
+.drawing-mode img[src*="tile.opentopomap.org"],
+.drawing-mode img[src*="arcgisonline.com"] {
+  /* DO NOT override transform property as it's needed for proper positioning */
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+  mix-blend-mode: normal !important;
+  filter: none !important;
+}
+
+/* Ensure proper stacking context for map elements */
+.leaflet-map-pane {
+  z-index: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-tile-pane {
+  z-index: 100 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-overlay-pane {
+  z-index: 300 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 400 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-tooltip-pane {
+  z-index: 600 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 700 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* Ensure proper stacking context for map elements in drawing mode */
+.drawing-mode .leaflet-map-pane {
+  z-index: 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-tile-pane {
+  z-index: 100 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-overlay-pane {
+  z-index: 300 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-shadow-pane {
+  z-index: 400 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-marker-pane {
+  z-index: 500 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-tooltip-pane {
+  z-index: 600 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+.drawing-mode .leaflet-popup-pane {
+  z-index: 700 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+}
+
+/* Ensure tile containers are visible */
+.leaflet-tile-container {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}
+
+.drawing-mode .leaflet-tile-container {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}
+
+/* Ensure tiles are visible */
+.leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}
+
+.drawing-mode .leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  position: absolute !important;
+}

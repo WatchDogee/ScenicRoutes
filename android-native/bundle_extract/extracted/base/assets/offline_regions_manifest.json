@@ -1,0 +1,110 @@
+[
+  {
+    "id": "berlin",
+    "name": "Berlin Metro",
+    "latNorth": 52.75,
+    "lonEast": 13.75,
+    "latSouth": 52.25,
+    "lonWest": 13.10,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "london",
+    "name": "London Area",
+    "latNorth": 51.80,
+    "lonEast": 0.40,
+    "latSouth": 51.20,
+    "lonWest": -0.70,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "paris",
+    "name": "Paris Area",
+    "latNorth": 49.10,
+    "lonEast": 2.90,
+    "latSouth": 48.60,
+    "lonWest": 1.90,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "riga",
+    "name": "Riga Area",
+    "latNorth": 57.10,
+    "lonEast": 24.40,
+    "latSouth": 56.70,
+    "lonWest": 23.80,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "sf_bay",
+    "name": "San Francisco Bay",
+    "latNorth": 38.10,
+    "lonEast": -121.50,
+    "latSouth": 36.80,
+    "lonWest": -123.00,
+    "zoomStart": 10,
+    "zoomEnd": 13,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "la",
+    "name": "Los Angeles",
+    "latNorth": 34.40,
+    "lonEast": -117.60,
+    "latSouth": 33.40,
+    "lonWest": -119.20,
+    "zoomStart": 10,
+    "zoomEnd": 13,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "innsbruck_alps",
+    "name": "Alps (Innsbruck)",
+    "latNorth": 47.60,
+    "lonEast": 11.70,
+    "latSouth": 46.80,
+    "lonWest": 10.50,
+    "zoomStart": 10,
+    "zoomEnd": 13,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "tokyo",
+    "name": "Tokyo Metro",
+    "latNorth": 35.90,
+    "lonEast": 140.10,
+    "latSouth": 35.40,
+    "lonWest": 138.90,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  },
+  {
+    "id": "sydney",
+    "name": "Sydney",
+    "latNorth": -33.60,
+    "lonEast": 151.40,
+    "latSouth": -34.20,
+    "lonWest": 150.80,
+    "zoomStart": 11,
+    "zoomEnd": 14,
+    "version": "v1",
+    "avgTileBytes": 6000
+  }
+]
