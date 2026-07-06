@@ -1,0 +1,12 @@
+graph:
+  datareader:
+    file: latvia-latest.osm.pbf
+  graph:
+    location: graph-cache
+  routing:
+    default: motorcycle
+    profiles:
+      - name: motorcycle
+        vehicle: motorcycle
+        weighting: fastest
+        turn_costs: true

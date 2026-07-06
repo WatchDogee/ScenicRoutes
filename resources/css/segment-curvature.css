@@ -1,0 +1,60 @@
+/* Segment-Specific Curvature UI Styles */
+
+/* Segment label markers on map */
+.segment-label {
+    background: transparent !important;
+    border: none !important;
+}
+
+.segment-label div {
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Segment curvature route polylines */
+.segment-curvature-segment {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.segment-curvature-segment:hover {
+    opacity: 1 !important;
+    filter: brightness(1.1);
+}
+
+.segment-curvature-route {
+    cursor: pointer;
+}
+
+/* Curvature level color indicators in dropdowns */
+.curvature-straightest {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+}
+
+.curvature-balanced {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+.curvature-curvy {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #fde047;
+}
+
+.curvature-extra-curvy {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+
+
+
+
+
+

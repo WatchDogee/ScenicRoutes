@@ -1,0 +1,52 @@
+{
+  "speed": [
+    {
+      "if": "road_class == MOTORWAY",
+      "limit_to": 130
+    },
+    {
+      "if": "road_class == TRUNK",
+      "limit_to": 110
+    },
+    {
+      "if": "road_class == PRIMARY",
+      "limit_to": 90
+    },
+    {
+      "if": "road_class == SECONDARY",
+      "limit_to": 70
+    },
+    {
+      "if": "road_class == TERTIARY",
+      "limit_to": 50
+    },
+    {
+      "if": "road_class == UNCLASSIFIED",
+      "limit_to": 40
+    },
+    {
+      "if": "road_class == RESIDENTIAL",
+      "limit_to": 30
+    },
+    {
+      "if": "road_class == SERVICE",
+      "limit_to": 20
+    }
+  ],
+  "priority": [
+    {
+      "if": "road_access == DESTINATION",
+      "multiply_by": 0
+    }
+  ]
+}
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ScenicRoutes</string>
+    <string name="title_activity_main">ScenicRoutes</string>
+    <string name="package_name">com.scenicroutes.app</string>
+    <string name="custom_url_scheme">com.scenicroutes.app</string>
+</resources>

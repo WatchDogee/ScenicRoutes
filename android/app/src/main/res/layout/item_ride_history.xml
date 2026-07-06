@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@drawable/stat_card_background"
+    android:padding="16dp"
+    android:layout_marginBottom="12dp">
+
+    <!-- Date Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_calendar"
+            android:contentDescription="Date"
+            android:layout_marginEnd="8dp"
+            android:tint="@color/gray_text" />
+
+        <TextView
+            android:id="@+id/itemRideDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Jan 16, 2025 14:30"
+            android:textSize="14sp"
+            android:textColor="@color/black" />
+
+        <TextView
+            android:id="@+id/itemRideSyncStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="✓"
+            android:textSize="16sp"
+            android:textColor="@color/green"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Distance and Duration Row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!-- Distance -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_distance"
+                android:contentDescription="Distance"
+                android:layout_marginEnd="4dp"
+                android:tint="@color/gray_text" />
+
+            <TextView
+                android:id="@+id/itemRideDistance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="5.2 km"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text" />
+        </LinearLayout>
+
+        <!-- Duration -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_timer"
+                android:contentDescription="Duration"
+                android:layout_marginEnd="4dp"
+                android:tint="@color/gray_text" />
+
+            <TextView
+                android:id="@+id/itemRideDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:45"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text" />
+        </LinearLayout>
+
+        <!-- Speed -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_speed"
+                android:contentDescription="Speed"
+                android:layout_marginEnd="4dp"
+                android:tint="@color/gray_text" />
+
+            <TextView
+                android:id="@+id/itemRideSpeed"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="2.1 m/s"
+                android:textSize="12sp"
+                android:textColor="@color/gray_text" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

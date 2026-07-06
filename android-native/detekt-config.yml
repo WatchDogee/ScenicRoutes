@@ -1,0 +1,37 @@
+build:
+  maxIssues: 2000  # Increased to allow gradual cleanup of existing codebase
+  weights:
+    complexity: 2
+    LongParameterList: 1
+    style: 1
+
+complexity:
+  active: true
+  LongParameterList:
+    functionThreshold: 5
+    constructorThreshold: 5
+  CyclomaticComplexMethod:
+    threshold: 10
+
+style:
+  active: true
+  MagicNumber:
+    ignoreNumbers: ['-1', '0', '1', '2']
+  MaxLineLength:
+    maxLineLength: 120
+  WildcardImport:
+    active: false  # Disabled - too many violations in existing code, matches ktlint config
+
+performance:
+  active: true
+
+coroutines:
+  active: true
+
+exceptions:
+  active: true
+
+naming:
+  active: true
+  # Using default naming patterns - custom patterns can be added if needed
+
