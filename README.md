@@ -6,6 +6,12 @@ ScenicRoutes is a route-planning and road discovery app with social ride-sharing
 - Saved roads, ride recording, and GPX import/export
 - Social features such as collections, followers, and following
 
+## Road discovery 
+![alt text](RoadDiscovery.gif)
+
+## Route Planning 
+![alt text](RoutePlanning.gif)
+
 
 ## Requirements
 
