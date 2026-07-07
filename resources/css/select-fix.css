@@ -1,0 +1,26 @@
+/* Fix for select dropdown text visibility */
+select {
+    color: #111827 !important; /* text-gray-900 */
+    background-color: #ffffff !important;
+}
+
+select option {
+    color: #111827 !important; /* text-gray-900 */
+    background-color: #ffffff !important;
+}
+
+select:focus {
+    color: #111827 !important;
+    background-color: #ffffff !important;
+}
+
+/* Ensure select text is visible in all states */
+select:disabled {
+    color: #6b7280 !important; /* text-gray-500 */
+    background-color: #f3f4f6 !important;
+}
+
+select:disabled option {
+    color: #6b7280 !important;
+    background-color: #f3f4f6 !important;
+}

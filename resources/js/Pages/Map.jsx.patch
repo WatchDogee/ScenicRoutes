@@ -1,0 +1,8 @@
+PATCH: Increase saved road visibility
+
+Line 1117: color: '#2563eb' → color: '#0d47a1' (darker blue for better contrast)
+Line 1118: weight: 8 → weight: 10 (thicker line)
+Line 1119: originalWeight: 8 → originalWeight: 10
+Line 1120: opacity: 0.9 → opacity: 1 (full opacity)
+
+This makes imported/saved roads appear thicker and with better visibility on the map.

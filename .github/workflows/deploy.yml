@@ -1,0 +1,96 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+
+jobs:
+  build-assets:
+    name: Build Frontend Assets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # Skip explicit cache paths to avoid resolution errors
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-build
+          path: public/build
+
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    needs: build-assets
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: public-build
+          path: public-build
+
+      - name: SSH sanity check
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            whoami
+            echo "Home: $HOME"
+            test -d "${{ secrets.APP_DIR }}" && echo "App dir exists" || echo "App dir missing"
+
+      - name: Copy assets to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "public-build/**"
+          target: "${{ secrets.APP_DIR }}/public/build"
+          overwrite: true
+
+      - name: Deploy code and run server tasks
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd "${{ secrets.APP_DIR }}"
+            # Ensure safe.directory is set for this shell session
+            git config --global --add safe.directory "${{ secrets.APP_DIR }}" 2>/dev/null || true
+            
+            # Update code (assets already copied via SCP)
+            git fetch origin production || true
+            git reset --hard origin/production
+            
+            # Install dependencies
+            composer install --no-dev --prefer-dist --optimize-autoloader
+            
+            # Run database migrations and cache commands
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+            
+            # Reload services without sudo (or gracefully fail if unavailable)
+            systemctl --user reload-or-restart php-fpm 2>/dev/null || true
+            systemctl --user reload-or-restart nginx 2>/dev/null || true

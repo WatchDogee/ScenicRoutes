@@ -1,0 +1,112 @@
+/*
+ * CRITICAL FIX FOR LEAFLET TILES BLEND MODE
+ * This file contains CSS fixes specifically for the issue where map tiles are affected by mix-blend-mode
+ * WITHOUT affecting the transform property which is needed for proper tile positioning
+ */
+
+/* Target the specific element with plus-lighter blend mode */
+.leaflet-container img.leaflet-tile {
+    mix-blend-mode: normal !important;
+}
+
+/* Target all leaflet tiles */
+img.leaflet-tile,
+img.leaflet-tile-loaded,
+.leaflet-tile-container img,
+.leaflet-tile-pane img,
+.leaflet-layer img {
+    mix-blend-mode: normal !important;
+}
+
+/* Target specific map tiles */
+img[src*="tile.openstreetmap.org"],
+img[src*="tile.opentopomap.org"],
+img[src*="arcgisonline.com"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Target map tiles in drawing mode */
+.drawing-mode .leaflet-container img.leaflet-tile,
+.drawing-mode img.leaflet-tile,
+.drawing-mode img.leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+/* Target all elements with mix-blend-mode: plus-lighter */
+*[style*="mix-blend-mode: plus-lighter"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Highest specificity selector to override blend mode without affecting transform */
+html body #map .leaflet-container img.leaflet-tile.leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+/* Fix for OpenStreetMap tiles */
+img[src*="tile.openstreetmap.org"].leaflet-tile-loaded {
+    mix-blend-mode: normal !important;
+}
+
+/* Fix for specific tile URLs */
+img[src*=".tile.openstreetmap.org"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Fix for all map tiles with !important to override any other styles */
+.leaflet-tile-container img {
+    mix-blend-mode: normal !important;
+}
+
+/* Target the specific element with inline style - only override blend mode */
+.leaflet-container img.leaflet-tile[style*="transform"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Target the specific element with inline style - only override blend mode */
+.leaflet-container img.leaflet-tile[style*="mix-blend-mode"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Direct fix for the specific element with inline style in drawing mode - only override blend mode */
+.drawing-mode .leaflet-container img.leaflet-tile[style*="transform"] {
+    mix-blend-mode: normal !important;
+}
+
+/* Direct fix for the specific element with inline style in drawing mode - only override blend mode */
+.drawing-mode .leaflet-container img.leaflet-tile[style*="mix-blend-mode"] {
+    mix-blend-mode: normal !important;
+}
+
+/* CRITICAL FIX FOR MAP TILES - Specific selector mentioned by user */
+#map .leaflet-tile-container img,
+#map .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    /* transform: none !important; */ /* Commented out as it causes positioning issues */
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    mix-blend-mode: normal !important;
+}
+
+/* CRITICAL FIX FOR DRAWING MODE - Specific selector for drawing mode */
+#map.drawing-mode .leaflet-tile-container img,
+#map.drawing-mode .leaflet-tile img {
+    filter: none !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 100 !important;
+    display: block !important;
+    /* transform: none !important; */ /* Commented out as it causes positioning issues */
+    pointer-events: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: auto !important;
+    height: auto !important;
+    mix-blend-mode: normal !important;
+}

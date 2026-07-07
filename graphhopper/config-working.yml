@@ -1,0 +1,27 @@
+# GraphHopper 8.0 Config (Working Format)
+# Use this AFTER the initial import is complete
+
+graphhopper:
+  datareader:
+    file: C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\graphhopper\latvia-latest.osm.pbf
+  graph:
+    location: C:\Users\mairi\OneDrive\Dators\ScenicRoutes\ScenicRoutes_dev\graphhopper\graph-cache
+  routing:
+    default: motorcycle
+    profiles:
+      - name: motorcycle
+        vehicle: motorcycle
+        weighting: fastest
+        turn_costs: true
+
+server:
+  application_connectors:
+    - type: http
+      port: 8989
+
+
+
+
+
+
+

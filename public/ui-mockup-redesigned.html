@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScenicRoutes - Redesigned UI Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #667eea;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .subscription-badge {
+            padding: 4px 10px;
+            background: #ffd700;
+            color: #333;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 380px;
+            background: white;
+            border-right: 1px solid #e5e5e5;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .icon {
+            font-size: 16px;
+        }
+
+        /* Search Input */
+        .search-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e5e5e5;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Button Groups */
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+
+        .btn-outline:hover {
+            background: #f8f9ff;
+        }
+
+        /* Route Options */
+        .route-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .route-option {
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .route-option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .route-option.active {
+            border-color: #667eea;
+            background: #e8f0ff;
+        }
+
+        .route-option-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .route-option-label {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Filters */
+        .filter-group {
+            margin-bottom: 16px;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .filter-select, .filter-slider {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* POI Section */
+        .poi-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .poi-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .poi-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Saved Roads List */
+        .saved-roads-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .saved-road-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .saved-road-item:hover {
+            background: #e8f0ff;
+            transform: translateX(4px);
+        }
+
+        .saved-road-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .saved-road-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Map Container */
+        .map-container {
+            flex: 1;
+            position: relative;
+            background: #e8f4f8;
+        }
+
+        .map-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 18px;
+        }
+
+        /* Floating Controls */
+        .floating-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+        }
+
+        .control-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            border: none;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        /* Route Panel */
+        .route-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            max-width: 800px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 20px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .route-panel.active {
+            display: block;
+        }
+
+        .route-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .route-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .route-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .route-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        /* Tabs in Sidebar */
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 0 20px;
+        }
+
+        .sidebar-tab {
+            padding: 12px 16px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            transition: all 0.2s;
+        }
+
+        .sidebar-tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Collapsible Sections */
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 0;
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s;
+        }
+
+        .collapsible-content.expanded {
+            max-height: 500px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 1000;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        /* Scrollbar */
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <span>🗺️</span>
+                    <span>ScenicRoutes</span>
+                </div>
+                <div class="nav-tabs">
+                    <button class="nav-tab active">Map</button>
+                    <button class="nav-tab">Community</button>
+                    <button class="nav-tab">Collections</button>
+                    <button class="nav-tab">Leaderboard</button>
+                </div>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;">Settings</button>
+                <div class="user-menu">
+                    <span>👤</span>
+                    <span>Guest</span>
+                    <span class="subscription-badge">Free</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" onclick="switchSidebarTab('plan')">Plan Route</button>
+                    <button class="sidebar-tab" onclick="switchSidebarTab('search')">Search Roads</button>
+                    <button class="sidebar-tab" onclick="switchSidebarTab('saved')">Saved</button>
+                    <button class="sidebar-tab" onclick="switchSidebarTab('poi')">POIs</button>
+                </div>
+
+                <div class="sidebar-content">
+                    <!-- Plan Route Tab -->
+                    <div id="plan-tab" class="tab-content active">
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">📍</span>
+                                <span>Start & End Points</span>
+                            </div>
+                            <input type="text" class="search-input" placeholder="Search start location...">
+                            <input type="text" class="search-input" placeholder="Search end location...">
+                            <button class="btn btn-outline" style="width: 100%; margin-top: 8px;">
+                                <span>➕</span>
+                                <span>Add Waypoint</span>
+                            </button>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">🛣️</span>
+                                <span>Route Type</span>
+                            </div>
+                            <div class="route-options">
+                                <div class="route-option active">
+                                    <div class="route-option-icon">🚗</div>
+                                    <div class="route-option-label">Fastest</div>
+                                </div>
+                                <div class="route-option">
+                                    <div class="route-option-icon">🌊</div>
+                                    <div class="route-option-label">Curved</div>
+                                </div>
+                                <div class="route-option">
+                                    <div class="route-option-icon">🔄</div>
+                                    <div class="route-option-label">Round Trip</div>
+                                </div>
+                                <div class="route-option">
+                                    <div class="route-option-icon">⚙️</div>
+                                    <div class="route-option-label">Custom</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">📥</span>
+                                <span>Import/Export</span>
+                            </div>
+                            <div class="button-group">
+                                <button class="btn btn-secondary">
+                                    <span>📥</span>
+                                    <span>Import GPX</span>
+                                </button>
+                                <button class="btn btn-secondary" disabled>
+                                    <span>📤</span>
+                                    <span>Export GPX</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="sidebar-section">
+                            <button class="btn btn-primary" style="width: 100%;">
+                                <span>🔍</span>
+                                <span>Calculate Route</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search Roads Tab -->
+                    <div id="search-tab" class="tab-content" style="display: none;">
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">🔍</span>
+                                <span>Search Filters</span>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Search Radius: 10 km</label>
+                                <input type="range" class="filter-slider" min="1" max="50" value="10">
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Road Type</label>
+                                <select class="filter-select">
+                                    <option>All Roads</option>
+                                    <option>Primary Roads</option>
+                                    <option>Secondary Roads</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Curvature</label>
+                                <select class="filter-select">
+                                    <option>All Curves</option>
+                                    <option>Very Curved</option>
+                                    <option>Moderately Curved</option>
+                                    <option>Mellow</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label class="filter-label">Length</label>
+                                <select class="filter-select">
+                                    <option>All Lengths</option>
+                                    <option>Short (2-5km)</option>
+                                    <option>Medium (5-15km)</option>
+                                    <option>Long (15km+)</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%; margin-top: 12px;">
+                                <span>🔍</span>
+                                <span>Search Roads</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Saved Routes Tab -->
+                    <div id="saved-tab" class="tab-content" style="display: none;">
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">💾</span>
+                                <span>My Saved Routes</span>
+                            </div>
+                            <div class="saved-roads-list">
+                                <div class="saved-road-item">
+                                    <div class="saved-road-name">Mountain Pass Route</div>
+                                    <div class="saved-road-meta">127.5 km • 2h 15m • ⭐ 4.8</div>
+                                </div>
+                                <div class="saved-road-item">
+                                    <div class="saved-road-name">Coastal Highway</div>
+                                    <div class="saved-road-meta">89.2 km • 1h 45m • ⭐ 4.5</div>
+                                </div>
+                                <div class="saved-road-item">
+                                    <div class="saved-road-name">Forest Trail</div>
+                                    <div class="saved-road-meta">45.3 km • 1h 10m • ⭐ 4.2</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- POIs Tab -->
+                    <div id="poi-tab" class="tab-content" style="display: none;">
+                        <div class="sidebar-section">
+                            <div class="section-title">
+                                <span class="icon">📍</span>
+                                <span>Points of Interest</span>
+                            </div>
+                            <div class="poi-options">
+                                <div class="poi-option">
+                                    <input type="checkbox" id="tourism">
+                                    <label for="tourism">🏛️ Tourism</label>
+                                </div>
+                                <div class="poi-option">
+                                    <input type="checkbox" id="fuel">
+                                    <label for="fuel">⛽ Fuel Stations</label>
+                                </div>
+                                <div class="poi-option">
+                                    <input type="checkbox" id="charging">
+                                    <label for="charging">🔌 EV Charging</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%; margin-top: 12px;">
+                                <span>🔍</span>
+                                <span>Find POIs</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div class="map-container">
+                <div class="map-placeholder">
+                    <div style="text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">🗺️</div>
+                        <div>Interactive Map View</div>
+                        <div style="font-size: 14px; margin-top: 10px; color: #999;">Leaflet Map Integration</div>
+                    </div>
+                </div>
+
+                <!-- Floating Controls -->
+                <div class="floating-controls">
+                    <button class="control-btn" title="Layers">🗺️</button>
+                    <button class="control-btn" title="Weather">☀️</button>
+                    <button class="control-btn" title="Draw Road">✏️</button>
+                    <button class="control-btn" title="Drop Marker">📍</button>
+                    <button class="control-btn" title="Offline Maps">📱</button>
+                </div>
+
+                <!-- Route Panel -->
+                <div class="route-panel active" id="route-panel">
+                    <div class="route-header">
+                        <div class="route-title">Scenic Route via Mountains</div>
+                        <button class="control-btn" onclick="closeRoutePanel()" style="width: 32px; height: 32px;">✕</button>
+                    </div>
+                    <div class="route-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">127.5</div>
+                            <div class="stat-label">Distance (km)</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">2h 15m</div>
+                            <div class="stat-label">Duration</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">8.5</div>
+                            <div class="stat-label">Curvature</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">⭐ 4.8</div>
+                            <div class="stat-label">Rating</div>
+                        </div>
+                    </div>
+                    <div class="route-actions">
+                        <button class="action-btn btn-primary">
+                            📥 Export GPX
+                        </button>
+                        <button class="action-btn btn-secondary">
+                            💾 Save
+                        </button>
+                        <button class="action-btn btn-secondary">
+                            🧭 Navigate
+                        </button>
+                        <button class="action-btn btn-secondary">
+                            ⭐ Rate
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Status Indicator -->
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Online</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchSidebarTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.sidebar-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            });
+
+            // Show selected tab
+            const tabIndex = ['plan', 'search', 'saved', 'poi'].indexOf(tabName);
+            document.querySelectorAll('.sidebar-tab')[tabIndex].classList.add('active');
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        function closeRoutePanel() {
+            document.getElementById('route-panel').classList.remove('active');
+        }
+
+        // Route option selection
+        document.querySelectorAll('.route-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.route-option').forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
+
+
+

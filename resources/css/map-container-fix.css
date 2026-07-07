@@ -1,0 +1,78 @@
+/*
+ * CRITICAL FIX FOR MAP CONTAINER IN DRAWING MODE
+ * This file contains CSS fixes specifically for ensuring the map container is properly displayed in drawing mode
+ */
+
+/* Force map container to be visible in drawing mode */
+#map.drawing-mode {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Force map container to be visible in drawing mode */
+body.drawing-mode #map {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Force leaflet container to be visible in drawing mode */
+#map.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Force leaflet container to be visible in drawing mode */
+body.drawing-mode .leaflet-container {
+    background-color: #f0f0f0 !important;
+    z-index: 0 !important;
+    position: relative !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Force all map layers to be visible in drawing mode */
+#map.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Force all map layers to be visible in drawing mode */
+body.drawing-mode .leaflet-layer {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: absolute !important;
+    z-index: 100 !important;
+    width: 100% !important;
+    height: 100% !important;
+}

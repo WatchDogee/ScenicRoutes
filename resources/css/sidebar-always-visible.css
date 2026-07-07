@@ -1,0 +1,117 @@
+/*
+ * CRITICAL FIX FOR SIDEBAR VISIBILITY AFTER DRAWING MODE
+ * This file contains CSS fixes specifically for ensuring sidebars are always visible
+ * after exiting drawing mode
+ */
+
+/* GLOBAL SIDEBAR VISIBILITY FIX */
+/* These selectors target the sidebar in all states */
+
+/* Main sidebar container - always visible */
+.flex.h-screen.relative > div:first-child,
+.flex.h-screen.relative > .w-16,
+.flex.h-screen.relative > .w-80 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    transition: width 0.3s ease !important;
+}
+
+/* Sidebar toggle button - always visible */
+.absolute.top-4.left-4,
+.absolute.top-4.left-40,
+button[class*="absolute top-4"][class*="left-4"],
+button[class*="absolute top-4"][class*="left-40"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+    position: absolute !important;
+}
+
+/* DRAWING MODE SPECIFIC FIXES */
+/* These selectors specifically target elements when drawing mode is active or inactive */
+
+/* When drawing mode is active, ensure sidebar remains visible */
+#map.drawing-mode ~ div:first-child,
+#map.drawing-mode ~ .w-16,
+#map.drawing-mode ~ .w-80 {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+/* When drawing mode is active, ensure sidebar toggle button remains visible */
+#map.drawing-mode ~ button[class*="absolute top-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+/* When drawing mode is NOT active, ensure sidebar remains visible */
+#map:not(.drawing-mode) ~ div:first-child,
+#map:not(.drawing-mode) ~ .w-16,
+#map:not(.drawing-mode) ~ .w-80,
+body:not(.drawing-mode) .flex.h-screen.relative > div:first-child {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+/* When drawing mode is NOT active, ensure sidebar toggle button remains visible */
+#map:not(.drawing-mode) ~ button[class*="absolute top-4"],
+body:not(.drawing-mode) button[class*="absolute top-4"] {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 3000 !important;
+    display: block !important;
+    pointer-events: auto !important;
+}
+
+/* DIRECT ELEMENT TARGETING */
+/* These selectors directly target elements by their class combinations */
+
+/* Collapsed sidebar */
+.w-16.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+/* Expanded sidebar */
+.w-80.transition-all.duration-300.bg-white.shadow-md.overflow-y-auto.overflow-x-hidden.z-20.flex.flex-col.relative {
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 2000 !important;
+    display: flex !important;
+    pointer-events: auto !important;
+}
+
+/* PARENT CONTAINER FIXES */
+/* Ensure the parent container is properly displayed */
+.flex.h-screen.relative {
+    display: flex !important;
+    position: relative !important;
+    height: 100vh !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Ensure the map container is properly displayed */
+.flex-1.relative {
+    flex: 1 !important;
+    position: relative !important;
+    overflow: visible !important;
+}
