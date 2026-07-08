@@ -19,7 +19,7 @@ ScenicRoutes is a route-planning and road discovery app with social ride-sharing
 - Composer
 - Node.js 20+ and npm
 - PostgreSQL 15+ or compatible local database
-- Android Studio (required for android app)
+- Android Studio (required for Android app)
 
 ## Local Setup
 
@@ -28,7 +28,7 @@ ScenicRoutes is a route-planning and road discovery app with social ride-sharing
    ```powershell
    Copy-Item .env.example .env
    ```
-3. Set your local database values in `.env`.
+3. Set your local database values and graphopper api key in `.env`. 
 4. Generate the app key:
    ```powershell
    php artisan key:generate
